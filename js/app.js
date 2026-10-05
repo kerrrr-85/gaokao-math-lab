@@ -37,7 +37,7 @@
     var avg = 0, cnt = 0;
     D.nodes.forEach(function (n) { avg += Store.masteryOf(n.id); cnt++; });
     avg = cnt ? Math.round(avg / cnt) : 0;
-    var html = '<h1>今日任务</h1>';
+    var html = '<div class="hero"><div class="cardContainer"><div class="card" onclick="go(\'#/practice/start\')"><div style="text-align:center"><p class="city">今日任务</p><p class="weather">函数与导数 · 新高考</p></div><div class="temp">' + due.length + '</div><div class="minmaxContainer"><div class="min"><span class="minHeading">新卡</span><span class="minTemp">' + nw.length + ' 张</span></div><div class="max"><span class="maxHeading">掌握度</span><span class="maxTemp">' + avg + '%</span></div></div></div></div><div class="heroText"><h1>今天，先把该复习的做完</h1><p>待复习 ' + due.length + ' 张 · 新卡 ' + nw.length + ' 张 · 累计练习 ' + st.total + ' 题</p><div class="row" style="margin-top:12px"><button class="btn primary" onclick="go(\'#/practice/start\')">开始练习</button><button class="btn" onclick="go(\'#/map\')">看知识图谱</button></div></div></div>';
     html += '<div class="kpi">' +
       '<div class="card"><b>' + due.length + '</b><span class="small muted">待复习卡</span></div>' +
       '<div class="card"><b>' + nw.length + '</b><span class="small muted">新卡</span></div>' +
@@ -271,7 +271,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v8</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v9</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +

@@ -105,3 +105,20 @@ input[type=text],textarea,select{font-size:16px}
 .loader_cube--color{z-index:1;filter:blur(2px);background:linear-gradient(135deg,#1afbf0,#da00ff);animation:loadtwo 2.5s ease-in-out infinite}
 @keyframes loadtwo{50%{transform:rotate(-80deg)}}
 .cube-text{color:#fff;font-size:15px;letter-spacing:1px}
+
+.hero{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap;background:linear-gradient(135deg,#0b1220,#1e293b);border-radius:20px;padding:22px 18px;margin-bottom:16px}
+.heroText{max-width:430px;color:#fff}
+.heroText h1{color:#fff;margin-bottom:6px}
+.heroText p{color:#c7d3e8;font-size:14px}
+.cardContainer{width:fit-content;position:relative;display:flex;align-items:center;justify-content:center}
+.card{position:relative;z-index:1;width:220px;height:250px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:20px 10px;border-radius:16px;backdrop-filter:blur(30px);background-color:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);cursor:pointer}
+.city{font-weight:700;font-size:.95em;letter-spacing:1.2px;color:#fff;margin:0}
+.weather{font-weight:500;font-size:.72em;letter-spacing:1.2px;color:#c5c5c5;margin:2px 0 0}
+.temp{font-size:2.6em;font-weight:800;color:#fff;line-height:1}
+.minmaxContainer{width:100%;display:flex;align-items:center;justify-content:space-between}
+.min,.max{width:50%;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0 16px;gap:4px}
+.max{align-items:flex-start;border-left:2px solid rgba(255,255,255,.5)}
+.maxHeading,.minHeading{font-size:.7em;font-weight:600;color:#fff}
+.maxTemp,.minTemp{font-size:.8em;font-weight:500;color:#c5c5c5}
+.cardContainer::before{width:100px;height:100px;content:"";position:absolute;background:linear-gradient(135deg,#90a1ff,#da00ff);z-index:0;border-radius:50%;left:70px;top:40px;transition:all 1s;filter:blur(2px)}
+.cardContainer:hover::before{transform:translate(-50px,50px)}
