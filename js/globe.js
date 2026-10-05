@@ -2,7 +2,7 @@
 (function (global) {
   var CITIES = global.CITIES || [];
   var rot = { yaw: -1.9, pitch: 0.5 }, zoom = 1, drag = null, auto = true, night = true;
-  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false, platesOn = false;
+  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false, platesOn = false, resizeFn = null, pick = null;
 
   function rad(d) { return d * Math.PI / 180; }
   function toVec(lat, lng) { var f = rad(lat), l = rad(lng); return { x: Math.cos(f) * Math.sin(l), y: Math.sin(f), z: Math.cos(f) * Math.cos(l) }; }
@@ -324,6 +324,19 @@
     return ns + '纬 ' + Math.abs(lat).toFixed(1) + '° · ' + ew + '经 ' + Math.abs(lng).toFixed(1) + '° · ' + ns + '半球/' + ew + '半球 · ' + band + ' · 约 UTC' + (off >= 0 ? '+' : '') + off;
   }
 
+  function fullscreen() {
+    document.body.classList.toggle('globe-full');
+    var b = document.getElementById('glFull'); if (b) b.textContent = document.body.classList.contains('globe-full') ? '⤡ 退出全屏' : '⛶ 全屏';
+    setTimeout(function () { if (resizeFn) resizeFn(); }, 80);
+  }
+  function pickCity(name) {
+    var c = cityByName(name); if (!c) return;
+    var box = document.getElementById('globeInfo');
+    if (!pick || !pick.a) { pick = { a: c }; if (box) box.textContent = '起点：' + c.name + '，再点一座城市作为终点'; return; }
+    setRoute(pick.a.name, c.name);
+    if (box) box.textContent = '航线：' + pick.a.name + ' → ' + c.name + '（再点城市重新选）';
+    pick = null;
+  }
   function tab(id) {
     ['motion', 'route', 'air', 'earth'].forEach(function (k) {
       var el = document.getElementById('gs-' + k); if (el) el.style.display = (k === id) ? 'block' : 'none';
@@ -339,13 +352,13 @@
       '<button class="chip" id="tab-route" onclick="Globe.tab(&#39;route&#39;)">航线与经纬</button>' +
       '<button class="chip" id="tab-air" onclick="Globe.tab(&#39;air&#39;)">大气与海洋</button>' +
       '<button class="chip" id="tab-earth" onclick="Globe.tab(&#39;earth&#39;)">地质·气候·植被</button></div>' +
-      '<div class="card elev2" style="margin-bottom:12px"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button>' +
+      '<div class="card elev2" style="margin-bottom:12px"><div class="row"><button class="btn sm" id="glFull" onclick="Globe.fullscreen()">⛶ 全屏</button><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button>' +
       '<button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button>' +
       '<button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button>' +
       '<button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button>' +
       '<button class="btn sm" id="glPlate" onclick="Globe.togglePlates()">🗺 板块关</button>' +
       '<select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div></div>' +
-      '<div class="globe-wrap" id="globeWrap"><canvas id="globeCv"></canvas><div class="globe-info" id="globeInfo">点球面任意位置读经纬度</div></div>' +
+      '<div class="globe-wrap" id="globeWrap"><canvas id="globeCv"></canvas><div class="globe-info" id="globeInfo">点城市=设航线起点/终点；点球面=读经纬度</div><button class="globe-x" onclick="Globe.fullscreen()">✕ 退出全屏</button></div>' +
 
       '<div id="gs-motion" class="gsec">' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">☀️</span><div class="grow"><h2>太阳直射点 · 正午太阳高度</h2><p>H = 90° − |当地纬度 − 直射点纬度|</p></div></div>' +
@@ -399,7 +412,34 @@
       '<div class="zone"><div style="background:#166534">热带雨林带</div><div style="background:#4d7c0f">热带草原带</div><div style="background:#b45309">热带荒漠带</div><div style="background:#0f766e">亚热带常绿硬叶林</div><div style="background:#15803d">温带落叶阔叶林</div><div style="background:#065f46">亚寒带针叶林</div><div style="background:#7c3aed">苔原带</div><div style="background:#38bdf8">冰原带</div></div>' +
       '<p class="small muted" style="margin:10px 0 0">赤道→两极：热量减少，自然带依次更替（纬度地带性）；同纬度沿海→内陆：水分减少，森林→草原→荒漠（经度地带性）；山地随海拔升高出现类似更替（垂直地带性）。</p></div>' +
       '</div>';
+    wrap = document.getElementById('globeWrap'); cv = document.getElementById('globeCv'); ctx = cv.getContext('2d');
+    var _gf = document.getElementById('glFrom'), _gt = document.getElementById('glTo');
+    var _ta = document.getElementById('tzA'), _tb = document.getElementById('tzB');
+    var _la = document.getElementById('ltA'), _lb = document.getElementById('ltB');
+    if (_gf) _gf.value = '北京'; if (_gt) _gt.value = '纽约';
+    if (_ta) _ta.value = '北京'; if (_tb) _tb.value = '伦敦';
+    if (_la) _la.value = '北京'; if (_lb) _lb.value = '伦敦';
+    updateTZ(); updateSun(); localTimeSwap(); climate();
+    function resize() { var r = wrap.getBoundingClientRect(); cv.width = Math.max(1, r.width * (devicePixelRatio || 1)); cv.height = Math.max(1, r.height * (devicePixelRatio || 1)); draw(); }
+    resizeFn = resize;
+    addEventListener('resize', resize);
+    wrap.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; if (wrap.setPointerCapture) wrap.setPointerCapture(e.pointerId); });
+    wrap.addEventListener('pointermove', function (e) { if (!drag) return; rot.yaw += (e.clientX - drag.x) * 0.008; rot.pitch = Math.max(-1.3, Math.min(1.3, rot.pitch + (e.clientY - drag.y) * 0.006)); drag = { x: e.clientX, y: e.clientY }; draw(); });
+    wrap.addEventListener('pointerup', function (e) {
+      if (drag && Math.abs(e.clientX - drag.x) < 3 && Math.abs(e.clientY - drag.y) < 3) {
+        var r = cv.getBoundingClientRect(), cx = cv.width / 2, cy = cv.height / 2, R = Math.min(cv.width, cv.height) * 0.36 * zoom;
+        var mx = (e.clientX - r.left) * (devicePixelRatio || 1), my = (e.clientY - r.top) * (devicePixelRatio || 1);
+        var hit = CITIES.map(function (c) { var p2 = project(c.lat, c.lng, cx, cy, R); return { c: c, d: p2.vis ? Math.hypot(p2.x - mx, p2.y - my) : 1e9 }; }).sort(function (a, b) { return a.d - b.d; })[0];
+        var box = document.getElementById('globeInfo');
+        if (hit && hit.d < 22) { box.textContent = hit.c.name + ' · ' + zoneText({ lat: hit.c.lat, lng: hit.c.lng }) + '（再点一次设为航线点）'; pickCity(hit.c.name); }
+        else { var pp = unproject(mx, my, cx, cy, R); box.textContent = pp ? zoneText(pp) : '点到了球外，请点球面'; }
+      }
+      drag = null;
+    });
+    wrap.addEventListener('wheel', function (e) { e.preventDefault(); zoom = Math.max(0.6, Math.min(2.4, zoom * (e.deltaY > 0 ? 0.94 : 1.06))); draw(); }, { passive: false });
+    resize();
+    if (!raf) raf = requestAnimationFrame(loop);
   }
 
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, tab: tab, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
+  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, tab: tab, fullscreen: fullscreen, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
