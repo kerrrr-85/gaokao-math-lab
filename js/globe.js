@@ -25,6 +25,42 @@
     var x = x1 * cy1 - z1 * sy1, z = x1 * sy1 + z1 * cy1;
     return { lat: Math.asin(Math.max(-1, Math.min(1, y1))) * 180 / Math.PI, lng: Math.atan2(x, z) * 180 / Math.PI };
   }
+  function subsolar() {
+    var now = new Date();
+    var utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
+    var doy = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - Date.UTC(now.getUTCFullYear(), 0, 0)) / 86400000);
+    var dec = 23.44 * Math.sin(2 * Math.PI * (doy - 81) / 365);
+    var lng = 180 - utcH * 15;
+    while (lng > 180) lng -= 360; while (lng < -180) lng += 360;
+    return { lat: dec, lng: lng };
+  }
+  function sunAltitude(lat) {
+    var d = subsolar();
+    var h = 90 - Math.abs(lat - d.lat);
+    return { h: Math.max(0, Math.round(h * 10) / 10), dec: d, polar: h <= 0 };
+  }
+  function localTimeSwap() {
+    var a = cityByName((document.getElementById('ltA') || {}).value), b = cityByName((document.getElementById('ltB') || {}).value);
+    var tv = ((document.getElementById('ltT') || {}).value || '08:00').split(':');
+    var box = document.getElementById('ltInfo'); if (!a || !b || !box) return;
+    var mins = (parseInt(tv[0], 10) || 0) * 60 + (parseInt(tv[1], 10) || 0);
+    var deltaMin = Math.round((b.lng - a.lng) / 15 * 60);
+    var t2 = ((mins + deltaMin) % 1440 + 1440) % 1440;
+    function fmt(m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); }
+    var diffH = Math.round(deltaMin / 6) / 10;
+    box.innerHTML = a.name + '（' + a.lng + '°E）' + fmt(mins) + ' 时，' + b.name + '（' + b.lng + '°E）地方时约 <b>' + fmt(t2) + '</b> ｜ 经度差 ' + Math.abs(Math.round(b.lng - a.lng)) + '° → 时差约 <b>' + Math.abs(diffH) + ' 小时</b>';
+  }
+  function updateSun() {
+    var box = document.getElementById('sunInfo'); if (!box) return;
+    var sel = document.getElementById('sunLat');
+    var val = sel && sel.value !== '' ? parseFloat(sel.value) : null;
+    var d = subsolar();
+    var ns = d.lat >= 0 ? '北纬' : '南纬';
+    var head = '此刻太阳直射点：<b>' + ns + ' ' + Math.abs(d.lat).toFixed(1) + '°</b>，经度 <b>' + d.lng.toFixed(1) + '°</b>';
+    if (val === null || isNaN(val)) { box.innerHTML = head + '。选择一个地点即可算出正午太阳高度。'; return; }
+    var r = sunAltitude(val);
+    box.innerHTML = head + '。<br>该地正午太阳高度 <b>' + (r.polar ? 0 : r.h) + '°</b>' + (r.polar ? '（出现极夜）' : '') + '　<span class="muted">公式 H = 90° − |当地纬度 − 直射点纬度|</span>';
+  }
   function sunVec() {
     var now = new Date();
     var utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
@@ -90,6 +126,14 @@
       ctx.fillStyle = '#fbbf24';
       for (var i = 0; i < 6; i++) { var pp = projectVec(pts[Math.floor(((phase + i / 6) % 1) * (pts.length - 1))], cx, cy, R); if (pp.vis) { ctx.beginPath(); ctx.arc(pp.x, pp.y, 3.2, 0, 6.2832); ctx.fill(); } }
     }
+    if (night) {
+      var ss = subsolar(), sv = toVec(ss.lat, ss.lng), sp = projectVec(sv, cx, cy, R);
+      if (sp.vis) {
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 8, 0, 6.2832); ctx.fillStyle = '#fbbf24'; ctx.fill();
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 14, 0, 6.2832); ctx.strokeStyle = 'rgba(251,191,36,.6)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = '#fde68a'; ctx.font = (12 * (devicePixelRatio || 1)) + 'px sans-serif'; ctx.fillText('☀ 直射点', sp.x + 13, sp.y + 4);
+      }
+    }
     CITIES.forEach(function (c) {
       var v = toVec(c.lat, c.lng), p = projectVec(v, cx, cy, R); if (!p.vis) return;
       var day3 = !night || isDay(v, s);
@@ -145,11 +189,22 @@
       '<div class="row" style="margin-top:8px"><select id="tzA" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.updateTZ()">' + opts + '</select><select id="tzB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.updateTZ()">' + opts + '</select></div>' +
       '<p class="small" id="tzInfo" style="margin:8px 0 0">选择两座城市看时差</p></div>' +
       '<div class="globe-wrap" id="globeWrap"><canvas id="globeCv"></canvas><div class="globe-info" id="globeInfo">点球面任意位置读经纬度</div></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">☀️</span><div class="grow"><h2>太阳直射点 · 正午太阳高度</h2><p>H = 90° − |当地纬度 − 直射点纬度|</p></div></div>' +
+      '<div class="row"><select id="sunLat" onchange="Globe.updateSun()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">选择地点…</option>' +
+      CITIES.map(function (c) { return '<option value="' + c.lat + '">' + c.name + '（' + c.lat + '°）</option>'; }).join('') +
+      '<option value="0">赤道 0°</option><option value="23.5">北回归线 23.5°</option><option value="-23.5">南回归线 -23.5°</option><option value="66.5">北极圈 66.5°</option></select></div>' +
+      '<p class="small" id="sunInfo" style="margin:10px 0 0"></p></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🕐</span><div class="grow"><h2>地方时换算</h2><p>经度每差 15°，地方时差 1 小时</p></div></div>' +
+      '<div class="row"><select id="ltA" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.localTime()">' + opts + '</select>' +
+      '<input type="time" id="ltT" value="08:00" onchange="Globe.localTime()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' +
+      '<span class="muted">→</span><select id="ltB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.localTime()">' + opts + '</select></div>' +
+      '<p class="small" id="ltInfo" style="margin:10px 0 0"></p></div>' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>三个地理考点</h2><p>点下面的按钮直接看</p></div></div><p class="small muted" style="margin:0"><b>① 最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成弧线。<br><b>② 经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>③ 昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。</p></div>';
     wrap = document.getElementById('globeWrap'); cv = document.getElementById('globeCv'); ctx = cv.getContext('2d');
     document.getElementById('glFrom').value = '北京'; document.getElementById('glTo').value = '纽约';
     document.getElementById('tzA').value = '北京'; document.getElementById('tzB').value = '伦敦';
-    updateTZ();
+    document.getElementById('ltA').value = '北京'; document.getElementById('ltB').value = '伦敦';
+    updateTZ(); updateSun(); localTimeSwap();
     function resize() { var r = wrap.getBoundingClientRect(); cv.width = r.width * (devicePixelRatio || 1); cv.height = r.height * (devicePixelRatio || 1); draw(); }
     wrap.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; if (wrap.setPointerCapture) wrap.setPointerCapture(e.pointerId); });
     wrap.addEventListener('pointermove', function (e) { if (!drag) return; rot.yaw += (e.clientX - drag.x) * 0.008; rot.pitch = Math.max(-1.3, Math.min(1.3, rot.pitch + (e.clientY - drag.y) * 0.006)); drag = { x: e.clientX, y: e.clientY }; draw(); });
@@ -169,5 +224,5 @@
     resize();
     if (!raf) raf = requestAnimationFrame(loop);
   }
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ };
+  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
