@@ -76,6 +76,20 @@
       '<div class="stat"><b>' + todayCount() + '</b><span>今日已练</span></div>' +
       '<div class="stat"><b>' + avgMastery() + '%</b><span>总掌握度</span></div>' +
       '<div class="stat"><b>' + streakDays() + '</b><span>连续天数</span></div></div>' +
+      '<div class="modcards">' + (function () {
+        var mods = ['函数与导数', '三角函数', '数列'];
+        return mods.map(function (mn) {
+          var ns = (window.DATA.nodes || []).filter(function (x) { return (x.module || '函数与导数') === mn; });
+          var sum = 0; ns.forEach(function (x) { sum += Store.masteryOf(x.id); });
+          var avg = ns.length ? Math.round(sum / ns.length) : 0;
+          var due = 0;
+          Store.dueCards().forEach(function (c) {
+            var arr = c.refType === 'method' ? (window.DATA.methods || []) : (window.DATA.questions || []);
+            arr.forEach(function (x) { if (x.id === c.refId && (x.module || '函数与导数') === mn) due++; });
+          });
+          return '<a class="modcard" href="#/today" onclick="Portal.openModule(\'' + mn + '\');return false;"><div class="m">' + avg + '%</div><b>' + mn + '</b><div class="s">待复习 ' + due + ' · ' + ns.length + ' 节点</div></a>';
+        }).join('');
+      })() + '</div>' +
       '<div class="pt-grid">' +
       tile('study','学习台','#/today') + tile('practice','练习','#/practice') + tile('map','知识图谱','#/map') +
       tile('wrong','错题本','#/wrong') + tile('stats','统计','#/stats') + tile('search','搜索','#/search') +
@@ -130,5 +144,5 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);

@@ -308,3 +308,19 @@ body.dark.study-bg .card,body.dark.study-bg .item,body.dark.study-bg .stat,body.
 .gnode-label{font-size:12px;fill:#334155;text-anchor:middle;paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:3px;stroke-linejoin:round}
 body.dark .gnode-label{fill:#cbd5e1;stroke:rgba(15,23,42,.9)}
 @media (max-width:700px){.graph{min-height:360px}}
+
+.modcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:520px;margin:10px auto 0;position:relative;z-index:2}
+.modcard{background:rgba(12,16,30,.62);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:12px 10px;color:#eaf2ff;text-align:center;backdrop-filter:blur(8px)}
+.modcard b{display:block;font-size:12.5px;margin-top:6px}
+.modcard .m{font-size:22px;font-weight:800}
+.modcard .s{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.modcard:hover{border-color:#2dd4bf;background:rgba(15,118,110,.35)}
+@media (max-width:420px){.modcards{grid-template-columns:repeat(3,1fr);gap:8px}.modcard .m{font-size:18px}.modcard b{font-size:11px}}
+.graphbox{position:relative;overflow:hidden;touch-action:none;cursor:grab}
+.graphbox svg{transform-origin:0 0;transition:transform .12s linear}
+.gnode.dim{opacity:.22}
+.edge.dim{opacity:.12}
+.edge.hot{stroke:#0f766e;stroke-width:2.4;opacity:1}
+.gnode.hot circle{stroke:#0f766e;stroke-width:3}
+.graphbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px}
+body.dark .edge.hot{stroke:#2dd4bf}

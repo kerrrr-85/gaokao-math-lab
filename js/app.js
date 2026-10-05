@@ -21,6 +21,7 @@
   function curModule() { return (Store.get().settings || {}).module || '函数与导数'; }
   function inMod(x) { return !x.module || x.module === curModule(); }
   function setModule(m) { Store.get().settings.module = m; Store.save(); toast('已切换到 ' + m); router(); }
+  function openModule(m) { Store.get().settings.module = m; Store.save(); go('#/today'); }
   function modbar() {
     var ms = ['函数与导数', '三角函数', '数列'];
     return '<div class="modbar">' + ms.map(function (m) { return '<button class="btn sm' + (m === curModule() ? ' primary' : '') + '" onclick="App.setModule(\'' + m + '\')">' + m + '</button>'; }).join('') + '</div>';
@@ -242,14 +243,14 @@
         if (!pos[pr] || !pos[n.id]) return;
         var A = pos[pr], B = pos[n.id];
         var y1 = A.y + rad[pr] + 4, y2 = B.y - rad[n.id] - 4;
-        svg += '<path class="edge" d="M' + A.x + ' ' + y1 + ' C' + A.x + ' ' + (y1 + 48) + ', ' + B.x + ' ' + (y2 - 48) + ', ' + B.x + ' ' + y2 + '"/>';
+        svg += '<path class="edge" data-from="' + pr + '" data-to="' + n.id + '" d="M' + A.x + ' ' + y1 + ' C' + A.x + ' ' + (y1 + 48) + ', ' + B.x + ' ' + (y2 - 48) + ', ' + B.x + ' ' + y2 + '"/>';
       });
     });
     MAP.forEach(function (n) {
       var p = pos[n.id], m = Store.masteryOf(n.id), r = rad[n.id];
       var fill = m >= 75 ? '#0f766e' : m >= 50 ? '#2dd4bf' : m >= 25 ? '#fbbf24' : '#e2e8f0';
       var tcol = m >= 50 ? '#ffffff' : '#0f172a';
-      svg += '<g class="gnode" transform="translate(' + p.x + ',' + p.y + ')" onclick="App.go(\'#/node/' + n.id + '\')">' +
+      svg += '<g class="gnode" data-id="' + n.id + '" transform="translate(' + p.x + ',' + p.y + ')" onmouseenter="App.graphHover(\'' + n.id + '\',true)" onmouseleave="App.graphHover(\'' + n.id + '\',false)" onclick="App.go(\'#/node/' + n.id + '\')">' +
         '<circle r="' + r.toFixed(0) + '" fill="' + fill + '" stroke="rgba(15,23,42,.16)" stroke-width="1.5"/>' +
         '<text y="4" style="font-size:12px;fill:' + tcol + ';font-weight:700">' + m + '%</text>' +
         '<text class="gnode-label" y="' + (r + 20) + '">' + esc(n.title) + '</text></g>';
@@ -257,12 +258,29 @@
     svg += '</svg>';
     view.innerHTML = modbar() +
       '<div class="phead"><span class="ico">🧭</span><div class="grow"><h2>' + esc(curModule()) + ' · 知识图谱</h2><p>圆越大题量越多 · 颜色越深掌握越好 · 点击进入节点</p></div></div>' +
-      '<div class="graph elev2">' + svg + '</div>' +
+      '<div class="graphbar"><button class="btn sm" onclick="App.graphReset()">↺ 重置视图</button><span class="small muted" style="align-self:center">滚轮缩放 · 拖拽平移</span></div>' + '<div class="graph graphbox elev2" id="graphBox">' + svg + '</div>' +
       '<div class="legend" style="margin-top:12px"><span><i style="background:#e2e8f0"></i>未掌握</span><span><i style="background:#fbbf24"></i>25% 以上</span><span><i style="background:#2dd4bf"></i>50% 以上</span><span><i style="background:#0f766e"></i>75% 以上</span></div>';
+    graphInit();
     if (window.Anim && Anim.ok()) Anim.animate('.gnode', { opacity: [0, 1], scale: [0.6, 1], duration: 620, delay: Anim.stagger(35), ease: 'outBack' });
   }
   /* ============ 节点 / 方法 ============ */
   function masteryBar(id) { var m = Store.masteryOf(id); return '<div class="mastery"><div class="bar"><i style="width:' + m + '%"></i></div><span class="small">' + m + '%</span></div>'; }
+  var gv = { s: 1, tx: 0, ty: 0 };
+  function graphApply() { var svgEl = document.querySelector('#graphBox svg'); if (svgEl) svgEl.style.transform = 'translate(' + gv.tx + 'px,' + gv.ty + 'px) scale(' + gv.s + ')'; }
+  function graphReset() { gv = { s: 1, tx: 0, ty: 0 }; graphApply(); }
+  function graphHover(id, on) {
+    Array.prototype.forEach.call(document.querySelectorAll('.gnode'), function (g) { g.classList.toggle('dim', on && g.getAttribute('data-id') !== id); g.classList.toggle('hot', on && g.getAttribute('data-id') === id); });
+    Array.prototype.forEach.call(document.querySelectorAll('.edge'), function (e) { var rel = on && (e.getAttribute('data-from') === id || e.getAttribute('data-to') === id); e.classList.toggle('hot', rel); e.classList.toggle('dim', on && !rel); });
+  }
+  function graphInit() {
+    gv = { s: 1, tx: 0, ty: 0 };
+    var box = document.getElementById('graphBox'); if (!box) return;
+    var drag = null;
+    box.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, tx: gv.tx, ty: gv.ty }; if (box.setPointerCapture) box.setPointerCapture(e.pointerId); });
+    box.addEventListener('pointermove', function (e) { if (!drag) return; gv.tx = drag.tx + (e.clientX - drag.x); gv.ty = drag.ty + (e.clientY - drag.y); graphApply(); });
+    box.addEventListener('pointerup', function () { drag = null; });
+    box.addEventListener('wheel', function (e) { e.preventDefault(); gv.s = Math.max(0.55, Math.min(2.4, gv.s * (e.deltaY > 0 ? 0.92 : 1.08))); graphApply(); }, { passive: false });
+  }
   function renderNode(id) {
     var n = nodeById[id]; if (!n) { view.innerHTML = '<div class="card">未找到该知识节点。</div>'; return; }
     var ms = D.methods.filter(function (m) { return n.methods.indexOf(m.id) >= 0; });
@@ -326,6 +344,14 @@
       '<div><i style="height:' + Math.max(4, Math.round(mid * 100 / total)) + '%"></i><span>中档 ' + mid + '</span></div>' +
       '<div><i style="height:' + Math.max(4, Math.round(hard * 100 / total)) + '%"></i><span>压轴 ' + hard + '</span></div></div>';
     html += '<div class="row" style="margin-top:16px"><button class="btn primary" onclick="App.beginPractice()">开始练习</button><button class="btn" onclick="App.beginPractice(true)">交错练习</button></div></div>';
+    var ns = D.nodes.filter(function (n) { return (n.module || '函数与导数') === curModule(); });
+    var rec = ns.map(function (n) { return { n: n, m: Store.masteryOf(n.id) }; }).filter(function (r) { return D.questions.some(function (q) { return q.node === r.n.id; }); }).sort(function (a, b) { return a.m - b.m; }).slice(0, 3);
+    if (rec.length) {
+      html += '<div class="card"><div class="phead"><span class="ico">🧠</span><div class="grow"><h2>智能推荐</h2><p>按掌握度最低挑选，优先补短板</p></div></div><div class="list">' + rec.map(function (r) {
+        var ids = D.questions.filter(function (q) { return q.node === r.n.id; }).map(function (q) { return q.id; });
+        return '<div class="item"><div class="row"><div class="grow"><b>' + esc(r.n.title) + '</b><div class="small muted">' + esc(r.n.brief) + '</div></div><span class="tag">' + r.m + '%</span></div><div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="App.startPractice(\'' + ids.join(',') + '\')">练这个节点</button></div></div>';
+      }).join('') + '</div></div>';
+    }
     var wrong = qs.filter(function (q) { return Store.wrong().some(function (a) { return a.questionId === q.id; }); });
     if (wrong.length) html += '<div class="card"><div class="phead"><span class="ico">🧯</span><div class="grow"><h2>重点复习</h2><p>做错过的题 · ' + wrong.length + ' 道</p></div></div><button class="btn accent" onclick="App.startPractice(\'' + wrong.map(function (q) { return q.id; }).join(',') + '\')">全部重做</button></div>';
     view.innerHTML = html;
@@ -534,7 +560,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v32 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v33 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
@@ -598,7 +624,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, setPF: setPF, flipCard: flipCard, setTheme: setTheme, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, openModule: openModule, setPF: setPF, flipCard: flipCard, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
