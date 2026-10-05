@@ -2,7 +2,7 @@
 (function (global) {
   var CITIES = global.CITIES || [];
   var rot = { yaw: -1.9, pitch: 0.5 }, zoom = 1, drag = null, auto = true, night = true;
-  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371;
+  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false;
 
   function rad(d) { return d * Math.PI / 180; }
   function toVec(lat, lng) { var f = rad(lat), l = rad(lng); return { x: Math.cos(f) * Math.sin(l), y: Math.sin(f), z: Math.cos(f) * Math.cos(l) }; }
@@ -57,9 +57,11 @@
     var d = subsolar();
     var ns = d.lat >= 0 ? '北纬' : '南纬';
     var head = '此刻太阳直射点：<b>' + ns + ' ' + Math.abs(d.lat).toFixed(1) + '°</b>，经度 <b>' + d.lng.toFixed(1) + '°</b>';
-    if (val === null || isNaN(val)) { box.innerHTML = head + '。选择一个地点即可算出正午太阳高度。'; return; }
+    var chart = document.getElementById('sunChart');
+    if (val === null || isNaN(val)) { box.innerHTML = head + '。选择一个地点即可算出正午太阳高度。'; if (chart) chart.innerHTML = ''; return; }
     var r = sunAltitude(val);
-    box.innerHTML = head + '。<br>该地正午太阳高度 <b>' + (r.polar ? 0 : r.h) + '°</b>' + (r.polar ? '（出现极夜）' : '') + '　<span class="muted">公式 H = 90° − |当地纬度 − 直射点纬度|</span>';
+    box.innerHTML = head + '。<br>该地正午太阳高度 <b>' + (r.polar ? 0 : r.h) + '°</b>' + (r.polar ? '（出现极夜）' : '') + '　<span class="muted">H = 90° − |当地纬度 − 直射点纬度|</span>';
+    if (chart) chart.innerHTML = sunChartSVG(val);
   }
   function sunVec() {
     var now = new Date();
@@ -85,6 +87,42 @@
     return { km: Math.round(o * R0), bearing: Math.round((Math.atan2(y, x) * 180 / Math.PI + 360) % 360) };
   }
 
+  function latBand(lat, color, width, cx, cy, R) {
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
+    var started = false;
+    for (var lo = -180; lo <= 180; lo += 4) {
+      var p = project(lat, lo, cx, cy, R);
+      if (p.vis) { if (started) ctx.lineTo(p.x, p.y); else { ctx.moveTo(p.x, p.y); started = true; } } else started = false;
+    }
+    ctx.stroke();
+  }
+  function windArrow(lat1, lng1, lat2, lng2, color, cx, cy, R) {
+    var p1 = project(lat1, lng1, cx, cy, R), p2 = project(lat2, lng2, cx, cy, R);
+    if (!p1.vis || !p2.vis) return;
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    var ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    ctx.beginPath(); ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p2.x - 7 * Math.cos(ang - 0.45), p2.y - 7 * Math.sin(ang - 0.45));
+    ctx.lineTo(p2.x - 7 * Math.cos(ang + 0.45), p2.y - 7 * Math.sin(ang + 0.45));
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  }
+  function drawPressure(cx, cy, R) {
+    latBand(0, 'rgba(56,189,248,.30)', 9, cx, cy, R);
+    latBand(30, 'rgba(248,113,113,.28)', 9, cx, cy, R); latBand(-30, 'rgba(248,113,113,.28)', 9, cx, cy, R);
+    latBand(60, 'rgba(56,189,248,.26)', 9, cx, cy, R); latBand(-60, 'rgba(56,189,248,.26)', 9, cx, cy, R);
+    latBand(84, 'rgba(248,113,113,.26)', 9, cx, cy, R); latBand(-84, 'rgba(248,113,113,.26)', 9, cx, cy, R);
+    var los = [-140, -80, -20, 40, 100, 160];
+    los.forEach(function (lo) {
+      windArrow(25, lo - 6, 15, lo + 6, 'rgba(251,191,36,.95)', cx, cy, R);
+      windArrow(10, lo - 6, 20, lo + 6, 'rgba(251,191,36,.95)', cx, cy, R);
+      windArrow(35, lo + 6, 50, lo - 6, 'rgba(45,212,191,.95)', cx, cy, R);
+      windArrow(62, lo - 6, 75, lo + 6, 'rgba(167,139,250,.95)', cx, cy, R);
+      windArrow(-25, lo - 6, -15, lo + 6, 'rgba(251,191,36,.95)', cx, cy, R);
+      windArrow(-35, lo + 6, -50, lo - 6, 'rgba(45,212,191,.95)', cx, cy, R);
+      windArrow(-62, lo - 6, -75, lo + 6, 'rgba(167,139,250,.95)', cx, cy, R);
+    });
+  }
   function draw() {
     if (!cv || !ctx) return;
     var W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.36 * zoom;
@@ -126,6 +164,7 @@
       ctx.fillStyle = '#fbbf24';
       for (var i = 0; i < 6; i++) { var pp = projectVec(pts[Math.floor(((phase + i / 6) % 1) * (pts.length - 1))], cx, cy, R); if (pp.vis) { ctx.beginPath(); ctx.arc(pp.x, pp.y, 3.2, 0, 6.2832); ctx.fill(); } }
     }
+    if (pressure) drawPressure(cx, cy, R);
     if (night) {
       var ss = subsolar(), sv = toVec(ss.lat, ss.lng), sp = projectVec(sv, cx, cy, R);
       if (sp.vis) {
@@ -146,6 +185,29 @@
 
   function loop(ts) { var dt = last ? Math.min(3, (ts - last) / 16.7) : 1; last = ts; if (auto && !drag) rot.yaw += 0.0035 * dt; if (route) phase = (phase + 0.004 * dt) % 1; if ((auto || route) && !drag) draw(); raf = requestAnimationFrame(loop); }
   function setAuto(v) { auto = !!v; var b = document.getElementById('glAuto'); if (b) b.textContent = auto ? '⏸ 暂停自转' : '▶ 开始自转'; }
+  function togglePressure() { pressure = !pressure; var b = document.getElementById('glPres'); if (b) b.textContent = pressure ? '🌀 气压带开' : '🌀 气压带关'; draw(); }
+  function sunChartSVG(lat) {
+    var pts = [], maxH = 0, minH = 90;
+    for (var d = 0; d < 365; d += 5) {
+      var dec = 23.44 * Math.sin(2 * Math.PI * (d + 1 - 81) / 365);
+      var h = Math.max(0, 90 - Math.abs(lat - dec));
+      pts.push({ d: d, h: h }); if (h > maxH) maxH = h; if (h < minH) minH = h;
+    }
+    var W = 620, H = 132, pad = 24;
+    var path = pts.map(function (p, i) {
+      var x = pad + (W - pad * 2) * p.d / 365;
+      var y = H - pad - (H - pad * 2) * p.h / 90;
+      return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }).join(' ');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;margin-top:8px">' +
+      '<line x1="' + pad + '" y1="' + (H - pad) + '" x2="' + (W - pad) + '" y2="' + (H - pad) + '" stroke="#cbd5e1"/>' +
+      '<path d="' + path + '" fill="none" stroke="#0f766e" stroke-width="2.4"/>' +
+      '<text x="' + pad + '" y="' + (H - 8) + '" font-size="11" fill="#64748b">1月</text>' +
+      '<text x="' + (W / 2 - 14) + '" y="' + (H - 8) + '" font-size="11" fill="#64748b">7月</text>' +
+      '<text x="' + (W - pad - 26) + '" y="' + (H - 8) + '" font-size="11" fill="#64748b">12月</text>' +
+      '<text x="' + pad + '" y="16" font-size="11" fill="#0f766e">年最大 ' + maxH.toFixed(1) + '°</text>' +
+      '<text x="' + (W - pad - 90) + '" y="16" font-size="11" fill="#64748b">年最小 ' + minH.toFixed(1) + '°</text></svg>';
+  }
   function toggleNight() { night = !night; var b = document.getElementById('glNight'); if (b) b.textContent = night ? '🌗 昼夜开' : '🌗 昼夜关'; draw(); }
   function reset() { rot.yaw = -1.9; rot.pitch = 0.5; zoom = 1; draw(); }
   function focus(name) { var c = cityByName(name); if (!c) return; rot.yaw = -rad(c.lng); rot.pitch = rad(c.lat); zoom = Math.max(zoom, 1.15); setAuto(false); draw(); }
@@ -182,7 +244,7 @@
     var v = document.getElementById('view');
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
     v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理考点</h2><p>航线 / 经纬网 / 昼夜 / 时区</p></div></div>' +
-      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
+      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
       '<div class="row" style="margin-top:10px"><select id="glFrom" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><span class="muted">→</span><select id="glTo" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Globe.applyRoute()">画航线</button><button class="btn sm" onclick="Globe.clearRoute()">清除</button></div>' +
       '<div class="row" style="margin-top:10px"><button class="chip" onclick="Globe.setRoute(&#39;北京&#39;,&#39;纽约&#39;)">北京→纽约</button><button class="chip" onclick="Globe.setRoute(&#39;上海&#39;,&#39;伦敦&#39;)">上海→伦敦</button><button class="chip" onclick="Globe.setRoute(&#39;青树坪&#39;,&#39;东京&#39;)">青树坪→东京</button></div>' +
       '<p class="small muted" id="routeInfo" style="margin:10px 0 0">未选择航线</p>' +
@@ -193,7 +255,7 @@
       '<div class="row"><select id="sunLat" onchange="Globe.updateSun()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">选择地点…</option>' +
       CITIES.map(function (c) { return '<option value="' + c.lat + '">' + c.name + '（' + c.lat + '°）</option>'; }).join('') +
       '<option value="0">赤道 0°</option><option value="23.5">北回归线 23.5°</option><option value="-23.5">南回归线 -23.5°</option><option value="66.5">北极圈 66.5°</option></select></div>' +
-      '<p class="small" id="sunInfo" style="margin:10px 0 0"></p></div>' +
+      '<p class="small" id="sunInfo" style="margin:10px 0 0"></p><div id="sunChart"></div></div>' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🕐</span><div class="grow"><h2>地方时换算</h2><p>经度每差 15°，地方时差 1 小时</p></div></div>' +
       '<div class="row"><select id="ltA" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.localTime()">' + opts + '</select>' +
       '<input type="time" id="ltT" value="08:00" onchange="Globe.localTime()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' +
@@ -224,5 +286,5 @@
     resize();
     if (!raf) raf = requestAnimationFrame(loop);
   }
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, updateSun: updateSun, localTime: localTimeSwap };
+  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, togglePressure: togglePressure, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
