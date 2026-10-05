@@ -25,6 +25,10 @@
     var ms = ['函数与导数', '三角函数', '数列'];
     return '<div class="modbar">' + ms.map(function (m) { return '<button class="btn sm' + (m === curModule() ? ' primary' : '') + '" onclick="App.setModule(\'' + m + '\')">' + m + '</button>'; }).join('') + '</div>';
   }
+  function cardMod(c) {
+    if (c.refType === 'method') { var m = methodById[c.refId]; return m ? (m.module || '函数与导数') : ''; }
+    var q = qById[c.refId]; return q ? (q.module || '函数与导数') : '';
+  }
   function isNew(c) { return c.state === 'new'; }
   function dueReview() { return Store.allCards().filter(function (c) { return !isNew(c) && SRS.isDue(c); }); }
   function newCards() { return Store.allCards().filter(isNew); }
@@ -73,11 +77,13 @@
   }
   /* ============ 今日 ============ */
   function renderToday() {
-    var due = dueReview(), nw = newCards(), st = Store.stats();
+    var due = dueReview().filter(function (c) { return cardMod(c) === curModule(); });
+    var nw = newCards().filter(function (c) { return cardMod(c) === curModule(); });
+    var st = Store.stats();
     var avg = 0, cnt = 0;
     D.nodes.forEach(function (n) { avg += Store.masteryOf(n.id); cnt++; });
     avg = cnt ? Math.round(avg / cnt) : 0;
-    var html = modbar() + '<h1>今日任务</h1>';
+    var html = modbar() + '<h1>今日任务 · ' + curModule() + '</h1>';
     html += '<div class="kpi">' +
       '<div class="card"><b>' + due.length + '</b><span class="small muted">待复习卡</span></div>' +
       '<div class="card"><b>' + nw.length + '</b><span class="small muted">新卡</span></div>' +
@@ -133,22 +139,23 @@
   }
   /* ============ 知识图谱 ============ */
   function renderMap() {
-    var depth = {}; D.nodes.forEach(function (n) { depth[n.id] = 0; });
-    for (var k = 0; k < 6; k++) { D.nodes.forEach(function (n) { n.prereq.forEach(function (p) { if (depth[p] + 1 > depth[n.id]) depth[n.id] = depth[p] + 1; }); }); }
-    var layers = {}; D.nodes.forEach(function (n) { (layers[depth[n.id]] = layers[depth[n.id]] || []).push(n); });
+    var MAP = D.nodes.filter(inMod);
+    var depth = {}; MAP.forEach(function (n) { depth[n.id] = 0; });
+    for (var k = 0; k < 6; k++) { MAP.forEach(function (n) { n.prereq.forEach(function (p) { if (depth[p] + 1 > depth[n.id]) depth[n.id] = depth[p] + 1; }); }); }
+    var layers = {}; MAP.forEach(function (n) { (layers[depth[n.id]] = layers[depth[n.id]] || []).push(n); });
     var W = 900, H = 520, pad = 70, pos = {};
     Object.keys(layers).forEach(function (d) {
       var arr = layers[d], y = pad + (H - 2 * pad) * (Object.keys(layers).length === 1 ? 0.5 : d / (Object.keys(layers).length - 1));
       arr.forEach(function (n, i) { pos[n.id] = { x: W * (i + 1) / (arr.length + 1), y: y }; });
     });
     var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
-    D.nodes.forEach(function (n) { n.prereq.forEach(function (p) { if (pos[p] && pos[n.id]) { var a = pos[p], b = pos[n.id]; svg += '<path class="edge" d="M' + a.x + ' ' + (a.y + 22) + ' C' + a.x + ' ' + (a.y + 60) + ', ' + b.x + ' ' + (b.y - 60) + ', ' + b.x + ' ' + (b.y - 22) + '"/>'; } }); });
-    D.nodes.forEach(function (n) {
+    MAP.forEach(function (n) { n.prereq.forEach(function (p) { if (pos[p] && pos[n.id]) { var a = pos[p], b = pos[n.id]; svg += '<path class="edge" d="M' + a.x + ' ' + (a.y + 22) + ' C' + a.x + ' ' + (a.y + 60) + ', ' + b.x + ' ' + (b.y - 60) + ', ' + b.x + ' ' + (b.y - 22) + '"/>'; } }); });
+    MAP.forEach(function (n) {
       var p = pos[n.id], m = Store.masteryOf(n.id);
       svg += '<g class="gnode' + (m >= 60 ? ' done' : '') + '" transform="translate(' + p.x + ',' + p.y + ')" onclick="App.go(\'#/node/' + n.id + '\')"><circle r="22"/><text y="44">' + esc(n.title) + '</text><text y="0" dy="4" style="font-size:12px;fill:#0f766e">' + m + '%</text></g>';
     });
     svg += '</svg>';
-    view.innerHTML = '<h1>知识图谱</h1><p class="muted small">节点为知识模块，连线是先修关系；绿色表示掌握度 ≥ 60%。点击节点查看详情。</p><div class="graph">' + svg + '</div>';
+    view.innerHTML = modbar() + '<h1>知识图谱 · ' + curModule() + '</h1><p class="muted small">节点为知识模块，连线是先修关系；绿色表示掌握度 ≥ 60%。点击节点查看详情。</p><div class="graph">' + svg + '</div>';
   }
 
   /* ============ 节点 / 方法 ============ */
@@ -178,7 +185,7 @@
   var session = { list: [], i: 0, answered: false, lastAttempt: null };
   function renderPractice() {
     if (session.list.length) { renderQuestion(); return; }
-    var html = modbar() + '<h1>练习</h1><div class="card"><div class="grid2">' +
+    var html = modbar() + '<h1>练习</h1><p class="small muted" style="text-align:center">当前模块：' + curModule() + ' · 可练习 ' + D.questions.filter(inMod).length + ' 题</p><div class="card"><div class="grid2">' +
       '<label>知识节点<select id="fNode" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option>' + D.nodes.map(function (n) { return '<option value="' + n.id + '">' + esc(n.title) + '</option>'; }).join('') + '</select></label>' +
       '<label>难度<select id="fDiff" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option><option>基础</option><option>中档</option><option>压轴</option></select></label>' +
       '<label>题型<select id="fType" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option><option value="choice">选择</option><option value="fill">填空</option><option value="solution">解答</option></select></label>' +
@@ -339,7 +346,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v20</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v21</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
