@@ -2,7 +2,7 @@
 (function (global) {
   var CITIES = global.CITIES || [];
   var rot = { yaw: -1.9, pitch: 0.5 }, zoom = 1, drag = null, auto = true, night = true;
-  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false;
+  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false;
 
   function rad(d) { return d * Math.PI / 180; }
   function toVec(lat, lng) { var f = rad(lat), l = rad(lng); return { x: Math.cos(f) * Math.sin(l), y: Math.sin(f), z: Math.cos(f) * Math.cos(l) }; }
@@ -107,6 +107,42 @@
     ctx.lineTo(p2.x - 7 * Math.cos(ang + 0.45), p2.y - 7 * Math.sin(ang + 0.45));
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   }
+  var CURRENTS = [
+    { n: '墨西哥湾暖流', w: true, p: [[25, -80], [32, -72], [38, -60], [42, -48]] },
+    { n: '北大西洋暖流', w: true, p: [[42, -48], [50, -30], [55, -15], [62, 5]] },
+    { n: '加那利寒流', w: false, p: [[32, -15], [25, -18], [18, -21], [12, -24]] },
+    { n: '拉布拉多寒流', w: false, p: [[62, -58], [55, -54], [48, -50]] },
+    { n: '北赤道暖流', w: true, p: [[12, -35], [12, -55], [12, -75]] },
+    { n: '南赤道暖流', w: true, p: [[-5, -30], [-5, -50], [-5, -70]] },
+    { n: '巴西暖流', w: true, p: [[-8, -34], [-20, -40], [-32, -48]] },
+    { n: '秘鲁寒流', w: false, p: [[-42, -76], [-25, -74], [-10, -80], [-2, -85]] },
+    { n: '本格拉寒流', w: false, p: [[-32, 16], [-20, 12], [-10, 9]] },
+    { n: '黑潮', w: true, p: [[20, 122], [28, 130], [35, 140]] },
+    { n: '亲潮', w: false, p: [[50, 160], [44, 150], [40, 145]] },
+    { n: '加利福尼亚寒流', w: false, p: [[40, -126], [32, -120], [24, -114]] },
+    { n: '东澳大利亚暖流', w: true, p: [[-15, 150], [-25, 154], [-35, 152]] },
+    { n: '西澳大利亚寒流', w: false, p: [[-32, 110], [-24, 110], [-16, 112]] },
+    { n: '西风漂流', w: false, p: [[-52, -60], [-55, 0], [-52, 60], [-55, 120], [-52, 180]] }
+  ];
+  function drawCurrents(cx, cy, R) {
+    CURRENTS.forEach(function (c) {
+      var col = c.w ? 'rgba(248,113,113,.95)' : 'rgba(96,165,250,.95)';
+      for (var i = 0; i < c.p.length - 1; i++) {
+        var a1 = project(c.p[i][0], c.p[i][1], cx, cy, R), b1 = project(c.p[i + 1][0], c.p[i + 1][1], cx, cy, R);
+        if (!a1.vis || !b1.vis) continue;
+        ctx.strokeStyle = col; ctx.lineWidth = 2.6;
+        ctx.beginPath(); ctx.moveTo(a1.x, a1.y); ctx.lineTo(b1.x, b1.y); ctx.stroke();
+        var ang = Math.atan2(b1.y - a1.y, b1.x - a1.x);
+        var mx = (a1.x + b1.x) / 2, my = (a1.y + b1.y) / 2;
+        ctx.beginPath(); ctx.moveTo(mx, my);
+        ctx.lineTo(mx - 8 * Math.cos(ang - 0.45), my - 8 * Math.sin(ang - 0.45));
+        ctx.lineTo(mx - 8 * Math.cos(ang + 0.45), my - 8 * Math.sin(ang + 0.45));
+        ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+      }
+      var label = project(c.p[c.p.length - 1][0], c.p[c.p.length - 1][1], cx, cy, R);
+      if (label.vis) { ctx.fillStyle = c.w ? '#fca5a5' : '#93c5fd'; ctx.font = (11 * (devicePixelRatio || 1)) + 'px sans-serif'; ctx.fillText(c.n, label.x + 7, label.y + 3); }
+    });
+  }
   function drawPressure(cx, cy, R) {
     latBand(0, 'rgba(56,189,248,.30)', 9, cx, cy, R);
     latBand(30, 'rgba(248,113,113,.28)', 9, cx, cy, R); latBand(-30, 'rgba(248,113,113,.28)', 9, cx, cy, R);
@@ -165,6 +201,7 @@
       for (var i = 0; i < 6; i++) { var pp = projectVec(pts[Math.floor(((phase + i / 6) % 1) * (pts.length - 1))], cx, cy, R); if (pp.vis) { ctx.beginPath(); ctx.arc(pp.x, pp.y, 3.2, 0, 6.2832); ctx.fill(); } }
     }
     if (pressure) drawPressure(cx, cy, R);
+    if (currentsOn) drawCurrents(cx, cy, R);
     if (night) {
       var ss = subsolar(), sv = toVec(ss.lat, ss.lng), sp = projectVec(sv, cx, cy, R);
       if (sp.vis) {
@@ -185,6 +222,7 @@
 
   function loop(ts) { var dt = last ? Math.min(3, (ts - last) / 16.7) : 1; last = ts; if (auto && !drag) rot.yaw += 0.0035 * dt; if (route) phase = (phase + 0.004 * dt) % 1; if ((auto || route) && !drag) draw(); raf = requestAnimationFrame(loop); }
   function setAuto(v) { auto = !!v; var b = document.getElementById('glAuto'); if (b) b.textContent = auto ? '⏸ 暂停自转' : '▶ 开始自转'; }
+  function toggleCurrents() { currentsOn = !currentsOn; var b = document.getElementById('glCur'); if (b) b.textContent = currentsOn ? '🌊 洋流开' : '🌊 洋流关'; draw(); }
   function togglePressure() { pressure = !pressure; var b = document.getElementById('glPres'); if (b) b.textContent = pressure ? '🌀 气压带开' : '🌀 气压带关'; draw(); }
   function sunChartSVG(lat) {
     var pts = [], maxH = 0, minH = 90;
@@ -244,7 +282,7 @@
     var v = document.getElementById('view');
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
     v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理考点</h2><p>航线 / 经纬网 / 昼夜 / 时区</p></div></div>' +
-      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
+      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button><button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
       '<div class="row" style="margin-top:10px"><select id="glFrom" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><span class="muted">→</span><select id="glTo" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Globe.applyRoute()">画航线</button><button class="btn sm" onclick="Globe.clearRoute()">清除</button></div>' +
       '<div class="row" style="margin-top:10px"><button class="chip" onclick="Globe.setRoute(&#39;北京&#39;,&#39;纽约&#39;)">北京→纽约</button><button class="chip" onclick="Globe.setRoute(&#39;上海&#39;,&#39;伦敦&#39;)">上海→伦敦</button><button class="chip" onclick="Globe.setRoute(&#39;青树坪&#39;,&#39;东京&#39;)">青树坪→东京</button></div>' +
       '<p class="small muted" id="routeInfo" style="margin:10px 0 0">未选择航线</p>' +
@@ -261,7 +299,7 @@
       '<input type="time" id="ltT" value="08:00" onchange="Globe.localTime()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' +
       '<span class="muted">→</span><select id="ltB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.localTime()">' + opts + '</select></div>' +
       '<p class="small" id="ltInfo" style="margin:10px 0 0"></p></div>' +
-      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>三个地理考点</h2><p>点下面的按钮直接看</p></div></div><p class="small muted" style="margin:0"><b>① 最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成弧线。<br><b>② 经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>③ 昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。</p></div>';
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>四个地理考点</h2><p>点下面的按钮直接看</p></div></div><p class="small muted" style="margin:0"><b>① 最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成弧线。<br><b>② 经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>③ 昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。<br><b>④ 洋流</b>：<span style="color:#dc2626">红=暖流</span>、<span style="color:#2563eb">蓝=寒流</span>，箭头是流向；暖流增温增湿、寒流降温减湿，寒暖流交汇处易形成大渔场。</p></div>';
     wrap = document.getElementById('globeWrap'); cv = document.getElementById('globeCv'); ctx = cv.getContext('2d');
     document.getElementById('glFrom').value = '北京'; document.getElementById('glTo').value = '纽约';
     document.getElementById('tzA').value = '北京'; document.getElementById('tzB').value = '伦敦';
@@ -286,5 +324,5 @@
     resize();
     if (!raf) raf = requestAnimationFrame(loop);
   }
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, togglePressure: togglePressure, updateSun: updateSun, localTime: localTimeSwap };
+  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, togglePressure: togglePressure, toggleCurrents: toggleCurrents, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
