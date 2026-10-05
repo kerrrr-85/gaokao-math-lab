@@ -55,7 +55,7 @@
       hubTile('wrong', '错题本', '#/wrong') +
       hubTile('stats', '学习统计', '#/stats') +
       hubTile('search', '搜索', '#/search') +
-      hubTile('weather', '天气', '#/today') +
+      
       hubTile('settings', '设置', '#/settings') +
       '</div><p class="small muted" style="text-align:center;margin-top:18px">已练习 ' + st.total + ' 题 · 待复习 ' + dueReview().length + ' 张</p></div>';
   }
@@ -65,7 +65,7 @@
     var avg = 0, cnt = 0;
     D.nodes.forEach(function (n) { avg += Store.masteryOf(n.id); cnt++; });
     avg = cnt ? Math.round(avg / cnt) : 0;
-    var html = '<div class="hero"><div class="wxCardContainer"><div class="wxCard" onclick="App.refreshWeather()"><div style="text-align:center"><p class="wxCity" id="wxCity">' + (((Store.get().settings||{}).weather||{}).city || '青树坪') + '</p><p class="wxWeather" id="wxDesc">加载中…</p></div><div class="wxTemp" id="wxTemp">--°</div><div class="wxMinMax"><div class="wxMin"><span class="wxMinH">最低</span><span class="wxMinT" id="wxMin">--°</span></div><div class="wxMax"><span class="wxMaxH">最高</span><span class="wxMaxT" id="wxMax">--°</span></div></div></div></div><div class="heroText"><h1>今天，先把该复习的做完</h1><p>待复习 ' + due.length + ' 张 · 新卡 ' + nw.length + ' 张 · 累计练习 ' + st.total + ' 题</p><div class="row" style="margin-top:12px"><button class="btn primary" onclick="go(\'#/practice/start\')">开始练习</button><button class="btn" onclick="go(\'#/map\')">看知识图谱</button></div></div></div>';
+    var html = '<h1>今日任务</h1>';
     html += '<div class="kpi">' +
       '<div class="card"><b>' + due.length + '</b><span class="small muted">待复习卡</span></div>' +
       '<div class="card"><b>' + nw.length + '</b><span class="small muted">新卡</span></div>' +
@@ -89,7 +89,6 @@
       return '<a class="item" href="' + (c.refType === 'method' ? '#/method/' + c.refId : '#/practice') + '"><b>' + esc(cardTitle(c)) + '</b><div class="small muted">' + (c.refType === 'method' ? '方法卡' : '题目卡') + '</div></a>';
     }).join('') + '</div></div>';
     view.innerHTML = html;
-    loadWeather();
   }
 
   function wmoText(c) { var m = {0:'晴',1:'基本晴朗',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'小雨',55:'中雨',56:'冻雨',57:'冻雨',61:'小雨',63:'中雨',65:'大雨',66:'冻雨',67:'冻雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨伴冰雹',99:'雷暴'}; return m[c] || '--'; }
@@ -328,7 +327,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v14</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v15</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
@@ -364,7 +363,7 @@
 
   /* ============ 路由 ============ */
   function router() {
-    var h = location.hash.replace(/^#\/?/, ''); var parts = h.split('/').filter(Boolean); var page = parts[0] || 'hub';
+    var h = location.hash.replace(/^#\/?/, ''); var parts = h.split('/').filter(Boolean); var page = parts[0] || 'portal';
     window.scrollTo(0, 0); setTab(page);
     if (page === 'node') renderNode(parts[1]);
     else if (page === 'method') renderMethod(parts[1]);
@@ -375,7 +374,10 @@
     else if (page === 'search') renderSearch();
     else if (page === 'settings') renderSettings();
     else if (page === 'today') renderToday();
-    else if (page === 'hub') renderHub();
+    else if (page === 'study') renderHub();
+    else if (page === 'portal') Portal.renderPortal();
+    else if (page === 'video') Portal.renderVideo();
+    else if (page === 'globe') Globe.render();
     else renderHub();
     updateMini();
   }
