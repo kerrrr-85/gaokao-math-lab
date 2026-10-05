@@ -295,6 +295,11 @@
       '<div class="grow" style="min-width:210px"><p class="muted small" style="margin:0 0 8px">' + esc(n.brief) + '</p>' +
       '<p class="small" style="margin:0"><b>课标要求：</b>' + esc(n.req) + '</p>' +
       '<div class="row" style="margin-top:12px"><button class="btn primary" onclick="App.startPractice(\'' + qs.map(function (q) { return q.id; }).join(',') + '\')">练本节点</button><a class="btn" href="#/map">回到图谱</a></div></div></div>';
+    var atts = Store.get().attempts.filter(function (a) { return (a.nodeIds || []).indexOf(n.id) >= 0; });
+    var okc = atts.filter(function (a) { return a.result === 'ok'; }).length;
+    var acc = atts.length ? Math.round(okc * 100 / atts.length) : 0;
+    var lastT = atts.length ? new Date(atts[0].createdAt).toLocaleDateString() : '还没练过';
+    html += '<div class="kpi" style="margin-bottom:14px"><div class="stat"><b>' + acc + '%</b><span>本节点正确率</span></div><div class="stat"><b>' + atts.length + '</b><span>已练次数</span></div><div class="stat"><b>' + qs.length + '</b><span>题目总数</span></div><div class="stat"><b style="font-size:15px;padding-top:4px">' + lastT + '</b><span>最近练习</span></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🧩</span><div class="grow"><h2>方法卡</h2><p>共 ' + ms.length + ' 张 · 识别信号 → 步骤 → 易错点</p></div></div><div class="list">' +
       ms.map(function (mm) { return '<a class="item elev" href="#/method/' + mm.id + '"><div class="row"><b class="grow">' + esc(mm.title) + '</b>' + diffTag(mm.diff) + '</div><div class="small muted" style="margin-top:4px">' + esc(mm.trigger) + '</div></a>'; }).join('') + '</div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📝</span><div class="grow"><h2>相关题目</h2><p>按难度分组 · 可单题练习</p></div></div>' +
@@ -366,8 +371,8 @@
     if (interleave) { var seen = {}, out = []; arr.forEach(function (q) { if (!seen[q.node]) { seen[q.node] = 1; out.push(q); } }); arr.forEach(function (q) { if (out.indexOf(q) < 0) out.push(q); }); arr = out; }
     return arr.slice(0, c);
   }
-  function beginPractice(interleave) { session = { list: pickQuestions(interleave), i: 0, answered: false, lastAttempt: null, done: 0, got: 0 }; if (!session.list.length) { toast('没有符合条件的题目'); return; } renderQuestion(); }
-  function startPractice(ids) { session = { list: ids.split(',').map(function (x) { return qById[x]; }).filter(Boolean), i: 0, answered: false, lastAttempt: null, done: 0, got: 0 }; renderQuestion(); }
+  function beginPractice(interleave) { session = { list: pickQuestions(interleave), i: 0, answered: false, lastAttempt: null, done: 0, got: 0, results: [] }; if (!session.list.length) { toast('没有符合条件的题目'); return; } renderQuestion(); }
+  function startPractice(ids) { session = { list: ids.split(',').map(function (x) { return qById[x]; }).filter(Boolean), i: 0, answered: false, lastAttempt: null, done: 0, got: 0, results: [] }; renderQuestion(); }
   function startSingle(id) { startPractice(id); }
   function renderQuestion() {
     var q = session.list[session.i]; if (!q) { renderSessionEnd(); return; }
@@ -403,6 +408,8 @@
     session.answered = true;
     var attempt = { id: 'a' + Date.now(), questionId: q.id, nodeIds: [q.node], methodIds: q.methods, difficulty: q.diff, userAnswer: userAnswer, userSteps: userSteps, imageDataUrl: img || '', result: result, errorType: '', createdAt: Date.now() };
     attempt.timeSpent = session.qStart ? Math.round((Date.now() - session.qStart) / 1000) : 0;
+    session.results = session.results || [];
+    session.results.push({ qid: q.id, result: result, spent: attempt.timeSpent });
     Store.addAttempt(attempt); session.lastAttempt = attempt; session.done = (session.done || 0) + 1; if (result === 'ok') session.got = (session.got || 0) + 1;
     Store.grade('question:' + q.id, result === 'ok' ? 2 : result === 'half' ? 1 : 0);
     q.methods.forEach(function (mid) { if (Store.get().reviews['method:' + mid]) Store.grade('method:' + mid, result === 'ok' ? 2 : result === 'half' ? 1 : 0); });
@@ -440,11 +447,21 @@
   function renderSessionEnd() {
     var done = session.done || 0, got = session.got || 0;
     var pct = done ? Math.round(got * 100 / done) : 0;
+    var res = session.results || [];
+    var wrongIds = res.filter(function (r) { return r.result !== 'ok'; }).map(function (r) { return r.qid; });
+    var listHtml = res.map(function (r, i) {
+      var q = qById[r.qid] || {};
+      var mark = r.result === 'ok' ? '<span class="result-ok">✓</span>' : r.result === 'half' ? '<span class="result-half">≈</span>' : '<span class="result-no">✗</span>';
+      return '<div class="item"><div class="row"><span style="width:20px">' + mark + '</span><span class="grow small">' + esc((q.stem || '').slice(0, 30)) + '…</span><span class="small muted">' + r.spent + ' 秒</span></div></div>';
+    }).join('');
     view.innerHTML = '<div class="card elev2" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">' +
       ringHTML(pct, pct + '%', '正确率') +
       '<div class="grow" style="min-width:200px"><h1 style="margin:0">本组完成 🎉</h1>' +
       '<p class="muted small" style="margin:6px 0 12px">共 ' + done + ' 题 · 正确 ' + got + ' 题 · 已计入掌握度与复习计划</p>' +
-      '<div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button><a class="btn" href="#/stats">查看统计</a><a class="btn" href="#/wrong">错题本</a></div></div></div>';
+      '<div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button>' +
+      (wrongIds.length ? '<button class="btn accent" onclick="App.startPractice(\'' + wrongIds.join(',') + '\')">只重做错题（' + wrongIds.length + '）</button>' : '') +
+      '<a class="btn" href="#/stats">查看统计</a></div></div></div>' +
+      (res.length ? '<div class="card"><div class="phead"><span class="ico">📋</span><div class="grow"><h2>本组逐题回顾</h2><p>对错与用时</p></div></div><div class="list">' + listHtml + '</div></div>' : '');
     animateRings();
   }
   function resetPractice() { session = { list: [], i: 0, answered: false }; renderPractice(); }
@@ -478,15 +495,19 @@
   function renderWrong() {
     var wrongs = Store.wrong(), seen = {}, list = [];
     wrongs.forEach(function (a) { if (!seen[a.questionId]) { seen[a.questionId] = 1; list.push(a); } });
+    var cnt = {}, lastErr = {};
+    wrongs.forEach(function (a) { cnt[a.questionId] = (cnt[a.questionId] || 0) + 1; if (!lastErr[a.questionId] && a.errorType) lastErr[a.questionId] = a.errorType; });
     var errs = ['知识', '方法', '计算', '审题', '心态'];
     var html = '<div class="phead"><span class="ico">📕</span><div class="grow"><h2>错题本</h2><p>共 ' + list.length + ' 道待攻克</p></div>' +
       (list.length ? '<button class="btn sm accent" onclick="App.startPractice(\'' + list.map(function (a) { return a.questionId; }).join(',') + '\')">全部重做</button>' : '') + '</div>';
     html += '<div class="card"><div class="small muted" style="margin-bottom:6px">按错因筛选</div><div class="row"><button class="chip' + (wf.err === '' ? ' on' : '') + '" onclick="App.setWF(\'err\',\'\')">全部</button>' +
       errs.map(function (e) { return '<button class="chip' + (wf.err === e ? ' on' : '') + '" onclick="App.setWF(\'err\',\'' + e + '\')">' + e + '</button>'; }).join('') + '</div>' +
+      '<div class="small muted" style="margin:12px 0 6px">错误次数</div><div class="row"><button class="chip' + ((wf.times || 'all') === 'all' ? ' on' : '') + '" onclick="App.setWF(\'times\',\'all\')">全部</button><button class="chip' + (wf.times === '2' ? ' on' : '') + '" onclick="App.setWF(\'times\',\'2\')">错 2 次以上</button></div>' +
       '<div class="small muted" style="margin:12px 0 6px">按模块筛选</div><div class="row"><button class="chip' + (wf.mod === '' ? ' on' : '') + '" onclick="App.setWF(\'mod\',\'\')">全部</button>' +
       ['函数与导数', '三角函数', '数列'].map(function (m) { return '<button class="chip' + (wf.mod === m ? ' on' : '') + '" onclick="App.setWF(\'mod\',\'' + m + '\')">' + m + '</button>'; }).join('') + '</div></div>';
     var show = list.filter(function (a) {
       var q = qById[a.questionId]; if (!q) return false;
+      if (wf.times === '2' && (cnt[a.questionId] || 0) < 2) return false;
       if (wf.err && a.errorType !== wf.err) return false;
       if (wf.mod && (q.module || '函数与导数') !== wf.mod) return false;
       return true;
@@ -494,7 +515,7 @@
     if (!show.length) html += '<div class="card muted small">没有符合条件的错题。</div>';
     else html += '<div class="list">' + show.map(function (a) {
       var q = qById[a.questionId];
-      return '<div class="item elev"><div class="row">' + diffTag(q.diff) + '<span class="tag p">' + esc(q.module || '函数与导数') + '</span>' + (a.errorType ? '<span class="tag a">' + a.errorType + '</span>' : '<span class="tag">未归因</span>') + '</div>' +
+      return '<div class="item elev"><div class="row">' + diffTag(q.diff) + '<span class="tag p">' + esc(q.module || '函数与导数') + '</span>' + (a.errorType ? '<span class="tag a">' + a.errorType + '</span>' : '<span class="tag">未归因</span>') + '<span class="tag">错 ' + (cnt[a.questionId] || 1) + ' 次</span>' + '</div>' +
         '<div style="margin-top:6px">' + esc(q.stem) + '</div>' +
         '<div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + q.id + '\')">重做</button><a class="btn sm" href="#/node/' + q.node + '">看知识点</a></div></div>';
     }).join('') + '</div>';
@@ -576,7 +597,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v35 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v36 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
