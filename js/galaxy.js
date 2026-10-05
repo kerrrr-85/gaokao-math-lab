@@ -41,6 +41,7 @@
   function mount(canvas) {
     stop(); cv = canvas; if (!cv) return;
     ctx = cv.getContext('2d'); resize(); make(); if (!sprite) makeSprite();
+    if (innerWidth < 700 && stars.length > 900) { stars = stars.slice(0, 900); dust = dust.slice(0, 70); }
     addEventListener('resize', resize); addEventListener('pointermove', onMove);
     var t = 0;
     function frame() {

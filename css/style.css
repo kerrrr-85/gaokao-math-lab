@@ -188,3 +188,12 @@ body.portal-dark .pt-tile span{color:rgba(255,255,255,.72)}
 body.portal-dark .pt-tile:hover{background:#0f766e;border-color:#0f766e}
 body.portal-dark .pt-tile:hover svg{fill:#fff}
 body.portal-dark .pt-tile:hover span{color:#fff}
+
+.pt-wrap{position:relative;z-index:2}
+.pt-wx{position:relative;z-index:2}
+body.portal-dark .pt-tile{background:rgba(12,16,30,.72);border-color:rgba(255,255,255,.20);color:#eaf2ff;backdrop-filter:blur(6px)}
+body.portal-dark .pt-tile span{color:rgba(255,255,255,.85)}
+body.portal-dark .pt-tile svg{fill:#8fd8ff}
+body.portal-dark .pt-tile:hover{background:#0f766e;border-color:#0f766e}
+body.portal-dark .pt-tile:hover span,body.portal-dark .pt-tile:hover svg{color:#fff;fill:#fff}
+body.portal-dark .pt-wx{background:linear-gradient(135deg,rgba(11,18,32,.92),rgba(30,41,59,.92))}
