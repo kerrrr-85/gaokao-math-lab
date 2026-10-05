@@ -508,9 +508,17 @@
     wrongs.forEach(function (a) { if (!seen[a.questionId]) { seen[a.questionId] = 1; list.push(a); } });
     var cnt = {}, lastErr = {};
     wrongs.forEach(function (a) { cnt[a.questionId] = (cnt[a.questionId] || 0) + 1; if (!lastErr[a.questionId] && a.errorType) lastErr[a.questionId] = a.errorType; });
+    var byErr = {}; wrongs.forEach(function (a) { if (a.errorType) byErr[a.errorType] = (byErr[a.errorType] || 0) + 1; });
+    var topErr = Object.keys(byErr).sort(function (a, b) { return byErr[b] - byErr[a]; })[0];
+    var ADVICE = { '知识': '先把对应知识点的方法卡过一遍，再回来做题', '方法': '重点练「识别信号 → 步骤」，看方法卡比盲目刷题更有效', '计算': '做题时把关键步骤写下来，避免跳步和符号错误', '审题': '读题时圈出条件与所求，先想清楚再动笔', '心态': '做限时训练，先从基础题找回手感' };
     var errs = ['知识', '方法', '计算', '审题', '心态'];
     var html = '<div class="phead"><span class="ico">📕</span><div class="grow"><h2>错题本</h2><p>共 ' + list.length + ' 道待攻克</p></div>' +
       (list.length ? '<button class="btn sm accent" onclick="App.startPractice(\'' + list.map(function (a) { return a.questionId; }).join(',') + '\')">全部重做</button>' : '') + '</div>';
+    html += (function () {
+      if (!topErr) return '';
+      var ids = list.filter(function (a) { return a.errorType === topErr; }).map(function (a) { return a.questionId; });
+      return '<div class="card elev2" style="border-left:5px solid var(--accent)"><div class="phead" style="margin-bottom:6px"><span class="ico">🩺</span><div class="grow"><h2>错因分析报告</h2><p>你最常犯的是「' + topErr + '」类错误（' + byErr[topErr] + ' 次）</p></div></div><p class="small" style="margin:0 0 10px"><b>建议：</b>' + (ADVICE[topErr] || '') + '</p>' + (ids.length ? '<button class="btn accent" onclick="App.startPractice(\'' + ids.join(',') + '\')">针对「' + topErr + '」专项练习（' + ids.length + '）</button>' : '') + '</div>';
+    })();
     html += '<div class="card"><div class="small muted" style="margin-bottom:6px">按错因筛选</div><div class="row"><button class="chip' + (wf.err === '' ? ' on' : '') + '" onclick="App.setWF(\'err\',\'\')">全部</button>' +
       errs.map(function (e) { return '<button class="chip' + (wf.err === e ? ' on' : '') + '" onclick="App.setWF(\'err\',\'' + e + '\')">' + e + '</button>'; }).join('') + '</div>' +
       '<div class="small muted" style="margin:12px 0 6px">错误次数</div><div class="row"><button class="chip' + ((wf.times || 'all') === 'all' ? ' on' : '') + '" onclick="App.setWF(\'times\',\'all\')">全部</button><button class="chip' + (wf.times === '2' ? ' on' : '') + '" onclick="App.setWF(\'times\',\'2\')">错 2 次以上</button></div>' +
@@ -533,6 +541,34 @@
     view.innerHTML = html;
   }
   /* ============ 统计 ============ */
+  function radarSVG(items) {
+    var n = items.length; if (!n) return '';
+    var cx = 170, cy = 150, R = 100, axes = '', poly = [], rings = '';
+    [0.25, 0.5, 0.75, 1].forEach(function (k) {
+      var pts = [];
+      items.forEach(function (it, i) { var a = -Math.PI / 2 + i * 2 * Math.PI / n; pts.push((cx + Math.cos(a) * R * k).toFixed(1) + ',' + (cy + Math.sin(a) * R * k).toFixed(1)); });
+      rings += '<polygon points="' + pts.join(' ') + '" fill="none" stroke="#eef1f4"/>';
+    });
+    items.forEach(function (it, i) {
+      var a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      axes += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + Math.cos(a) * R).toFixed(1) + '" y2="' + (cy + Math.sin(a) * R).toFixed(1) + '" stroke="#e2e8f0"/>';
+      axes += '<text x="' + (cx + Math.cos(a) * (R + 28)).toFixed(1) + '" y="' + (cy + Math.sin(a) * (R + 28)).toFixed(1) + '" font-size="10" fill="#64748b" text-anchor="middle">' + esc(it.n.title.slice(0, 6)) + '</text>';
+      var rr = R * it.m / 100;
+      poly.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+    });
+    var pstr = poly.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ');
+    return '<svg viewBox="0 0 340 300" style="width:100%;height:auto;max-width:380px;margin:0 auto;display:block">' + rings + axes + '<polygon points="' + pstr + '" fill="rgba(15,118,110,.22)" stroke="#0f766e" stroke-width="2"/>' + poly.map(function (q) { return '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3" fill="#0f766e"/>'; }).join('') + '</svg>';
+  }
+  function hourHeatSVG() {
+    var grid = [], max = 1, w, h;
+    for (w = 0; w < 7; w++) { grid.push([]); for (h = 0; h < 24; h++) grid[w].push(0); }
+    Store.get().attempts.forEach(function (a) { var d = new Date(a.createdAt || 0), ww = (d.getDay() + 6) % 7, hh = d.getHours(); grid[ww][hh]++; if (grid[ww][hh] > max) max = grid[ww][hh]; });
+    var cells = '', labels = ['一', '二', '三', '四', '五', '六', '日'];
+    for (w = 0; w < 7; w++) for (h = 0; h < 24; h++) { var v = grid[w][h]; var op = v ? (0.18 + 0.82 * v / max).toFixed(2) : 0; cells += '<rect x="' + (h * 15) + '" y="' + (w * 15) + '" width="13" height="13" rx="3" fill="' + (v ? 'rgba(15,118,110,' + op + ')' : '#eef1f4') + '"/>'; }
+    for (w = 0; w < 7; w++) cells += '<text x="-6" y="' + (w * 15 + 10) + '" font-size="9" fill="#94a3b8" text-anchor="end">' + labels[w] + '</text>';
+    [0, 6, 12, 18].forEach(function (hh) { cells += '<text x="' + (hh * 15) + '" y="118" font-size="9" fill="#94a3b8">' + hh + '时</text>'; });
+    return '<svg viewBox="-22 -4 380 128" style="width:100%;height:auto">' + cells + '</svg>';
+  }
   function renderStats() {
     var st = Store.stats();
     var rate = st.total ? Math.round((st.ok + st.half * 0.5) * 100 / st.total) : 0;
@@ -559,6 +595,9 @@
       '<div class="donut"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="54" fill="none" stroke="#eef1f4" stroke-width="18"/>' + segs + '</svg>' +
       '<div class="val" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--primary)">' + totalErr + '</div></div>' +
       '<div class="legend">' + errs.map(function (e, i) { return '<span><i style="background:' + colors[i] + '"></i>' + e + ' ' + (st.byErr[e] || 0) + '</span>'; }).join('') + '</div></div></div>';
+    var radarItems = D.nodes.filter(function (n) { return (n.module || '函数与导数') === curModule(); }).slice(0, 8).map(function (n) { return { n: n, m: Store.masteryOf(n.id) }; });
+    html += '<div class="card"><div class="phead"><span class="ico">🕸️</span><div class="grow"><h2>知识点雷达</h2><p>每个方向=一个节点，越靠外掌握越好</p></div></div>' + radarSVG(radarItems) + '</div>';
+    html += '<div class="card"><div class="phead"><span class="ico">⏰</span><div class="grow"><h2>学习时段热力图</h2><p>横轴=24 小时 · 纵轴=周一到周日</p></div></div>' + hourHeatSVG() + '</div>';
     html += '<div class="card"><div class="phead"><span class="ico">📚</span><div class="grow"><h2>三个模块对比</h2><p>掌握度 / 题量 / 已练</p></div></div>' +
       ['函数与导数', '三角函数', '数列'].map(function (mn) {
         var ns = D.nodes.filter(function (n) { return (n.module || '函数与导数') === mn; });
@@ -608,7 +647,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v44 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v45 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="App.exportWrongMd()">导出错题本 MD</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
