@@ -37,6 +37,8 @@
     document.getElementById('todayMini').textContent = '待复习 ' + dueReview().length + ' · 新卡 ' + newCards().length + ' · 已练 ' + Store.stats().total + ' 题';
   }
   function setTab(page) {
+    document.body.classList.toggle('portal-dark', page === 'portal' || !page);
+    if (page !== 'portal' && window.Galaxy) Galaxy.stop();
     var bb = document.getElementById('backBtn');
     if (bb) bb.style.display = (page === 'portal' || !page) ? 'none' : 'inline-flex';
     var learn = { today: 1, map: 1, node: 1, method: 1, practice: 1, wrong: 1, stats: 1, settings: 1, study: 1 };
@@ -346,7 +348,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v21</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v22</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +

@@ -32,13 +32,14 @@
   }
   function renderPortal() {
     var v = document.getElementById('view');
-    v.innerHTML = '<h1 style="text-align:center">我的大门户</h1>' +
+    v.innerHTML = '<canvas class="galaxy-canvas" id="galaxyCanvas"></canvas><h1 style="text-align:center">我的大门户</h1>' +
       '<div class="pt-wx" onclick="Portal.loadWeather(true)"><div><div class="small" id="ptCity">青树坪</div><div class="small" id="ptRange">今日 --~--°</div></div><div class="t" id="ptTemp">--°</div><div id="ptDesc">加载中…</div></div>' +
       '<div class="pt-group">学习</div><div class="pt-grid">' + tile('study','学习台','#/today') + tile('search','搜索','#/search') + '</div>' +
       '<div class="pt-group">工具</div><div class="pt-grid">' + tile('globe','地球','#/globe') + tile('weather','天气','#/today') + tile('settings','设置','#/settings') + '</div>' +
       '<div class="pt-group">娱乐</div><div class="pt-grid">' + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) + '</div>' +
       '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p>';
     loadWeather(false);
+    if (global.Galaxy) { var gc = document.getElementById('galaxyCanvas'); if (gc) global.Galaxy.mount(gc); }
   }
   function renderVideo() {
     var v = document.getElementById('view');
