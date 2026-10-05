@@ -59,6 +59,28 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { headers: h });
     if (url.pathname === '/health') return json({ ok: true, ts: Date.now() }, h);
     if (url.pathname === '/tts') return json({ error: 'tts not enabled in v1' }, h, 501);
+    if (url.pathname === '/asr') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, h, 405);
+      if (!env.DASHSCOPE_API_KEY) return json({ error: 'server missing DASHSCOPE_API_KEY' }, h, 500);
+      let ab;
+      try { ab = await request.json(); } catch (e) { return json({ error: 'bad json' }, h, 400); }
+      if (!ab || !ab.audio) return json({ error: 'missing audio' }, h, 400);
+      if (ab.audio.length > 8000000) return json({ error: 'audio too large (<= 8MB)' }, h, 413);
+      const abase = env.DASHSCOPE_BASE || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+      let aresp;
+      try {
+        aresp = await fetch(abase + '/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + env.DASHSCOPE_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: env.ASR_MODEL || 'qwen3-asr-flash', messages: [{ role: 'user', content: [{ type: 'input_audio', input_audio: { data: ab.audio, format: 'wav' } }] }] })
+        });
+      } catch (e) { return json({ error: 'upstream fetch failed: ' + e.message }, h, 502); }
+      const at = await aresp.text();
+      if (!aresp.ok) return json({ error: 'upstream ' + aresp.status, detail: at.slice(0, 400) }, h, 502);
+      let aj = {}; try { aj = JSON.parse(at); } catch (e) {}
+      const txt = aj && aj.choices && aj.choices[0] && aj.choices[0].message ? aj.choices[0].message.content : '';
+      return json({ text: String(txt || '').trim() }, h);
+    }
     if (url.pathname === '/analyze') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, h, 405);
       if (!env.DASHSCOPE_API_KEY) return json({ error: 'server missing DASHSCOPE_API_KEY' }, h, 500);

@@ -8,5 +8,6 @@ TEXT_MODEL = "qwen-plus"
 VISION_MODEL = "qwen-vl-max"
 RATE_LIMIT_PER_HOUR = "60"
 MAX_TOKENS = "1200"
+ASR_MODEL = "qwen3-asr-flash"
 # 密钥不要写在这里！用命令行设置：
 #   wrangler secret put DASHSCOPE_API_KEY

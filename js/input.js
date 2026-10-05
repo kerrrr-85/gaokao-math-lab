@@ -32,7 +32,7 @@
   function toolbarHTML(id) {
     return '<div class="itools"><div class="row" style="gap:8px">' +
       '<button type="button" class="btn sm" onclick="InputTools.toggle(\'' + id + '\')">∑ 符号</button>' +
-      '<button type="button" class="btn sm" onclick="InputTools.voice(\'' + id + '\')">🎤 语音</button>' +
+      '<button type="button" class="btn sm" onclick="InputTools.voice(\'' + id + '\')">🎤 语音</button>' + '<button type="button" class="btn sm" onclick="InputTools.record(\'' + id + '\')">🎙️ 录音识别</button>' +
       '<button type="button" class="btn sm" onclick="InputTools.canvas(\'' + id + '\')">✍️ 手写</button>' +
       '<span class="small muted" id="hw_' + id + '"></span></div>' + paletteHTML(id) + '</div>';
   }
@@ -114,6 +114,55 @@
     try { r.start(); } catch (err) { alert('无法启动语音识别：' + (err && err.message ? err.message : err) + '\n可改用手机输入法的麦克风。'); activeRec = null; }
   }
 
+  /* ---- 录音识别（走 Worker + 通义 ASR，国内可用） ---- */
+  function blobToWavBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var AC = global.AudioContext || global.webkitAudioContext;
+        var ctx = new AC();
+        ctx.decodeAudioData(fr.result, function (buf) {
+          var ch = buf.getChannelData(0), sr = buf.sampleRate, len = ch.length;
+          var ab = new ArrayBuffer(44 + len * 2), v = new DataView(ab);
+          function ws(o, t) { for (var i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); }
+          ws(0, 'RIFF'); v.setUint32(4, 36 + len * 2, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+          v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+          v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+          ws(36, 'data'); v.setUint32(40, len * 2, true);
+          for (var i = 0; i < len; i++) { var x = Math.max(-1, Math.min(1, ch[i])); v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7FFF, true); }
+          var bytes = new Uint8Array(ab), bin = '';
+          for (var j = 0; j < bytes.length; j++) bin += String.fromCharCode(bytes[j]);
+          resolve('data:audio/wav;base64,' + btoa(bin));
+        }, reject);
+      };
+      fr.onerror = reject;
+      fr.readAsArrayBuffer(blob);
+    });
+  }
+  function record(id) {
+    var cfg = (global.Store && Store.get().settings.ai) || {};
+    var proxy = (cfg.proxyUrl || '').replace(/\/+$/, '');
+    if (!proxy) { alert('录音识别需要先在「设置 → AI 讲解」填写 Cloudflare Worker 代理地址。\n也可以直接用手机输入法自带的麦克风。'); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !global.MediaRecorder) { alert('当前浏览器不支持录音，请改用手机输入法麦克风或手写。'); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var chunks = [], mr = new MediaRecorder(stream);
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        var blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        blobToWavBase64(blob).then(function (b64) {
+          fetch(proxy + '/asr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio: b64 }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { if (j && j.text) { insert(id, mathify(j.text)); } else { alert('识别失败：' + ((j && j.error) || '未知')); } })
+            .catch(function (e) { alert('识别请求失败：' + e.message); });
+        }).catch(function (e) { alert('音频处理失败：' + e.message); });
+      };
+      mr.start();
+      if (global.toast) {} 
+      setTimeout(function () { try { mr.stop(); } catch (e) {} }, 6000);
+    }).catch(function (e) { alert('无法使用麦克风：' + e.message); });
+  }
+
   /* ---- 语音朗读 ---- */
   var voiceCache = [];
   function refreshVoices() { try { voiceCache = global.speechSynthesis ? (speechSynthesis.getVoices() || []) : []; } catch (e) { voiceCache = []; } }
@@ -147,5 +196,5 @@
   function copyText(t) { try { navigator.clipboard.writeText(String(t || '')); return true; } catch (e) { return false; } }
   if (global.speechSynthesis && typeof speechSynthesis.addEventListener === 'function') { speechSynthesis.addEventListener('voiceschanged', refreshVoices); }
 
-  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText };
+  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record };
 })(window);
