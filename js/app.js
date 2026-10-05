@@ -180,7 +180,7 @@
       html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>薄弱知识点</h2><p>掌握度最低的三个，优先补</p></div></div><div class="list">' +
         weak.map(function (n) {
           var m = Store.masteryOf(n.id);
-          return '<div class="item"><div class="row"><div class="grow"><b>' + esc(n.title) + '</b><div class="small muted">' + esc(n.brief) + '</div></div><span class="tag">' + m + '%</span></div>' +
+          return '<div class="item"><div class="row"><div class="grow"><b>' + hl(n.title) + '</b><div class="small muted">' + hl(n.brief) + '</div></div><span class="tag">' + m + '%</span></div>' +
             '<div class="bar" style="margin-top:8px"><i style="width:' + m + '%"></i></div>' +
             '<div class="row" style="margin-top:8px"><a class="btn sm" href="#/node/' + n.id + '">看知识点</a></div></div>';
         }).join('') + '</div></div>';
@@ -257,7 +257,7 @@
       svg += '<g class="gnode" data-id="' + n.id + '" transform="translate(' + p.x + ',' + p.y + ')" onmouseenter="App.graphHover(\'' + n.id + '\',true)" onmouseleave="App.graphHover(\'' + n.id + '\',false)" onclick="App.go(\'#/node/' + n.id + '\')">' +
         '<circle r="' + r.toFixed(0) + '" fill="' + fill + '" stroke="rgba(15,23,42,.16)" stroke-width="1.5"/>' +
         '<text y="4" style="font-size:12px;fill:' + tcol + ';font-weight:700">' + m + '%</text>' +
-        '<text class="gnode-label" y="' + (r + 20) + '">' + esc(n.title) + '</text></g>';
+        '<text class="gnode-label" y="' + (r + 20) + '">' + hl(n.title) + '</text></g>';
     });
     svg += '</svg>';
     view.innerHTML = modbar() +
@@ -290,9 +290,9 @@
     var ms = D.methods.filter(function (m) { return n.methods.indexOf(m.id) >= 0; });
     var qs = D.questions.filter(function (q) { return q.node === n.id; });
     var m = Store.masteryOf(n.id);
-    var html = '<div class="phead"><span class="ico">📗</span><div class="grow"><h2>' + esc(n.title) + '</h2><p>' + esc(n.module || '函数与导数') + ' · ' + (n.diff || '') + ' · ' + qs.length + ' 道题</p></div></div>';
+    var html = '<div class="phead"><span class="ico">📗</span><div class="grow"><h2>' + hl(n.title) + '</h2><p>' + esc(n.module || '函数与导数') + ' · ' + (n.diff || '') + ' · ' + qs.length + ' 道题</p></div></div>';
     html += '<div class="card elev2" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">' + ringHTML(m, m + '%', '掌握度') +
-      '<div class="grow" style="min-width:210px"><p class="muted small" style="margin:0 0 8px">' + esc(n.brief) + '</p>' +
+      '<div class="grow" style="min-width:210px"><p class="muted small" style="margin:0 0 8px">' + hl(n.brief) + '</p>' +
       '<p class="small" style="margin:0"><b>课标要求：</b>' + esc(n.req) + '</p>' +
       '<div class="row" style="margin-top:12px"><button class="btn primary" onclick="App.startPractice(\'' + qs.map(function (q) { return q.id; }).join(',') + '\')">练本节点</button><a class="btn" href="#/map">回到图谱</a></div></div></div>';
     var atts = Store.get().attempts.filter(function (a) { return (a.nodeIds || []).indexOf(n.id) >= 0; });
@@ -307,7 +307,7 @@
         var arr = qs.filter(function (q) { return q.diff === d; });
         if (!arr.length) return '';
         return '<div class="small muted" style="margin:10px 0 6px">' + d + ' · ' + arr.length + ' 道</div><div class="list">' +
-          arr.map(function (q) { return '<div class="item"><div>' + esc(q.stem) + '</div><div class="row" style="margin-top:8px"><span class="tag">' + typeName(q.type) + '</span><button class="btn sm primary" onclick="App.startSingle(\'' + q.id + '\')">练这题</button></div></div>'; }).join('') + '</div>';
+          arr.map(function (q) { return '<div class="item"><div>' + hl(q.stem) + '</div><div class="row" style="margin-top:8px"><span class="tag">' + typeName(q.type) + '</span><button class="btn sm primary" onclick="App.startSingle(\'' + q.id + '\')">练这题</button></div></div>'; }).join('') + '</div>';
       }).join('') + '</div>';
     view.innerHTML = html;
     animateRings();
@@ -318,7 +318,7 @@
     var card = Store.get().reviews['method:' + m.id] || {};
     var html = '<div class="phead"><span class="ico">🧩</span><div class="grow"><h2>方法卡</h2><p>' + esc(n.title || '') + ' · ' + (m.diff || '') + '</p></div></div>';
     html += '<div class="flip" onclick="App.flipCard()"><div class="flip-inner" id="flipInner">' +
-      '<div class="flip-face front"><div class="flip-tag">识别信号</div><h2>' + esc(m.title) + '</h2><p class="muted">' + esc(m.trigger) + '</p><div class="flip-hint">点击翻面看步骤 →</div></div>' +
+      '<div class="flip-face front"><div class="flip-tag">识别信号</div><h2>' + hl(m.title) + '</h2><p class="muted">' + hl(m.trigger) + '</p><div class="flip-hint">点击翻面看步骤 →</div></div>' +
       '<div class="flip-face back"><div class="flip-tag">步骤 · 公式 · 易错点</div><ol class="steps">' + m.steps.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' +
       '<p class="small"><b>公式/依据：</b>' + esc(m.formula) + '</p><p class="small" style="color:#b91c1c"><b>易错：</b>' + esc(m.mistake) + '</p><div class="flip-hint">点击翻回正面 ←</div></div>' +
       '</div></div>';
@@ -341,7 +341,7 @@
   function clearDraft() { var q = session.list[session.i]; if (q && window.InputTools && InputTools.clearPad) InputTools.clearPad('draftPad', q.id); }
   /* ============ 练习 ============ */
   var session = { list: [], i: 0, answered: false, lastAttempt: null };
-  var pf = { diff: '', type: '', count: 8 };
+  var pf = { diff: '', type: '', count: 8, adaptive: true };
   function setPF(k, v) { pf[k] = v; renderPractice(); }
   function renderPractice() {
     if (session.list.length) { renderQuestion(); return; }
@@ -355,7 +355,8 @@
     html += '<div class="small muted" style="margin-bottom:6px">难度</div><div class="row">' + ['', '基础', '中档', '压轴'].map(function (d) { return '<button class="chip' + (pf.diff === d ? ' on' : '') + '" onclick="App.setPF(\'diff\',\'' + d + '\')">' + (d || '全部') + '</button>'; }).join('') + '</div>';
     html += '<div class="small muted" style="margin:12px 0 6px">题型</div><div class="row">' + [['', '全部'], ['choice', '选择'], ['fill', '填空'], ['solution', '解答']].map(function (t) { return '<button class="chip' + (pf.type === t[0] ? ' on' : '') + '" onclick="App.setPF(\'type\',\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>';
     html += '<div class="small muted" style="margin:12px 0 6px">题量</div><div class="row">' + [8, 12, 20, 48].map(function (n) { return '<button class="chip' + (pf.count === n ? ' on' : '') + '" onclick="App.setPF(\'count\',' + n + ')">' + n + '</button>'; }).join('') + '</div>';
-    html += '<div class="small muted" style="margin:14px 0 6px">本模块难度分布</div><div class="bars7" style="height:72px">' +
+    html += '<div class="small muted" style="margin:12px 0 6px">出题策略</div><div class="row"><button class="chip' + (pf.adaptive !== false ? ' on' : '') + '" onclick="App.setPF(\'adaptive\',' + (pf.adaptive === false ? 'true' : 'false') + ')">自适应：弱项多练</button></div>' +
+      '<div class="small muted" style="margin:14px 0 6px">本模块难度分布</div><div class="bars7" style="height:72px">' +
       '<div><i style="height:' + Math.max(4, Math.round(basic * 100 / total)) + '%"></i><span>基础 ' + basic + '</span></div>' +
       '<div><i style="height:' + Math.max(4, Math.round(mid * 100 / total)) + '%"></i><span>中档 ' + mid + '</span></div>' +
       '<div><i style="height:' + Math.max(4, Math.round(hard * 100 / total)) + '%"></i><span>压轴 ' + hard + '</span></div></div>';
@@ -378,6 +379,11 @@
     var d = pf.diff, t = pf.type, c = pf.count || 8;
     var arr = D.questions.filter(function (q) { return inMod(q) && (!d || q.diff === d) && (!t || q.type === t); });
     if (interleave) { var seen = {}, out = []; arr.forEach(function (q) { if (!seen[q.node]) { seen[q.node] = 1; out.push(q); } }); arr.forEach(function (q) { if (out.indexOf(q) < 0) out.push(q); }); arr = out; }
+    else if (pf.adaptive !== false && !d) {
+      arr = arr.map(function (q) { return { q: q, r: Math.random() * 28 }; })
+        .sort(function (a, b) { return (Store.masteryOf(a.q.node) - a.r) - (Store.masteryOf(b.q.node) - b.r); })
+        .map(function (x) { return x.q; });
+    }
     return arr.slice(0, c);
   }
   function beginPractice(interleave) { session = { list: pickQuestions(interleave), i: 0, answered: false, lastAttempt: null, done: 0, got: 0, results: [] }; if (!session.list.length) { toast('没有符合条件的题目'); return; } renderQuestion(); }
@@ -386,7 +392,7 @@
   function renderQuestion() {
     var q = session.list[session.i]; if (!q) { renderSessionEnd(); return; }
     var html = '<div class="card"><div class="row"><span class="tag">第 ' + (session.i + 1) + ' / ' + session.list.length + ' 题</span>' + diffTag(q.diff) + '<span class="tag p">' + typeName(q.type) + '</span><a class="tag" href="#/node/' + q.node + '">' + esc(nodeById[q.node].title) + '</a></div>';
-    html += '<div class="qbox" style="margin-top:12px;font-size:16px">' + esc(q.stem) + '</div>';
+    html += '<div class="qbox" style="margin-top:12px;font-size:16px">' + hl(q.stem) + '</div>';
     if (q.type === 'choice') {
       html += '<div style="margin-top:12px" id="opts">' + q.options.map(function (o, i) { return '<div class="opt" data-k="' + 'ABCD'[i] + '" onclick="App.selOpt(this)"><b>' + 'ABCD'[i] + '.</b><span>' + esc(o) + '</span></div>'; }).join('') + '</div>';
     } else if (q.type === 'fill') {
@@ -535,7 +541,7 @@
     else html += '<div class="list">' + show.map(function (a) {
       var q = qById[a.questionId];
       return '<div class="item elev"><div class="row">' + diffTag(q.diff) + '<span class="tag p">' + esc(q.module || '函数与导数') + '</span>' + (a.errorType ? '<span class="tag a">' + a.errorType + '</span>' : '<span class="tag">未归因</span>') + '<span class="tag">错 ' + (cnt[a.questionId] || 1) + ' 次</span>' + '</div>' +
-        '<div style="margin-top:6px">' + esc(q.stem) + '</div>' +
+        '<div style="margin-top:6px">' + hl(q.stem) + '</div>' +
         '<div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + q.id + '\')">重做</button><a class="btn sm" href="#/node/' + q.node + '">看知识点</a></div></div>';
     }).join('') + '</div>';
     view.innerHTML = html;
@@ -633,13 +639,14 @@
       box.innerHTML = '<div class="card small muted">已在新标签打开「' + se.engine + '」搜索：' + esc(k) + '</div>';
       return;
     }
+    function hl(s2) { return esc(s2).split(esc(k)).join('<mark>' + esc(k) + '</mark>'); }
     var ns = D.nodes.filter(function (n) { return (n.title + n.brief + n.req).indexOf(k) >= 0; });
     var ms = D.methods.filter(function (m) { return (m.title + m.trigger + m.steps.join('') + m.formula + m.mistake).indexOf(k) >= 0; });
     var qs = D.questions.filter(function (q) { return (q.stem + q.answer + q.steps).indexOf(k) >= 0; });
     var html = '';
-    if (ns.length) html += '<div class="card"><h2>知识点</h2><div class="list">' + ns.map(function (n) { return '<a class="item" href="#/node/' + n.id + '"><b>' + esc(n.title) + '</b><div class="small muted">' + esc(n.brief) + '</div></a>'; }).join('') + '</div></div>';
-    if (ms.length) html += '<div class="card"><h2>方法卡</h2><div class="list">' + ms.map(function (m) { return '<a class="item" href="#/method/' + m.id + '"><b>' + esc(m.title) + '</b><div class="small muted">' + esc(m.trigger) + '</div></a>'; }).join('') + '</div></div>';
-    if (qs.length) html += '<div class="card"><h2>题目</h2><div class="list">' + qs.map(function (q) { return '<div class="item"><div class="row">' + diffTag(q.diff) + '<span class="tag">' + typeName(q.type) + '</span></div><div style="margin-top:6px">' + esc(q.stem) + '</div><button class="btn sm" style="margin-top:8px" onclick="App.startSingle(\'' + q.id + '\')">练这题</button></div>'; }).join('') + '</div></div>';
+    if (ns.length) html += '<div class="card"><h2>知识点</h2><div class="list">' + ns.map(function (n) { return '<a class="item" href="#/node/' + n.id + '"><b>' + hl(n.title) + '</b><div class="small muted">' + hl(n.brief) + '</div></a>'; }).join('') + '</div></div>';
+    if (ms.length) html += '<div class="card"><h2>方法卡</h2><div class="list">' + ms.map(function (m) { return '<a class="item" href="#/method/' + m.id + '"><b>' + hl(m.title) + '</b><div class="small muted">' + hl(m.trigger) + '</div></a>'; }).join('') + '</div></div>';
+    if (qs.length) html += '<div class="card"><h2>题目</h2><div class="list">' + qs.map(function (q) { return '<div class="item"><div class="row">' + diffTag(q.diff) + '<span class="tag">' + typeName(q.type) + '</span></div><div style="margin-top:6px">' + hl(q.stem) + '</div><button class="btn sm" style="margin-top:8px" onclick="App.startSingle(\'' + q.id + '\')">练这题</button></div>'; }).join('') + '</div></div>';
     box.innerHTML = html || '<div class="card muted">没有找到相关内容。</div>';
   }
 
@@ -647,7 +654,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v47 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v48 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="App.exportWrongMd()">导出错题本 MD</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
