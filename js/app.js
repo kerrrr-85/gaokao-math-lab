@@ -426,7 +426,13 @@
       html += '<div style="margin-top:12px"><textarea id="solInput" placeholder="写下你的解答过程"></textarea></div>' + InputTools.toolbarHTML('solInput');
     }
     html += '<div class="seclabel" style="margin-top:16px">你的思路（可选，AI 据此指出错在哪）</div><textarea id="stepsInput" placeholder="例如：先求定义域 → 求导 → 判断单调性 → 找极值"></textarea>' + InputTools.toolbarHTML('stepsInput');
-    html += '<div class="card tight" style="margin-top:12px"><div class="row"><b class="grow small">✍️ 草稿纸（自动保存）</b><button class="btn sm" onclick="App.clearDraft()">清空</button></div><canvas id="draftPad" class="draft" width="760" height="320"></canvas></div>';
+    html += '<div class="card tight draft-card" id="draftCard" style="margin-top:12px">' +
+      '<div class="row"><b class="grow small">草稿纸 · 自动保存</b>' +
+      '<span class="penwrap" data-penfor="draftPad">' + [3, 6, 10].map(function (w, i) { return '<button class="penbtn' + (i === 0 ? ' on' : '') + '" data-w="' + w + '" onclick="InputTools.padPen(\'draftPad\',' + w + ')">' + (i === 0 ? '细' : i === 1 ? '中' : '粗') + '</button>'; }).join('') + '</span>' +
+      '<button class="btn sm" onclick="InputTools.padUndo(\'draftPad\')">撤销</button>' +
+      '<button class="btn sm" onclick="App.clearDraft()">清空</button>' +
+      '<button class="btn sm primary" id="draftFullBtn" onclick="InputTools.padFull(\'draftPad\')">全屏</button></div>' +
+      '<canvas id="draftPad" class="draft" width="760" height="320"></canvas></div>';
     html += '<div id="ansArea"></div>';
     html += '<div class="row" style="margin-top:14px"><button class="btn primary" id="submitBtn" onclick="App.submit()">提交</button><button class="btn ghost" onclick="App.nextQ()">跳过</button></div>';
     html += '</div>';
@@ -687,7 +693,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v49 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v51 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="App.exportWrongMd()">导出错题本 MD</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
@@ -744,6 +750,7 @@
   }
   function resetData() { if (confirm('确定清空所有进度吗？此操作不可恢复。')) { Store.reset(); toast('已清空'); router(); } }
 
+
   /* ============ 路由 ============ */
   function router() {
     var h = location.hash.replace(/^#\/?/, ''); var parts = h.split('/').filter(Boolean); var page = parts[0] || 'portal';
@@ -760,7 +767,7 @@
     else if (page === 'study') { history.replaceState(null, '', '#/today'); renderToday(); }
     else if (page === 'portal') Portal.renderPortal();
     else if (page === 'video') Portal.renderVideo();
-    else if (page === 'globe') Globe.render();
+    else if (page === 'globe') Globe.render(parts[1]);
     else renderHub();
     updateMini();
     if (window.Anim && Anim.ok() && page !== 'portal') Anim.pageIn();

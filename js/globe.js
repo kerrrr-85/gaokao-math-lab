@@ -346,21 +346,28 @@
     pick = null;
   }
   function tab(id) {
-    ['motion', 'route', 'air', 'earth'].forEach(function (k) {
+    ['real', 'motion', 'route', 'air', 'earth'].forEach(function (k) {
       var el = document.getElementById('gs-' + k); if (el) el.style.display = (k === id) ? 'block' : 'none';
       var ch = document.getElementById('tab-' + k); if (ch) ch.className = 'chip' + (k === id ? ' on' : '');
     });
+    var gw = document.getElementById('globeWrap'), gt = document.getElementById('globeTools');
+    var isReal = (id === 'real');
+    if (gw) gw.style.display = isReal ? 'none' : 'block';
+    if (gt) gt.style.display = isReal ? 'none' : 'block';
+    if (global.Earth3D) { if (isReal) Earth3D.resume(); else Earth3D.pause(); }
+    if (!isReal) { setTimeout(function () { if (resizeFn) resizeFn(); }, 0); }
     draw();
   }
-  function render() {
+  function render(startTab) {
     var v = document.getElementById('view');
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
     v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理</h2><p>分板块查看：点下面的标签切换</p></div></div>' +
-      '<div class="row" style="margin-bottom:10px"><button class="chip on" id="tab-motion" onclick="Globe.tab(&#39;motion&#39;)">地球运动</button>' +
+      '<div class="row" style="margin-bottom:10px"><button class="chip on" id="tab-real" onclick="Globe.tab(&#39;real&#39;)">真实地球</button>' +
+      '<button class="chip" id="tab-motion" onclick="Globe.tab(&#39;motion&#39;)">地球运动</button>' +
       '<button class="chip" id="tab-route" onclick="Globe.tab(&#39;route&#39;)">航线与经纬</button>' +
       '<button class="chip" id="tab-air" onclick="Globe.tab(&#39;air&#39;)">大气与海洋</button>' +
       '<button class="chip" id="tab-earth" onclick="Globe.tab(&#39;earth&#39;)">地质·气候·植被</button></div>' +
-      '<div class="card elev2" style="margin-bottom:12px"><div class="row"><button class="btn sm" id="glFull" onclick="Globe.fullscreen()">⛶ 全屏</button><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button>' +
+      '<div class="card elev2" id="globeTools" style="margin-bottom:12px"><div class="row"><button class="btn sm" id="glFull" onclick="Globe.fullscreen()">⛶ 全屏</button><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button>' +
       '<button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button>' +
       '<button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button>' +
       '<button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button>' +
@@ -368,7 +375,17 @@
       '<select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div></div>' +
       '<div class="globe-wrap" id="globeWrap"><canvas id="globeCv"></canvas><div class="globe-info" id="globeInfo">点城市=设航线起点/终点；点球面=读经纬度</div><button class="globe-x" onclick="Globe.fullscreen()">✕ 退出全屏</button></div>' +
 
-      '<div id="gs-motion" class="gsec">' +
+      '<div id="gs-real" class="gsec">' +
+      '<div class="card elev2" style="margin-top:12px;padding:12px">' +
+      '<div class="e3-wrap" id="e3Wrap"><div class="e3-labels" id="e3Labels"></div><div class="e3-hud" id="e3Info">拖动=转视角 · 滚轮/双指=缩放 · 点击球面读经纬度</div></div>' +
+      '<div class="row" style="margin-top:10px"><button class="btn sm" id="e3Auto" onclick="Earth3D.toggleAuto()">暂停自转</button><button class="btn sm" id="e3Lbl" onclick="Earth3D.toggleLabels()">城市名开</button><button class="btn sm" id="e3Grid" onclick="Earth3D.toggleGrid()">经纬网关</button><button class="btn sm" id="e3Night" onclick="Earth3D.toggleNight()">夜景开</button><button class="btn sm" onclick="Earth3D.reset()">复位视角</button></div>' +
+      '<div class="row" style="margin-top:10px"><b class="small">时间轴</b><input type="range" id="e3Hour" min="0" max="24" step="0.25" value="12" oninput="Earth3D.setHour(this.value)" style="flex:1;min-width:150px"><span class="small muted" id="e3Time"></span><button class="btn sm primary" id="e3Live" onclick="Earth3D.setLive()">实时</button></div>' +
+      '<div class="row" style="margin-top:10px"><b class="small">最短航线</b><select id="e3From" onchange="Earth3D.applyRoute()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><select id="e3To" onchange="Earth3D.applyRoute()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Earth3D.applyRoute()">画大圆航线</button><button class="btn sm" onclick="Earth3D.clearRoute()">清除</button></div>' +
+      '<div class="small muted" id="e3Route" style="margin-top:8px"></div></div>' +
+      '<div class="card"><div class="phead"><div class="grow"><h2>为什么最短航线走「大圆」</h2><p>北京 → 纽约看似横穿太平洋，实际最短是向北掠过北极圈</p></div></div>' +
+      '<p class="small muted" style="margin:0">球面上两点间最短路径 = 过球心的<b>大圆</b>劣弧。所以北半球中高纬之间的飞行/航海，多选择<b>偏向极地</b>的路线；赤道附近两点才接近沿纬线。橙色弧线即大圆航线，距离按地球半径 6371km 计算。</p></div>' +
+      '</div>' +
+      '<div id="gs-motion" class="gsec" style="display:none">' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">☀️</span><div class="grow"><h2>太阳直射点 · 正午太阳高度</h2><p>H = 90° − |当地纬度 − 直射点纬度|</p></div></div>' +
       '<div class="row"><select id="sunLat" onchange="Globe.updateSun()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">选择地点…</option>' +
       CITIES.map(function (c) { return '<option value="' + c.lat + '">' + c.name + '（' + c.lat + '°）</option>'; }).join('') +
@@ -446,10 +463,13 @@
     });
     wrap.addEventListener('wheel', function (e) { e.preventDefault(); zoom = Math.max(0.6, Math.min(2.4, zoom * (e.deltaY > 0 ? 0.94 : 1.06))); draw(); }, { passive: false });
     resize();
+    if (global.Earth3D) Earth3D.mount(document.getElementById('e3Wrap'));
     if (!raf) raf = requestAnimationFrame(loop);
+    tab(startTab || 'real');
   }
 
   function stop() {
+    if (global.Earth3D) Earth3D.unmount();
     if (raf) { cancelAnimationFrame(raf); raf = null; }
     if (resizeFn) { removeEventListener('resize', resizeFn); resizeFn = null; }
     last = 0;

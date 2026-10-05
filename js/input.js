@@ -1,6 +1,7 @@
 ﻿/* 输入工具：数学符号面板 / 手写画布 / 语音输入 / 语音朗读。
    全部基于浏览器原生能力，离线可用（语音识别需浏览器支持）。 */
 (function (global) {
+  var padKeys = {}, padPens = {}, padHist = {}, padHome = {};
   var SYM = [
     ['运算', ['+', '−', '×', '÷', '±', '√', '^', '∑', '∏', '∫', '!', '(', ')', '[', ']', '|']],
     ['关系', ['=', '≠', '<', '>', '≤', '≥', '≈', '∝', '∈', '∉', '⊂', '⊆', '⇒', '⇔', '∀', '∃']],
@@ -76,17 +77,75 @@
       m.parentNode.removeChild(m);
     };
   }
+  function padInk(ctx, id) { ctx.strokeStyle = '#0f172a'; ctx.lineWidth = padPens[id] || 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; }
+  function padSave(id) { var cv = document.getElementById(id), k = padKeys[id]; if (!cv || !k) return; try { localStorage.setItem('gml_draft_' + k, cv.toDataURL('image/png')); } catch (e) {} }
   function pad(id, key) {
     var cv = document.getElementById(id); if (!cv) return;
-    var ctx = cv.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
-    try { var saved = localStorage.getItem('gml_draft_' + key); if (saved) { var img = new Image(); img.onload = function () { ctx.drawImage(img, 0, 0, cv.width, cv.height); }; img.src = saved; } } catch (e) {}
+    padKeys[id] = key;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    padInk(ctx, id);
+    try { var saved = localStorage.getItem('gml_draft_' + key); if (saved) { var img = new Image(); img.onload = function () { var c2 = cv.getContext('2d'); c2.drawImage(img, 0, 0, cv.width, cv.height); padInk(c2, id); }; img.src = saved; } } catch (e) {}
     var drawing = false;
     function pos(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; }
-    cv.addEventListener('pointerdown', function (e) { e.preventDefault(); drawing = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (cv.setPointerCapture) cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); drawing = true;
+      var st = padHist[id] || (padHist[id] = []);
+      try { st.push(cv.toDataURL('image/png')); if (st.length > 6) st.shift(); } catch (err) {}
+      var p = pos(e); padInk(ctx, id); ctx.beginPath(); ctx.moveTo(p.x, p.y);
+      if (cv.setPointerCapture) cv.setPointerCapture(e.pointerId);
+    });
     cv.addEventListener('pointermove', function (e) { if (!drawing) return; e.preventDefault(); var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-    cv.addEventListener('pointerup', function () { drawing = false; try { localStorage.setItem('gml_draft_' + key, cv.toDataURL('image/png')); } catch (err) {} });
+    cv.addEventListener('pointerup', function () { drawing = false; padSave(id); });
+    cv.addEventListener('pointercancel', function () { drawing = false; });
   }
-  function clearPad(id, key) { var cv = document.getElementById(id); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); try { localStorage.removeItem('gml_draft_' + key); } catch (e) {} }
+  function padUndo(id) {
+    var cv = document.getElementById(id), st = padHist[id] || [];
+    if (!cv || !st.length) return;
+    var url = st.pop(), img = new Image();
+    img.onload = function () { var c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height); c.drawImage(img, 0, 0, cv.width, cv.height); padInk(c, id); padSave(id); };
+    img.src = url;
+  }
+  function padPen(id, w) {
+    padPens[id] = w;
+    var cv = document.getElementById(id); if (cv) padInk(cv.getContext('2d'), id);
+    var wrap = document.querySelector('[data-penfor="' + id + '"]');
+    if (wrap) Array.prototype.forEach.call(wrap.querySelectorAll('button'), function (b) { b.classList.toggle('on', parseInt(b.getAttribute('data-w'), 10) === w); });
+  }
+  function padFull(id) {
+    var cv = document.getElementById(id); if (!cv) return;
+    var box = document.getElementById('draftCard');
+    var goFull = !document.body.classList.contains('draft-full');
+    if (box && goFull) {
+      padHome[id] = { parent: box.parentNode, next: box.nextSibling };
+      document.body.appendChild(box);
+    } else if (box && padHome[id]) {
+      var hm = padHome[id];
+      if (hm.parent && hm.parent.isConnected) hm.parent.insertBefore(box, hm.next);
+      else if (box.parentNode) box.parentNode.removeChild(box);
+      padHome[id] = null;
+    }
+    var old = document.createElement('canvas'); old.width = cv.width; old.height = cv.height;
+    try { old.getContext('2d').drawImage(cv, 0, 0); } catch (e) {}
+    if (goFull) document.body.classList.add('draft-full'); else document.body.classList.remove('draft-full');
+    if (box) box.classList.toggle('on', goFull);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w, h;
+    if (goFull) { w = Math.max(320, Math.round((cv.clientWidth || innerWidth) * dpr)); h = Math.max(260, Math.round((cv.clientHeight || (innerHeight - 120)) * dpr)); }
+    else { w = 760; h = 320; }
+    cv.width = w; cv.height = h;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, w, h);
+    padInk(ctx, id);
+    var b = document.getElementById('draftFullBtn'); if (b) b.textContent = goFull ? '退出全屏' : '全屏';
+    padSave(id);
+  }
+  document.addEventListener('keydown', function (e) { if ((e.key === 'Escape') && document.body.classList.contains('draft-full')) padFull('draftPad'); });
+  function clearPad(id, key) {
+    var cv = document.getElementById(id); if (!cv) return;
+    var ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); padInk(ctx, id);
+    padHist[id] = []; padSave(id);
+  }
   function getImage(id) { return images[id] || null; }
   function clearImage(id) { delete images[id]; }
 
@@ -217,5 +276,5 @@
   function copyText(t) { try { navigator.clipboard.writeText(String(t || '')); return true; } catch (e) { return false; } }
   if (global.speechSynthesis && typeof speechSynthesis.addEventListener === 'function') { speechSynthesis.addEventListener('voiceschanged', refreshVoices); }
 
-  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record, showCube: showCube, hideCube: hideCube, pad: pad, clearPad: clearPad };
+  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record, showCube: showCube, hideCube: hideCube, pad: pad, clearPad: clearPad, padUndo: padUndo, padPen: padPen, padFull: padFull, padSave: padSave };
 })(window);

@@ -358,3 +358,25 @@ body.globe-full .topbar,body.globe-full .bottombar,body.globe-full .dot-canvas{d
 }
 body.perf-low .dot-canvas{display:none!important}
 body.perf-low .blob{display:none}
+
+/* ===== 草稿纸：全屏模式 + 笔粗 ===== */
+.penwrap{display:inline-flex;gap:2px;border:1px solid var(--line);border-radius:10px;padding:2px;background:#fff}
+.penbtn{border:0;background:transparent;font:inherit;font-size:12px;padding:4px 9px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.penbtn.on{background:var(--primary);color:#fff;font-weight:700}
+.draft-card.on{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;max-width:none;max-height:none;z-index:150;margin:0;border:0;border-radius:0;background:#fff;padding:10px 12px calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;overflow:hidden}
+.draft-card.on .draft{flex:1 1 0%;min-height:0;width:100%;margin-top:8px;border-radius:12px}
+body.dark .penwrap{background:#111c33;border-color:#1e293b}
+body.dark .draft-card.on{background:#0b1220}
+body.draft-full{overflow:hidden}
+body.draft-full .topbar,body.draft-full .tabbar,body.draft-full .dot-canvas{display:none}
+
+
+/* ===== 真实地球（three.js） ===== */
+.e3-wrap{position:relative;width:100%;height:min(62vh,520px);background:#04070f;border-radius:14px;overflow:hidden;touch-action:none;cursor:grab}
+.e3-wrap:active{cursor:grabbing}
+.e3-cv{display:block;width:100%;height:100%}
+.e3-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.e3-lb{position:absolute;transform:translate(-50%,-50%);font-size:11px;line-height:1.2;color:#fff;background:rgba(6,12,26,.55);border:1px solid rgba(150,180,255,.35);border-radius:6px;padding:1px 5px;text-shadow:0 1px 3px #000;white-space:nowrap}
+.e3-hud{position:absolute;left:10px;bottom:10px;right:10px;font-size:12px;color:#cbd5e1;background:rgba(4,7,15,.62);padding:5px 9px;border-radius:9px}
+.e3-fail{padding:22px;color:#fca5a5;font-size:13px}
+@media (max-width:700px){.e3-wrap{height:min(52vh,420px)}}
