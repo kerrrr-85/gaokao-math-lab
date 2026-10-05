@@ -18,6 +18,8 @@
     var dark = isDark();
     var base = dark ? [51, 65, 85] : [203, 213, 225];
     var hot = dark ? [45, 212, 191] : [15, 118, 110];
+    if (document.body.classList.contains('mod-trig')) hot = dark ? [56, 189, 248] : [37, 99, 235];
+    if (document.body.classList.contains('mod-seq')) hot = dark ? [192, 132, 252] : [124, 58, 237];
     var INFL = (innerWidth < 700 ? 96 : 128) * dpr;
     ctx.clearRect(0, 0, w, h);
     for (var i = 0; i < dots.length; i++) {

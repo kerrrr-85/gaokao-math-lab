@@ -42,6 +42,9 @@
     var studyPages = { today: 1, map: 1, node: 1, method: 1, practice: 1, wrong: 1, stats: 1, settings: 1, search: 1 };
     var isStudy = !!studyPages[page];
     document.body.classList.toggle('study-bg', isStudy);
+    document.body.classList.remove('mod-func', 'mod-trig', 'mod-seq');
+    var _mm = curModule();
+    document.body.classList.add(_mm === '三角函数' ? 'mod-trig' : _mm === '数列' ? 'mod-seq' : 'mod-func');
     if (window.DotGrid) { if (isStudy) DotGrid.mount(document.getElementById('dotCanvas')); else DotGrid.stop(); }
     var bb = document.getElementById('backBtn');
     if (bb) bb.style.display = (page === 'portal' || !page) ? 'none' : 'inline-flex';
@@ -217,31 +220,39 @@
     for (var k = 0; k < 6; k++) MAP.forEach(function (n) { (n.prereq || []).forEach(function (p) { if (depth[p] != null && depth[p] + 1 > depth[n.id]) depth[n.id] = depth[p] + 1; }); });
     var layers = {}; MAP.forEach(function (n) { (layers[depth[n.id]] = layers[depth[n.id]] || []).push(n); });
     var keys = Object.keys(layers).sort(function (x, y) { return x - y; });
-    var W = 900, H = 520, pad = 84, pos = {};
+    var W = 940, padY = 70, rowGap = 132, padX = 110;
+    var H = Math.max(300, padY * 2 + rowGap * Math.max(1, keys.length - 1));
+    var pos = {}, rad = {};
+    MAP.forEach(function (n) {
+      var qn = D.questions.filter(function (q) { return q.node === n.id; }).length;
+      rad[n.id] = 22 + Math.min(10, qn * 0.5);
+    });
     keys.forEach(function (d, di) {
       var arr = layers[d];
-      var y = keys.length === 1 ? H / 2 : pad + (H - 2 * pad) * di / (keys.length - 1);
-      arr.forEach(function (n, i) { pos[n.id] = { x: W * (i + 1) / (arr.length + 1), y: y }; });
+      var y = keys.length === 1 ? H / 2 : padY + (H - 2 * padY) * di / (keys.length - 1);
+      var usable = W - padX * 2;
+      arr.forEach(function (n, i) {
+        var x = arr.length === 1 ? W / 2 : padX + usable * i / (arr.length - 1);
+        pos[n.id] = { x: x, y: y };
+      });
     });
-    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '"><defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
     MAP.forEach(function (n) {
-      (n.prereq || []).forEach(function (p) {
-        if (pos[p] && pos[n.id]) {
-          var a1 = pos[p], b1 = pos[n.id];
-          svg += '<path class="edge" d="M' + a1.x + ' ' + (a1.y + 28) + ' C' + a1.x + ' ' + (a1.y + 74) + ', ' + b1.x + ' ' + (b1.y - 74) + ', ' + b1.x + ' ' + (b1.y - 28) + '"/>';
-        }
+      (n.prereq || []).forEach(function (pr) {
+        if (!pos[pr] || !pos[n.id]) return;
+        var A = pos[pr], B = pos[n.id];
+        var y1 = A.y + rad[pr] + 4, y2 = B.y - rad[n.id] - 4;
+        svg += '<path class="edge" d="M' + A.x + ' ' + y1 + ' C' + A.x + ' ' + (y1 + 48) + ', ' + B.x + ' ' + (y2 - 48) + ', ' + B.x + ' ' + y2 + '"/>';
       });
     });
     MAP.forEach(function (n) {
-      var p = pos[n.id], m = Store.masteryOf(n.id);
-      var qn = D.questions.filter(function (q) { return q.node === n.id; }).length;
-      var r = 20 + Math.min(12, qn * 0.6);
+      var p = pos[n.id], m = Store.masteryOf(n.id), r = rad[n.id];
       var fill = m >= 75 ? '#0f766e' : m >= 50 ? '#2dd4bf' : m >= 25 ? '#fbbf24' : '#e2e8f0';
       var tcol = m >= 50 ? '#ffffff' : '#0f172a';
       svg += '<g class="gnode" transform="translate(' + p.x + ',' + p.y + ')" onclick="App.go(\'#/node/' + n.id + '\')">' +
         '<circle r="' + r.toFixed(0) + '" fill="' + fill + '" stroke="rgba(15,23,42,.16)" stroke-width="1.5"/>' +
         '<text y="4" style="font-size:12px;fill:' + tcol + ';font-weight:700">' + m + '%</text>' +
-        '<text y="' + (r + 17) + '" style="font-size:12px;fill:#334155">' + esc(n.title) + '</text></g>';
+        '<text class="gnode-label" y="' + (r + 20) + '">' + esc(n.title) + '</text></g>';
     });
     svg += '</svg>';
     view.innerHTML = modbar() +
@@ -523,7 +534,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v30 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v32 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +

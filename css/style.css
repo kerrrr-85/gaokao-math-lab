@@ -290,3 +290,21 @@ body.study-bg .topbar{z-index:20}
 .pt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:430px;margin:0 auto}
 .pt-tile{width:100%;height:106px;padding:14px 6px;justify-content:center}
 @media (max-width:400px){.pt-tile{height:96px}.tile-badge{width:36px;height:36px}}
+
+body.study-bg{background:linear-gradient(160deg,#eefbf7 0%,#f7fafc 46%,#eef4ff 100%)}
+body.study-bg.mod-trig{background:linear-gradient(160deg,#eef6ff 0%,#f7fafc 46%,#eef0ff 100%)}
+body.study-bg.mod-seq{background:linear-gradient(160deg,#f6f1ff 0%,#f7fafc 46%,#fdf1ff 100%)}
+body.dark.study-bg{background:linear-gradient(160deg,#05131a 0%,#0b1220 50%,#090f22 100%)}
+body.dark.study-bg.mod-trig{background:linear-gradient(160deg,#061020 0%,#0b1220 50%,#0e1026 100%)}
+body.dark.study-bg.mod-seq{background:linear-gradient(160deg,#0c0a1a 0%,#0b1220 50%,#140a1e 100%)}
+body.study-bg::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(720px 440px at 12% 6%,rgba(45,212,191,.20),transparent 62%),radial-gradient(620px 420px at 88% 94%,rgba(99,102,241,.14),transparent 62%)}
+body.study-bg.mod-trig::before{background:radial-gradient(720px 440px at 12% 6%,rgba(56,189,248,.22),transparent 62%),radial-gradient(620px 420px at 88% 94%,rgba(79,70,229,.16),transparent 62%)}
+body.study-bg.mod-seq::before{background:radial-gradient(720px 440px at 12% 6%,rgba(192,132,252,.22),transparent 62%),radial-gradient(620px 420px at 88% 94%,rgba(236,72,153,.14),transparent 62%)}
+body.study-bg .card,body.study-bg .item,body.study-bg .stat,body.study-bg .mini{background:rgba(255,255,255,.86);backdrop-filter:blur(6px)}
+body.dark.study-bg .card,body.dark.study-bg .item,body.dark.study-bg .stat,body.dark.study-bg .mini{background:rgba(15,23,42,.82)}
+
+.graph{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+.graph svg{width:100%;height:auto;display:block}
+.gnode-label{font-size:12px;fill:#334155;text-anchor:middle;paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:3px;stroke-linejoin:round}
+body.dark .gnode-label{fill:#cbd5e1;stroke:rgba(15,23,42,.9)}
+@media (max-width:700px){.graph{min-height:360px}}
