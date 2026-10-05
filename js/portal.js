@@ -9,10 +9,22 @@
     weather: '<svg viewBox="0 0 24 24"><path d="M6 19a4 4 0 010-8 6 6 0 0111.6-1.6A4.5 4.5 0 0117 19H6z"/></svg>',
     settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4c0-.4 0-.9-.1-1.3l2-1.5-2-3.4-2.3 1a9 9 0 00-2.2-1.3L15.9 3h-4l-.4 2.5a9 9 0 00-2.2 1.3l-2.3-1-2 3.4 2 1.5A9 9 0 006.9 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a9 9 0 002.2 1.3l.4 2.5h4l.4-2.5a9 9 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></svg>'
   };
+  var TILE_STYLE = {
+    study: 'linear-gradient(135deg,#0f766e,#2dd4bf)',
+    video: 'linear-gradient(135deg,#ec4899,#f472b6)',
+    globe: 'linear-gradient(135deg,#2563eb,#38bdf8)',
+    search: 'linear-gradient(135deg,#f59e0b,#fbbf24)',
+    doubao: 'linear-gradient(135deg,#7c3aed,#c084fc)',
+    weather: 'linear-gradient(135deg,#06b6d4,#67e8f9)',
+    settings: 'linear-gradient(135deg,#475569,#94a3b8)'
+  };
   function tile(key, label, href, ext) {
     var a = ext ? '<a class="pt-tile" href="' + href + '" target="_blank" rel="noopener">' : '<a class="pt-tile" href="' + href + '">';
-    return a + (ICONS[key] || '') + '<span>' + label + '</span></a>';
+    var bg = TILE_STYLE[key] || TILE_STYLE.study;
+    return a + '<span class="tile-badge" style="background:' + bg + '">' + (ICONS[key] || '') + '</span><span class="tlabel">' + label + '</span></a>';
   }
+  function greeting() { var h = new Date().getHours(); return h < 6 ? '凌晨好' : h < 11 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : h < 23 ? '晚上好' : '夜深了'; }
+  function dateStr() { var d = new Date(), w = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]; return (d.getMonth() + 1) + '月' + d.getDate() + '日 · 星期' + w; }
   function wmoText(c) { var m = {0:'晴',1:'基本晴朗',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'小雨',55:'中雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',95:'雷阵雨',96:'雷暴',99:'强雷暴'}; return m[c] || '--'; }
   function applyWeather(d) {
     var q = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
@@ -32,7 +44,9 @@
   }
   function renderPortal() {
     var v = document.getElementById('view');
-    v.innerHTML = '<canvas class="galaxy-canvas" id="galaxyCanvas"></canvas><div class="pt-wrap"><h1 style="text-align:center">我的大门户</h1>' +
+    v.innerHTML = '<canvas class="galaxy-canvas" id="galaxyCanvas"></canvas><div class="pt-wrap">' +
+      '<div class="hero2"><div><div class="hi">' + dateStr() + '</div><h1>' + greeting() + '，今天想做什么？</h1></div>' +
+      '<div class="quick"><a href="#/today">待复习 ' + Store.dueCards().length + '</a><a href="#/practice/start">开始刷题</a><a href="#/globe">地球</a><a href="#/video">B站</a></div></div>' +
       '<div class="pt-wx" onclick="Portal.loadWeather(true)"><div><div class="small" id="ptCity">青树坪</div><div class="small" id="ptRange">今日 --~--°</div></div><div class="t" id="ptTemp">--°</div><div id="ptDesc">加载中…</div></div>' +
       '<div class="pt-group">学习</div><div class="pt-grid">' + tile('study','学习台','#/today') + tile('search','搜索','#/search') + '</div>' +
       '<div class="pt-group">工具</div><div class="pt-grid">' + tile('globe','地球','#/globe') + tile('weather','天气','#/today') + tile('settings','设置','#/settings') + '</div>' +
@@ -44,11 +58,28 @@
   }
   function renderVideo() {
     var v = document.getElementById('view');
-    var list = (global.BILI || []).map(function (b, i) {
-      return '<div class="bili-item"><b>' + (i + 1) + '. ' + b.title + '</b><div style="margin-top:6px"><button class="btn sm primary" onclick="Portal.play(\'' + b.bvid + '\')">▶ 站内播放</button> <a class="btn sm" href="https://www.bilibili.com/video/' + b.bvid + '" target="_blank" rel="noopener">去B站看</a></div><div id="pl_' + b.bvid + '"></div></div>';
+    var list = global.BILI || [];
+    var cards = list.map(function (b) {
+      return '<div class="card" style="padding:0;overflow:hidden;box-shadow:var(--sh1)">' +
+        '<div class="bili-cover" id="cv_' + b.bvid + '"><span>加载封面…</span></div>' +
+        '<div style="padding:12px 14px"><b>' + b.title + '</b><div class="small muted" style="margin-top:2px">' + b.bvid + '</div>' +
+        '<div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="Portal.play(\'' + b.bvid + '\')">▶ 站内播放</button><a class="btn sm" href="https://www.bilibili.com/video/' + b.bvid + '" target="_blank" rel="noopener">去B站</a></div>' +
+        '<div id="pl_' + b.bvid + '"></div></div></div>';
     }).join('');
-    v.innerHTML = '<h1>B站视频区</h1><div class="card"><div class="row"><input type="text" id="biliQ" placeholder="搜 B站视频，如：函数 导数 压轴" style="flex:1"><button class="btn primary" onclick="Portal.searchBili()">搜索</button></div></div>' +
-      (list || '<div class="card muted">还没有收藏视频，把 BV 号发我就能加进来。</div>');
+    v.innerHTML = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>B站视频区</h2><p>收藏 ' + list.length + ' 个 · 点「站内播放」直接看</p></div></div>' +
+      '<div class="card elev2"><div class="row"><input type="text" id="biliQ" placeholder="搜 B站，如：导数 压轴 技巧" style="flex:1"><button class="btn primary" onclick="Portal.searchBili()">搜索</button></div></div>' +
+      (cards ? '<div class="grid2">' + cards + '</div>' : '<div class="card muted">还没有收藏视频，把 BV 号发我就能加。</div>');
+    list.forEach(function (b) {
+      fetch('https://api.bilibili.com/x/web-interface/view?bvid=' + b.bvid)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var box = document.getElementById('cv_' + b.bvid); if (!box) return;
+          if (j && j.code === 0 && j.data && j.data.pic) { box.style.backgroundImage = 'url(' + j.data.pic + ')'; box.innerHTML = ''; }
+          else { box.innerHTML = '<span style="opacity:.6">B站封面不可用</span>'; }
+        })
+        .catch(function () { var box2 = document.getElementById('cv_' + b.bvid); if (box2) box2.innerHTML = '<span style="opacity:.6">封面需联网</span>'; });
+    });
+    if (window.Anim && Anim.ok()) Anim.enter('.card', 45);
   }
   function play(bvid) {
     var box = document.getElementById('pl_' + bvid); if (!box) return;

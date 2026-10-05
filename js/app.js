@@ -77,38 +77,90 @@
       hubTile('settings', '设置', '#/settings') +
       '</div><p class="small muted" style="text-align:center;margin-top:18px">已练习 ' + st.total + ' 题 · 待复习 ' + dueReview().length + ' 张</p></div>';
   }
+  function ringHTML(pct, big, small) {
+    var r = 46, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct || 0));
+    var off = c * (1 - p / 100);
+    return '<div class="ring"><svg width="112" height="112" viewBox="0 0 112 112">' +
+      '<circle cx="56" cy="56" r="' + r + '" fill="none" stroke="#e8eaee" stroke-width="10"/>' +
+      '<circle class="rprog" cx="56" cy="56" r="' + r + '" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + c.toFixed(1) + '" data-off="' + off.toFixed(1) + '"/>' +
+      '<defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#0f766e"/></linearGradient></defs>' +
+      '</svg><div class="val"><b>' + big + '</b><span>' + small + '</span></div></div>';
+  }
+  function animateRings() {
+    Array.prototype.forEach.call(document.querySelectorAll('.rprog'), function (el) {
+      var to = el.getAttribute('data-off');
+      requestAnimationFrame(function () { setTimeout(function () { el.setAttribute('stroke-dashoffset', to); }, 30); });
+    });
+  }
+  function heatHTML(v) {
+    var on = Math.round((v || 0) / 20);
+    var h = '<span class="heat">';
+    for (var i = 0; i < 5; i++) h += '<i class="' + (i < on ? 'on' : '') + '"></i>';
+    return h + '</span>';
+  }
   /* ============ 今日 ============ */
   function renderToday() {
-    var due = dueReview().filter(function (c) { return cardMod(c) === curModule(); });
-    var nw = newCards().filter(function (c) { return cardMod(c) === curModule(); });
+    var mod = curModule();
+    var due = dueReview().filter(function (c) { return cardMod(c) === mod; });
+    var nw = newCards().filter(function (c) { return cardMod(c) === mod; });
     var st = Store.stats();
-    var avg = 0, cnt = 0;
-    D.nodes.forEach(function (n) { avg += Store.masteryOf(n.id); cnt++; });
-    avg = cnt ? Math.round(avg / cnt) : 0;
-    var html = modbar() + '<h1>今日任务 · ' + curModule() + '</h1>';
-    html += '<div class="kpi">' +
-      '<div class="card"><b>' + due.length + '</b><span class="small muted">待复习卡</span></div>' +
-      '<div class="card"><b>' + nw.length + '</b><span class="small muted">新卡</span></div>' +
-      '<div class="card"><b>' + st.total + '</b><span class="small muted">累计练习</span></div>' +
-      '<div class="card"><b>' + avg + '%</b><span class="small muted">平均掌握度</span></div>' +
-      '</div>';
-    html += '<div class="card"><div class="row"><h2 class="grow">复习队列</h2><span class="small muted">按遗忘曲线安排</span></div>';
-    if (!due.length) html += '<p class="muted">当前没有到期的复习卡。可以去做新题。</p>';
+    var nodes = D.nodes.filter(function (n) { return (n.module || '函数与导数') === mod; });
+    var avg = 0; nodes.forEach(function (n) { avg += Store.masteryOf(n.id); });
+    avg = nodes.length ? Math.round(avg / nodes.length) : 0;
+    var t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    var doneToday = Store.get().attempts.filter(function (a) { return (a.createdAt || 0) >= t0.getTime(); }).length;
+    var goal = Store.get().settings.reviewPerDay || 20;
+    var pct = Math.min(100, Math.round(doneToday * 100 / goal));
+    var weak = nodes.slice().sort(function (a, b) { return Store.masteryOf(a.id) - Store.masteryOf(b.id); }).slice(0, 3);
+
+    var html = modbar();
+    html += '<div class="card elev2" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">' +
+      ringHTML(pct, pct + '%', '今日 ' + doneToday + '/' + goal) +
+      '<div class="grow" style="min-width:220px"><h2 style="margin:0">' + esc(mod) + '</h2>' +
+      '<p class="small muted" style="margin:4px 0 12px">' + nodes.length + ' 个知识节点 · 平均掌握度 ' + avg + '% · 累计练习 ' + st.total + ' 题</p>' +
+      '<div class="row"><a class="btn primary" href="#/practice/start">开始练习</a><a class="btn" href="#/map">看图谱</a><a class="btn" href="#/wrong">错题本</a></div></div></div>';
+
+    html += '<div class="kpi" style="margin-bottom:14px">' +
+      '<div class="stat"><b>' + due.length + '</b><span>待复习</span></div>' +
+      '<div class="stat"><b>' + nw.length + '</b><span>新卡</span></div>' +
+      '<div class="stat"><b>' + st.wrongCount + '</b><span>错题</span></div>' +
+      '<div class="stat"><b>' + avg + '%</b><span>掌握度</span></div></div>';
+
+    html += '<div class="card"><div class="phead"><span class="ico">📘</span><div class="grow"><h2>复习队列</h2><p>按遗忘曲线安排 · 共 ' + due.length + ' 张</p></div></div>';
+    if (!due.length) html += '<p class="muted small">当前没有到期卡片，去练习页开新卡吧。</p>';
     else {
       html += '<div class="list">';
       due.slice(0, Store.get().settings.reviewPerDay).forEach(function (c) {
-        html += '<div class="item"><div class="row"><div class="grow"><b>' + esc(cardTitle(c)) + '</b><div class="small muted">' + (c.refType === 'method' ? '方法卡' : '题目卡') + ' · 第 ' + (c.reps + 1) + ' 次</div></div></div>' +
+        var mod2 = cardMod(c);
+        html += '<div class="item elev"><div class="row"><div class="grow"><b>' + esc(cardTitle(c)) + '</b>' +
+          '<div class="small muted" style="margin-top:2px">' + (c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + c.reps + ' 次 · ' + esc(mod2) + '</div></div>' +
+          heatHTML(Store.masteryOf(c.refId)) + '</div>' +
           '<div class="row" style="margin-top:8px"><button class="btn sm" onclick="App.reviewCard(\'' + c.id + '\',0)">不会</button><button class="btn sm" onclick="App.reviewCard(\'' + c.id + '\',1)">半会</button><button class="btn sm primary" onclick="App.reviewCard(\'' + c.id + '\',2)">会了</button></div></div>';
       });
       html += '</div>';
     }
     html += '</div>';
-    html += '<div class="card"><div class="row"><h2 class="grow">新卡</h2><button class="btn sm primary" onclick="App.go(\'#/practice\')">去练习</button></div>';
-    html += '<p class="muted small">先从方法卡和例题开始建立记忆，之后系统会自动安排复习。</p>';
-    html += '<div class="list">' + nw.slice(0, Store.get().settings.newPerDay).map(function (c) {
-      return '<a class="item" href="' + (c.refType === 'method' ? '#/method/' + c.refId : '#/practice') + '"><b>' + esc(cardTitle(c)) + '</b><div class="small muted">' + (c.refType === 'method' ? '方法卡' : '题目卡') + '</div></a>';
-    }).join('') + '</div></div>';
+
+    html += '<div class="card"><div class="phead"><span class="ico">✨</span><div class="grow"><h2>新卡</h2><p>先建立记忆，再交给系统安排复习</p></div><a class="btn sm primary" href="#/practice">去练习</a></div>';
+    if (!nw.length) html += '<p class="muted small">本模块的新卡已全部解锁。</p>';
+    else {
+      html += '<div class="rail">' + nw.slice(0, Store.get().settings.newPerDay).map(function (c) {
+        return '<a class="mini" href="' + (c.refType === 'method' ? '#/method/' + c.refId : '#/practice') + '"><b>' + esc(cardTitle(c)) + '</b><span class="small muted">' + (c.refType === 'method' ? '方法卡' : '题目卡') + '</span></a>';
+      }).join('') + '</div>';
+    }
+    html += '</div>';
+
+    if (weak.length) {
+      html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>薄弱知识点</h2><p>掌握度最低的三个，优先补</p></div></div><div class="list">' +
+        weak.map(function (n) {
+          var m = Store.masteryOf(n.id);
+          return '<div class="item"><div class="row"><div class="grow"><b>' + esc(n.title) + '</b><div class="small muted">' + esc(n.brief) + '</div></div><span class="tag">' + m + '%</span></div>' +
+            '<div class="bar" style="margin-top:8px"><i style="width:' + m + '%"></i></div>' +
+            '<div class="row" style="margin-top:8px"><a class="btn sm" href="#/node/' + n.id + '">看知识点</a></div></div>';
+        }).join('') + '</div></div>';
+    }
     view.innerHTML = html;
+    animateRings();
   }
 
   function wmoText(c) { var m = {0:'晴',1:'基本晴朗',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'小雨',55:'中雨',56:'冻雨',57:'冻雨',61:'小雨',63:'中雨',65:'大雨',66:'冻雨',67:'冻雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨伴冰雹',99:'雷暴'}; return m[c] || '--'; }
@@ -143,23 +195,42 @@
   function renderMap() {
     var MAP = D.nodes.filter(inMod);
     var depth = {}; MAP.forEach(function (n) { depth[n.id] = 0; });
-    for (var k = 0; k < 6; k++) { MAP.forEach(function (n) { n.prereq.forEach(function (p) { if (depth[p] + 1 > depth[n.id]) depth[n.id] = depth[p] + 1; }); }); }
+    for (var k = 0; k < 6; k++) MAP.forEach(function (n) { (n.prereq || []).forEach(function (p) { if (depth[p] != null && depth[p] + 1 > depth[n.id]) depth[n.id] = depth[p] + 1; }); });
     var layers = {}; MAP.forEach(function (n) { (layers[depth[n.id]] = layers[depth[n.id]] || []).push(n); });
-    var W = 900, H = 520, pad = 70, pos = {};
-    Object.keys(layers).forEach(function (d) {
-      var arr = layers[d], y = pad + (H - 2 * pad) * (Object.keys(layers).length === 1 ? 0.5 : d / (Object.keys(layers).length - 1));
+    var keys = Object.keys(layers).sort(function (x, y) { return x - y; });
+    var W = 900, H = 520, pad = 84, pos = {};
+    keys.forEach(function (d, di) {
+      var arr = layers[d];
+      var y = keys.length === 1 ? H / 2 : pad + (H - 2 * pad) * di / (keys.length - 1);
       arr.forEach(function (n, i) { pos[n.id] = { x: W * (i + 1) / (arr.length + 1), y: y }; });
     });
-    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
-    MAP.forEach(function (n) { n.prereq.forEach(function (p) { if (pos[p] && pos[n.id]) { var a = pos[p], b = pos[n.id]; svg += '<path class="edge" d="M' + a.x + ' ' + (a.y + 22) + ' C' + a.x + ' ' + (a.y + 60) + ', ' + b.x + ' ' + (b.y - 60) + ', ' + b.x + ' ' + (b.y - 22) + '"/>'; } }); });
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '"><defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    MAP.forEach(function (n) {
+      (n.prereq || []).forEach(function (p) {
+        if (pos[p] && pos[n.id]) {
+          var a1 = pos[p], b1 = pos[n.id];
+          svg += '<path class="edge" d="M' + a1.x + ' ' + (a1.y + 28) + ' C' + a1.x + ' ' + (a1.y + 74) + ', ' + b1.x + ' ' + (b1.y - 74) + ', ' + b1.x + ' ' + (b1.y - 28) + '"/>';
+        }
+      });
+    });
     MAP.forEach(function (n) {
       var p = pos[n.id], m = Store.masteryOf(n.id);
-      svg += '<g class="gnode' + (m >= 60 ? ' done' : '') + '" transform="translate(' + p.x + ',' + p.y + ')" onclick="App.go(\'#/node/' + n.id + '\')"><circle r="22"/><text y="44">' + esc(n.title) + '</text><text y="0" dy="4" style="font-size:12px;fill:#0f766e">' + m + '%</text></g>';
+      var qn = D.questions.filter(function (q) { return q.node === n.id; }).length;
+      var r = 20 + Math.min(12, qn * 0.6);
+      var fill = m >= 75 ? '#0f766e' : m >= 50 ? '#2dd4bf' : m >= 25 ? '#fbbf24' : '#e2e8f0';
+      var tcol = m >= 50 ? '#ffffff' : '#0f172a';
+      svg += '<g class="gnode" transform="translate(' + p.x + ',' + p.y + ')" onclick="App.go(\'#/node/' + n.id + '\')">' +
+        '<circle r="' + r.toFixed(0) + '" fill="' + fill + '" stroke="rgba(15,23,42,.16)" stroke-width="1.5"/>' +
+        '<text y="4" style="font-size:12px;fill:' + tcol + ';font-weight:700">' + m + '%</text>' +
+        '<text y="' + (r + 17) + '" style="font-size:12px;fill:#334155">' + esc(n.title) + '</text></g>';
     });
     svg += '</svg>';
-    view.innerHTML = modbar() + '<h1>知识图谱 · ' + curModule() + '</h1><p class="muted small">节点为知识模块，连线是先修关系；绿色表示掌握度 ≥ 60%。点击节点查看详情。</p><div class="graph">' + svg + '</div>';
+    view.innerHTML = modbar() +
+      '<div class="phead"><span class="ico">🧭</span><div class="grow"><h2>' + esc(curModule()) + ' · 知识图谱</h2><p>圆越大题量越多 · 颜色越深掌握越好 · 点击进入节点</p></div></div>' +
+      '<div class="graph elev2">' + svg + '</div>' +
+      '<div class="legend" style="margin-top:12px"><span><i style="background:#e2e8f0"></i>未掌握</span><span><i style="background:#fbbf24"></i>25% 以上</span><span><i style="background:#2dd4bf"></i>50% 以上</span><span><i style="background:#0f766e"></i>75% 以上</span></div>';
+    if (window.Anim && Anim.ok()) Anim.animate('.gnode', { opacity: [0, 1], scale: [0.6, 1], duration: 620, delay: Anim.stagger(35), ease: 'outBack' });
   }
-
   /* ============ 节点 / 方法 ============ */
   function masteryBar(id) { var m = Store.masteryOf(id); return '<div class="mastery"><div class="bar"><i style="width:' + m + '%"></i></div><span class="small">' + m + '%</span></div>'; }
   function renderNode(id) {
@@ -185,26 +256,37 @@
 
   /* ============ 练习 ============ */
   var session = { list: [], i: 0, answered: false, lastAttempt: null };
+  var pf = { diff: '', type: '', count: 8 };
+  function setPF(k, v) { pf[k] = v; renderPractice(); }
   function renderPractice() {
     if (session.list.length) { renderQuestion(); return; }
-    var html = modbar() + '<h1>练习</h1><p class="small muted" style="text-align:center">当前模块：' + curModule() + ' · 可练习 ' + D.questions.filter(inMod).length + ' 题</p><div class="card"><div class="grid2">' +
-      '<label>知识节点<select id="fNode" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option>' + D.nodes.map(function (n) { return '<option value="' + n.id + '">' + esc(n.title) + '</option>'; }).join('') + '</select></label>' +
-      '<label>难度<select id="fDiff" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option><option>基础</option><option>中档</option><option>压轴</option></select></label>' +
-      '<label>题型<select id="fType" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option><option value="choice">选择</option><option value="fill">填空</option><option value="solution">解答</option></select></label>' +
-      '<label>数量<select id="fCount" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option>8</option><option>12</option><option>20</option><option>48</option></select></label>' +
-      '</div><div class="row" style="margin-top:12px"><button class="btn primary" onclick="App.beginPractice()">开始练习</button><button class="btn" onclick="App.beginPractice(true)">交错练习</button></div></div>';
-    var wrong = D.questions.filter(function (q) { return Store.wrong().some(function (a) { return a.questionId === q.id; }); });
-    if (wrong.length) html += '<div class="card"><h2>重点复习（错过的题）</h2><button class="btn accent" onclick="App.startPractice(\'' + wrong.map(function (q) { return q.id; }).join(',') + '\')">重做错题（' + wrong.length + '）</button></div>';
+    var qs = D.questions.filter(function (q) { return inMod(q); });
+    var basic = qs.filter(function (q) { return q.diff === '基础'; }).length;
+    var mid = qs.filter(function (q) { return q.diff === '中档'; }).length;
+    var hard = qs.filter(function (q) { return q.diff === '压轴'; }).length;
+    var total = qs.length || 1;
+    var html = modbar();
+    html += '<div class="card elev2"><div class="phead"><span class="ico">✏️</span><div class="grow"><h2>练习设置</h2><p>' + esc(curModule()) + ' · 共 ' + qs.length + ' 题</p></div></div>';
+    html += '<div class="small muted" style="margin-bottom:6px">难度</div><div class="row">' + ['', '基础', '中档', '压轴'].map(function (d) { return '<button class="chip' + (pf.diff === d ? ' on' : '') + '" onclick="App.setPF(\'diff\',\'' + d + '\')">' + (d || '全部') + '</button>'; }).join('') + '</div>';
+    html += '<div class="small muted" style="margin:12px 0 6px">题型</div><div class="row">' + [['', '全部'], ['choice', '选择'], ['fill', '填空'], ['solution', '解答']].map(function (t) { return '<button class="chip' + (pf.type === t[0] ? ' on' : '') + '" onclick="App.setPF(\'type\',\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>';
+    html += '<div class="small muted" style="margin:12px 0 6px">题量</div><div class="row">' + [8, 12, 20, 48].map(function (n) { return '<button class="chip' + (pf.count === n ? ' on' : '') + '" onclick="App.setPF(\'count\',' + n + ')">' + n + '</button>'; }).join('') + '</div>';
+    html += '<div class="small muted" style="margin:14px 0 6px">本模块难度分布</div><div class="bars7" style="height:72px">' +
+      '<div><i style="height:' + Math.max(4, Math.round(basic * 100 / total)) + '%"></i><span>基础 ' + basic + '</span></div>' +
+      '<div><i style="height:' + Math.max(4, Math.round(mid * 100 / total)) + '%"></i><span>中档 ' + mid + '</span></div>' +
+      '<div><i style="height:' + Math.max(4, Math.round(hard * 100 / total)) + '%"></i><span>压轴 ' + hard + '</span></div></div>';
+    html += '<div class="row" style="margin-top:16px"><button class="btn primary" onclick="App.beginPractice()">开始练习</button><button class="btn" onclick="App.beginPractice(true)">交错练习</button></div></div>';
+    var wrong = qs.filter(function (q) { return Store.wrong().some(function (a) { return a.questionId === q.id; }); });
+    if (wrong.length) html += '<div class="card"><div class="phead"><span class="ico">🧯</span><div class="grow"><h2>重点复习</h2><p>做错过的题 · ' + wrong.length + ' 道</p></div></div><button class="btn accent" onclick="App.startPractice(\'' + wrong.map(function (q) { return q.id; }).join(',') + '\')">全部重做</button></div>';
     view.innerHTML = html;
   }
   function pickQuestions(interleave) {
-    var n = (document.getElementById('fNode') || {}).value || '', d = (document.getElementById('fDiff') || {}).value || '', t = (document.getElementById('fType') || {}).value || '', c = parseInt((document.getElementById('fCount') || {}).value || '8', 10);
-    var arr = D.questions.filter(function (q) { return inMod(q) && (!n || q.node === n) && (!d || q.diff === d) && (!t || q.type === t); });
+    var d = pf.diff, t = pf.type, c = pf.count || 8;
+    var arr = D.questions.filter(function (q) { return inMod(q) && (!d || q.diff === d) && (!t || q.type === t); });
     if (interleave) { var seen = {}, out = []; arr.forEach(function (q) { if (!seen[q.node]) { seen[q.node] = 1; out.push(q); } }); arr.forEach(function (q) { if (out.indexOf(q) < 0) out.push(q); }); arr = out; }
     return arr.slice(0, c);
   }
-  function beginPractice(interleave) { session = { list: pickQuestions(interleave), i: 0, answered: false, lastAttempt: null }; if (!session.list.length) { toast('没有符合条件的题目'); return; } renderQuestion(); }
-  function startPractice(ids) { session = { list: ids.split(',').map(function (x) { return qById[x]; }).filter(Boolean), i: 0, answered: false, lastAttempt: null }; renderQuestion(); }
+  function beginPractice(interleave) { session = { list: pickQuestions(interleave), i: 0, answered: false, lastAttempt: null, done: 0, got: 0 }; if (!session.list.length) { toast('没有符合条件的题目'); return; } renderQuestion(); }
+  function startPractice(ids) { session = { list: ids.split(',').map(function (x) { return qById[x]; }).filter(Boolean), i: 0, answered: false, lastAttempt: null, done: 0, got: 0 }; renderQuestion(); }
   function startSingle(id) { startPractice(id); }
   function renderQuestion() {
     var q = session.list[session.i]; if (!q) { renderSessionEnd(); return; }
@@ -236,7 +318,7 @@
     var img = (window.InputTools ? (InputTools.getImage('fillInput') || InputTools.getImage('solInput') || InputTools.getImage('stepsInput')) : null);
     session.answered = true;
     var attempt = { id: 'a' + Date.now(), questionId: q.id, nodeIds: [q.node], methodIds: q.methods, difficulty: q.diff, userAnswer: userAnswer, userSteps: userSteps, imageDataUrl: img || '', result: result, errorType: '', createdAt: Date.now() };
-    Store.addAttempt(attempt); session.lastAttempt = attempt;
+    Store.addAttempt(attempt); session.lastAttempt = attempt; session.done = (session.done || 0) + 1; if (result === 'ok') session.got = (session.got || 0) + 1;
     Store.grade('question:' + q.id, result === 'ok' ? 2 : result === 'half' ? 1 : 0);
     q.methods.forEach(function (mid) { if (Store.get().reviews['method:' + mid]) Store.grade('method:' + mid, result === 'ok' ? 2 : result === 'half' ? 1 : 0); });
     showAnswer(q, result, userAnswer);
@@ -262,7 +344,14 @@
   function overrideOk() { var q = session.list[session.i]; var a = Store.get().attempts; for (var i = 0; i < a.length; i++) { if (a[i].id === session.lastAttempt.id) { a[i].result = 'ok'; } } Store.save(); Store.grade('question:' + q.id, 2); toast('已标为掌握'); }
   function nextQ() { session.i += 1; session.answered = false; if (session.i >= session.list.length) renderSessionEnd(); else renderQuestion(); }
   function renderSessionEnd() {
-    view.innerHTML = '<div class="card"><h1>本组完成 🎉</h1><p class="muted">这一组的作答已计入掌握度和复习计划。</p><div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button><button class="btn" onclick="App.go(\'#/stats\')">查看统计</button></div></div>';
+    var done = session.done || 0, got = session.got || 0;
+    var pct = done ? Math.round(got * 100 / done) : 0;
+    view.innerHTML = '<div class="card elev2" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">' +
+      ringHTML(pct, pct + '%', '正确率') +
+      '<div class="grow" style="min-width:200px"><h1 style="margin:0">本组完成 🎉</h1>' +
+      '<p class="muted small" style="margin:6px 0 12px">共 ' + done + ' 题 · 正确 ' + got + ' 题 · 已计入掌握度与复习计划</p>' +
+      '<div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button><a class="btn" href="#/stats">查看统计</a><a class="btn" href="#/wrong">错题本</a></div></div></div>';
+    animateRings();
   }
   function resetPractice() { session = { list: [], i: 0, answered: false }; renderPractice(); }
 
@@ -290,51 +379,83 @@
     if (v.autoSpeak) { var txt = '判定：' + (a.verdict || '') + '。' + (a.whereWrong || []).map(function (x) { return (x.where || '') + '：' + (x.what || '') + '。' + (x.why || ''); }).join('') + ' 正确步骤：' + (a.correctSteps || ''); InputTools.speak(txt, v); }
   }
   /* ============ 错题本 ============ */
+  var wf = { err: '', mod: '' };
+  function setWF(k, v) { wf[k] = v; renderWrong(); }
   function renderWrong() {
     var wrongs = Store.wrong(), seen = {}, list = [];
     wrongs.forEach(function (a) { if (!seen[a.questionId]) { seen[a.questionId] = 1; list.push(a); } });
-    var html = '<h1>错题本</h1>';
-    if (!list.length) html += '<div class="card muted">还没有错题。去练习吧。</div>';
-    else {
-      html += '<div class="card"><div class="row"><span class="grow">共 ' + list.length + ' 道需要复习</span><button class="btn sm accent" onclick="App.startPractice(\'' + list.map(function (a) { return a.questionId; }).join(',') + '\')">全部重做</button></div></div>';
-      html += '<div class="list">' + list.map(function (a) {
-        var q = qById[a.questionId]; if (!q) return '';
-        return '<div class="item"><div class="row">' + diffTag(q.diff) + '<span class="tag p">' + esc(nodeById[q.node].title) + '</span>' + (a.errorType ? '<span class="tag a">' + a.errorType + '</span>' : '') + '</div><div style="margin-top:6px">' + esc(q.stem) + '</div><div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + q.id + '\')">重做</button></div></div>';
-      }).join('') + '</div>';
-    }
+    var errs = ['知识', '方法', '计算', '审题', '心态'];
+    var html = '<div class="phead"><span class="ico">📕</span><div class="grow"><h2>错题本</h2><p>共 ' + list.length + ' 道待攻克</p></div>' +
+      (list.length ? '<button class="btn sm accent" onclick="App.startPractice(\'' + list.map(function (a) { return a.questionId; }).join(',') + '\')">全部重做</button>' : '') + '</div>';
+    html += '<div class="card"><div class="small muted" style="margin-bottom:6px">按错因筛选</div><div class="row"><button class="chip' + (wf.err === '' ? ' on' : '') + '" onclick="App.setWF(\'err\',\'\')">全部</button>' +
+      errs.map(function (e) { return '<button class="chip' + (wf.err === e ? ' on' : '') + '" onclick="App.setWF(\'err\',\'' + e + '\')">' + e + '</button>'; }).join('') + '</div>' +
+      '<div class="small muted" style="margin:12px 0 6px">按模块筛选</div><div class="row"><button class="chip' + (wf.mod === '' ? ' on' : '') + '" onclick="App.setWF(\'mod\',\'\')">全部</button>' +
+      ['函数与导数', '三角函数', '数列'].map(function (m) { return '<button class="chip' + (wf.mod === m ? ' on' : '') + '" onclick="App.setWF(\'mod\',\'' + m + '\')">' + m + '</button>'; }).join('') + '</div></div>';
+    var show = list.filter(function (a) {
+      var q = qById[a.questionId]; if (!q) return false;
+      if (wf.err && a.errorType !== wf.err) return false;
+      if (wf.mod && (q.module || '函数与导数') !== wf.mod) return false;
+      return true;
+    });
+    if (!show.length) html += '<div class="card muted small">没有符合条件的错题。</div>';
+    else html += '<div class="list">' + show.map(function (a) {
+      var q = qById[a.questionId];
+      return '<div class="item elev"><div class="row">' + diffTag(q.diff) + '<span class="tag p">' + esc(q.module || '函数与导数') + '</span>' + (a.errorType ? '<span class="tag a">' + a.errorType + '</span>' : '<span class="tag">未归因</span>') + '</div>' +
+        '<div style="margin-top:6px">' + esc(q.stem) + '</div>' +
+        '<div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + q.id + '\')">重做</button><a class="btn sm" href="#/node/' + q.node + '">看知识点</a></div></div>';
+    }).join('') + '</div>';
     view.innerHTML = html;
   }
-
   /* ============ 统计 ============ */
   function renderStats() {
     var st = Store.stats();
     var rate = st.total ? Math.round((st.ok + st.half * 0.5) * 100 / st.total) : 0;
-    var html = '<h1>学习统计</h1><div class="kpi">' +
-      '<div class="card"><b>' + st.total + '</b><span class="small muted">累计作答</span></div>' +
-      '<div class="card"><b>' + rate + '%</b><span class="small muted">加权正确率</span></div>' +
-      '<div class="card"><b>' + st.wrongCount + '</b><span class="small muted">错题数</span></div>' +
-      '<div class="card"><b>' + dueReview().length + '</b><span class="small muted">待复习</span></div></div>';
-    html += '<div class="card"><h2>各知识节点掌握度</h2>';
-    D.nodes.forEach(function (n) { html += '<div style="margin:10px 0"><div class="row"><span class="grow small">' + esc(n.title) + '</span></div>' + masteryBar(n.id) + '</div>'; });
-    html += '</div>';
-    html += '<div class="card"><h2>错因分布</h2>';
-    var errs = ['知识', '方法', '计算', '审题', '心态'], max = 1;
-    errs.forEach(function (e) { max = Math.max(max, st.byErr[e] || 0); });
-    errs.forEach(function (e) { var v = st.byErr[e] || 0; html += '<div class="row small"><span style="width:44px">' + e + '</span><div class="bar grow"><i style="width:' + Math.round(v * 100 / max) + '%"></i></div><span>' + v + '</span></div>'; });
-    html += '</div>';
-    html += '<div class="card"><h2>难度分布</h2>';
-    ['基础', '中档', '压轴'].forEach(function (d) { var v = st.byDiff[d] || 0; html += '<div class="row small"><span style="width:44px">' + d + '</span><div class="bar grow"><i style="width:' + Math.min(100, v * 100 / Math.max(1, st.total)) + '%"></i></div><span>' + v + '</span></div>'; });
-    html += '</div>';
+    var days = [];
+    for (var i = 6; i >= 0; i--) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push({ t: d.getTime(), n: 0, label: (d.getMonth() + 1) + '/' + d.getDate() }); }
+    Store.get().attempts.forEach(function (a) { for (var i = 0; i < days.length; i++) { var end = i < days.length - 1 ? days[i + 1].t : Infinity; if ((a.createdAt || 0) >= days[i].t && (a.createdAt || 0) < end) { days[i].n++; break; } } });
+    var maxDay = Math.max(1, Math.max.apply(null, days.map(function (x) { return x.n; })));
+    var errs = ['知识', '方法', '计算', '审题', '心态'], colors = ['#0f766e', '#2563eb', '#f59e0b', '#ec4899', '#94a3b8'];
+    var totalErr = errs.reduce(function (a, e) { return a + (st.byErr[e] || 0); }, 0) || 1;
+    var C = 2 * Math.PI * 54, off = 0, segs = '';
+    errs.forEach(function (e, i) { var v = st.byErr[e] || 0; var len = C * v / totalErr; segs += '<circle cx="66" cy="66" r="54" fill="none" stroke="' + colors[i] + '" stroke-width="18" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" transform="rotate(-90 66 66)"/>'; off += len; });
+    var nodes = D.nodes.filter(function (n) { return (n.module || '函数与导数') === curModule(); });
+    var ranked = nodes.map(function (n) { return { n: n, m: Store.masteryOf(n.id) }; }).sort(function (a, b) { return a.m - b.m; });
+
+    var html = modbar() + '<div class="phead"><span class="ico">📊</span><div class="grow"><h2>学习统计</h2><p>' + esc(curModule()) + ' · 共 ' + st.total + ' 次作答</p></div></div>';
+    html += '<div class="kpi" style="margin-bottom:14px">' +
+      '<div class="stat"><b>' + st.total + '</b><span>累计作答</span></div>' +
+      '<div class="stat"><b>' + rate + '%</b><span>加权正确率</span></div>' +
+      '<div class="stat"><b>' + st.wrongCount + '</b><span>错题</span></div>' +
+      '<div class="stat"><b>' + dueReview().length + '</b><span>待复习</span></div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">📅</span><div class="grow"><h2>近 7 天活跃</h2><p>每天完成的作答数</p></div></div><div class="bars7">' +
+      days.map(function (x) { return '<div><i style="height:' + Math.max(4, Math.round(x.n * 100 / maxDay)) + '%"></i><span>' + x.label + '</span></div>'; }).join('') + '</div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">🧯</span><div class="grow"><h2>错因分布</h2><p>标记过的错题按原因归类</p></div></div><div class="row" style="align-items:center;gap:22px">' +
+      '<div class="donut"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="54" fill="none" stroke="#eef1f4" stroke-width="18"/>' + segs + '</svg>' +
+      '<div class="val" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--primary)">' + totalErr + '</div></div>' +
+      '<div class="legend">' + errs.map(function (e, i) { return '<span><i style="background:' + colors[i] + '"></i>' + e + ' ' + (st.byErr[e] || 0) + '</span>'; }).join('') + '</div></div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>掌握度排行</h2><p>按掌握度从低到高</p></div></div><div class="list">' +
+      ranked.map(function (r) { return '<div class="item"><div class="row"><span class="grow small">' + esc(r.n.title) + '</span><b class="small">' + r.m + '%</b></div><div class="bar" style="margin-top:6px"><i style="width:' + r.m + '%"></i></div></div>'; }).join('') + '</div></div>';
     view.innerHTML = html;
   }
-
   /* ============ 搜索 ============ */
+  var se = { engine: 'local' };
+  function setSE(e) { se.engine = e; renderSearch(); }
   function renderSearch() {
-    view.innerHTML = '<h1>搜索</h1><div class="card"><input type="text" id="q" placeholder="输入关键词，如：单调性、切线、恒成立" oninput="App.doSearch()"></div><div id="searchRes"></div>';
+    var engines = [['local', '站内'], ['baidu', '百度'], ['bili', 'B站'], ['zhihu', '知乎']];
+    view.innerHTML = '<div class="phead"><span class="ico">🔍</span><div class="grow"><h2>搜索</h2><p>站内搜知识点/方法卡/题目，或跳到外部引擎</p></div></div>' +
+      '<div class="card elev2"><div class="row" style="margin-bottom:10px">' + engines.map(function (e) { return '<button class="chip' + (se.engine === e[0] ? ' on' : '') + '" onclick="App.setSE(\'' + e[0] + '\')">' + e[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="row"><input type="text" id="q" placeholder="' + (se.engine === 'local' ? '输入关键词，如：单调性、切线、恒成立' : '输入关键词后回车，跳到对应网站') + '" style="flex:1" oninput="App.doSearch()" onkeydown="if(event.key===String.fromCharCode(13))App.doSearch()"><button class="btn primary" onclick="App.doSearch()">搜索</button></div></div><div id="searchRes"></div>';
   }
+
   function doSearch() {
     var k = (document.getElementById('q').value || '').trim(); var box = document.getElementById('searchRes');
     if (!k) { box.innerHTML = ''; return; }
+    if (se.engine !== 'local') {
+      var map = { baidu: 'https://www.baidu.com/s?wd=', bili: 'https://search.bilibili.com/all?keyword=', zhihu: 'https://www.zhihu.com/search?type=content&q=' };
+      window.open(map[se.engine] + encodeURIComponent(k), '_blank');
+      box.innerHTML = '<div class="card small muted">已在新标签打开「' + se.engine + '」搜索：' + esc(k) + '</div>';
+      return;
+    }
     var ns = D.nodes.filter(function (n) { return (n.title + n.brief + n.req).indexOf(k) >= 0; });
     var ms = D.methods.filter(function (m) { return (m.title + m.trigger + m.steps.join('') + m.formula + m.mistake).indexOf(k) >= 0; });
     var qs = D.questions.filter(function (q) { return (q.stem + q.answer + q.steps).indexOf(k) >= 0; });
@@ -347,20 +468,27 @@
 
   /* ============ 设置 ============ */
   function renderSettings() {
-    var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v26</span></h1>' +
-      '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
-      '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
+    var s = Store.get().settings, raw = Store.get();
+    var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v27 · 数据只存在本机</p></div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
+      '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
+      '<div class="grid2"><label class="small">新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label>' +
+      '<label class="small">复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">🤖</span><div class="grow"><h2>AI 讲解</h2><p>需要 Cloudflare Worker 代理，Key 不进前端</p></div></div>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
-      '<div class="row" style="margin-top:10px"><label class="small"><input type="checkbox" id="aiEnabled" ' + ((s.ai && s.ai.enabled) ? 'checked' : '') + '> 启用 AI 讲解</label><button class="btn sm" onclick="App.testAI()">测试连接</button></div><p class="small muted" id="aiTest"></p></div>' +
-      '<div class="card"><h2>语音</h2><p class="small muted">朗读用浏览器语音（免费）；语音输入需安卓 Chrome/Edge。</p>' +
+      '<div class="row" style="margin-top:10px"><label class="small"><input type="checkbox" id="aiEnabled" ' + ((s.ai && s.ai.enabled) ? 'checked' : '') + '> 启用 AI 讲解</label><button class="btn sm" onclick="App.testAI()">测试连接</button></div><p class="small muted" id="aiTest"></p></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">🔊</span><div class="grow"><h2>语音</h2><p>浏览器原生朗读；录音识别需代理</p></div></div>' +
       '<label class="small">语速 <input type="range" id="voRate" min="0.6" max="1.6" step="0.1" value="' + ((s.voice && s.voice.rate) || 1) + '"></label>' +
       '<label class="small" style="display:block;margin-top:8px">音色<select id="voVoice" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"></select></label>' +
-      '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label>' + '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.testVoice()">🔊 试听</button><button class="btn sm" onclick="App.voiceDiag()">🩺 语音诊断</button></div><p class="small muted" id="voDiag"></p></div>' +
-      '<div class="card"><h2>数据</h2><p class="small muted">进度只存在本机浏览器，不上传。换设备时可导出再导入。</p><div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn" onclick="App.resetData()">清空进度</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>' +
-      '<div class="card"><h2>安装到手机</h2><p class="small muted">用手机浏览器打开线上网址后，选择“添加到主屏幕”，即可像 App 一样使用。</p></div>';
+      '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label>' +
+      '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.testVoice()">🔊 试听</button><button class="btn sm" onclick="App.voiceDiag()">🩺 语音诊断</button></div><p class="small muted" id="voDiag"></p></div>';
+    html += '<div class="card" style="text-align:center"><button class="btn primary" onclick="App.saveSettings()">保存设置</button></div>';
+    view.innerHTML = html;
     fillVoices();
   }
+
   function fillVoices() { setTimeout(function () { var sel = document.getElementById('voVoice'); if (!sel) return; var vs = InputTools.voices(); var cur = (Store.get().settings.voice || {}).voiceUri || ''; sel.innerHTML = '<option value="">系统默认</option>' + vs.map(function (v) { return '<option value="' + v.voiceURI + '"' + (cur === v.voiceURI ? ' selected' : '') + '>' + v.name + '（' + v.lang + '）</option>'; }).join(''); }, 250); }
   function testVoice() { InputTools.speak('这是一段语音试听。如果听到了，说明朗读功能正常。', Store.get().settings.voice || {}); }
   function voiceDiag() {
@@ -405,12 +533,12 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule,
+    go: go, back: back, setModule: setModule, setPF: setPF,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
     startPractice: startPractice, startSingle: startSingle, selfRate: selfRate, tagError: tagError, overrideOk: overrideOk,
-    doSearch: doSearch, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData,
+    doSearch: doSearch, setWF: setWF, setSE: setSE, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData,
     aiExplain: aiExplain, refreshWeather: refreshWeather, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI, testVoice: testVoice, voiceDiag: voiceDiag
   };
   /* 站内跳转用 pushState：返回键可回到上一页；顶部「首页」一键回门户 */
