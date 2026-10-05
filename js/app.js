@@ -261,7 +261,7 @@
       '<div class="graphbar"><button class="btn sm" onclick="App.graphReset()">↺ 重置视图</button><span class="small muted" style="align-self:center">滚轮缩放 · 拖拽平移</span></div>' + '<div class="graph graphbox elev2" id="graphBox">' + svg + '</div>' +
       '<div class="legend" style="margin-top:12px"><span><i style="background:#e2e8f0"></i>未掌握</span><span><i style="background:#fbbf24"></i>25% 以上</span><span><i style="background:#2dd4bf"></i>50% 以上</span><span><i style="background:#0f766e"></i>75% 以上</span></div>';
     graphInit();
-    if (window.Anim && Anim.ok()) Anim.animate('.gnode', { opacity: [0, 1], scale: [0.6, 1], duration: 620, delay: Anim.stagger(35), ease: 'outBack' });
+    if (window.Anim && Anim.ok()) Anim.animate('.gnode', { opacity: [0, 1], duration: 520, delay: Anim.stagger(35), ease: 'outQuad' });
   }
   /* ============ 节点 / 方法 ============ */
   function masteryBar(id) { var m = Store.masteryOf(id); return '<div class="mastery"><div class="bar"><i style="width:' + m + '%"></i></div><span class="small">' + m + '%</span></div>'; }
@@ -560,7 +560,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v33 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v34 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
