@@ -324,17 +324,30 @@
     return ns + '纬 ' + Math.abs(lat).toFixed(1) + '° · ' + ew + '经 ' + Math.abs(lng).toFixed(1) + '° · ' + ns + '半球/' + ew + '半球 · ' + band + ' · 约 UTC' + (off >= 0 ? '+' : '') + off;
   }
 
+  function tab(id) {
+    ['motion', 'route', 'air', 'earth'].forEach(function (k) {
+      var el = document.getElementById('gs-' + k); if (el) el.style.display = (k === id) ? 'block' : 'none';
+      var ch = document.getElementById('tab-' + k); if (ch) ch.className = 'chip' + (k === id ? ' on' : '');
+    });
+    draw();
+  }
   function render() {
     var v = document.getElementById('view');
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
-    v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理考点</h2><p>航线 / 经纬网 / 昼夜 / 时区</p></div></div>' +
-      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button><button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button><button class="btn sm" id="glPlate" onclick="Globe.togglePlates()">🗺 板块关</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
-      '<div class="row" style="margin-top:10px"><select id="glFrom" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><span class="muted">→</span><select id="glTo" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Globe.applyRoute()">画航线</button><button class="btn sm" onclick="Globe.clearRoute()">清除</button></div>' +
-      '<div class="row" style="margin-top:10px"><button class="chip" onclick="Globe.setRoute(&#39;北京&#39;,&#39;纽约&#39;)">北京→纽约</button><button class="chip" onclick="Globe.setRoute(&#39;上海&#39;,&#39;伦敦&#39;)">上海→伦敦</button><button class="chip" onclick="Globe.setRoute(&#39;青树坪&#39;,&#39;东京&#39;)">青树坪→东京</button></div>' +
-      '<p class="small muted" id="routeInfo" style="margin:10px 0 0">未选择航线</p>' +
-      '<div class="row" style="margin-top:8px"><select id="tzA" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.updateTZ()">' + opts + '</select><select id="tzB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.updateTZ()">' + opts + '</select></div>' +
-      '<p class="small" id="tzInfo" style="margin:8px 0 0">选择两座城市看时差</p></div>' +
+    v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理</h2><p>分板块查看：点下面的标签切换</p></div></div>' +
+      '<div class="row" style="margin-bottom:10px"><button class="chip on" id="tab-motion" onclick="Globe.tab(&#39;motion&#39;)">地球运动</button>' +
+      '<button class="chip" id="tab-route" onclick="Globe.tab(&#39;route&#39;)">航线与经纬</button>' +
+      '<button class="chip" id="tab-air" onclick="Globe.tab(&#39;air&#39;)">大气与海洋</button>' +
+      '<button class="chip" id="tab-earth" onclick="Globe.tab(&#39;earth&#39;)">地质·气候·植被</button></div>' +
+      '<div class="card elev2" style="margin-bottom:12px"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button>' +
+      '<button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button>' +
+      '<button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button>' +
+      '<button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button>' +
+      '<button class="btn sm" id="glPlate" onclick="Globe.togglePlates()">🗺 板块关</button>' +
+      '<select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div></div>' +
       '<div class="globe-wrap" id="globeWrap"><canvas id="globeCv"></canvas><div class="globe-info" id="globeInfo">点球面任意位置读经纬度</div></div>' +
+
+      '<div id="gs-motion" class="gsec">' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">☀️</span><div class="grow"><h2>太阳直射点 · 正午太阳高度</h2><p>H = 90° − |当地纬度 − 直射点纬度|</p></div></div>' +
       '<div class="row"><select id="sunLat" onchange="Globe.updateSun()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">选择地点…</option>' +
       CITIES.map(function (c) { return '<option value="' + c.lat + '">' + c.name + '（' + c.lat + '°）</option>'; }).join('') +
@@ -345,59 +358,48 @@
       '<input type="time" id="ltT" value="08:00" onchange="Globe.localTime()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' +
       '<span class="muted">→</span><select id="ltB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.localTime()">' + opts + '</select></div>' +
       '<p class="small" id="ltInfo" style="margin:10px 0 0"></p></div>' +
-      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>五个地理考点</h2><p>点下面的按钮直接看</p></div></div><p class="small muted" style="margin:0"><b>① 最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成弧线。<br><b>② 经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>③ 昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。<br><b>④ 洋流</b>：<span style="color:#dc2626">红=暖流</span>、<span style="color:#2563eb">蓝=寒流</span>，箭头是流向；暖流增温增湿、寒流降温减湿，寒暖流交汇处易形成大渔场。<br><b>⑤ 板块与地震带</b>：橙色=环太平洋地震带、黄色=地中海—喜马拉雅地震带、蓝色=大西洋中脊、绿色=东非裂谷；板块交界处地壳活跃，多火山地震。</p></div>';
-    v.innerHTML +=
-      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌦️</span><div class="grow"><h2>气候类型判读</h2><p>选纬度带 + 海陆位置，判断气候</p></div></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌐</span><div class="grow"><h2>时区与时差</h2><p>区时 = 中央经线的地方时</p></div></div>' +
+      '<div class="row"><select id="tzA" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.updateTZ()">' + opts + '</select>' +
+      '<select id="tzB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.updateTZ()">' + opts + '</select></div>' +
+      '<p class="small" id="tzInfo" style="margin:10px 0 0"></p></div>' +
+      '</div>' +
+
+      '<div id="gs-route" class="gsec" style="display:none">' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">✈️</span><div class="grow"><h2>最短航线（大圆航线）</h2><p>球面两点最短路径是大圆的一段</p></div></div>' +
+      '<div class="row"><select id="glFrom" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><span class="muted">→</span><select id="glTo" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Globe.applyRoute()">画航线</button><button class="btn sm" onclick="Globe.clearRoute()">清除</button></div>' +
+      '<div class="row" style="margin-top:10px"><button class="chip" onclick="Globe.setRoute(&#39;北京&#39;,&#39;纽约&#39;)">北京→纽约</button><button class="chip" onclick="Globe.setRoute(&#39;上海&#39;,&#39;伦敦&#39;)">上海→伦敦</button><button class="chip" onclick="Globe.setRoute(&#39;青树坪&#39;,&#39;东京&#39;)">青树坪→东京</button></div>' +
+      '<p class="small muted" id="routeInfo" style="margin:10px 0 0">未选择航线</p></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>经纬网与航线要点</h2><p>球面摊平会有形变</p></div></div>' +
+      '<p class="small muted" style="margin:0"><b>经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成了弧线——北京飞纽约往北极方向「绕一下」反而更短。<br><b>昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。</p></div>' +
+      '</div>' +
+
+      '<div id="gs-air" class="gsec" style="display:none">' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌀</span><div class="grow"><h2>气压带与风带</h2><p>开「气压带」按钮看球面叠加</p></div></div>' +
+      '<p class="small muted" style="margin:0"><b>7 个气压带</b>：赤道低压带、副热带高压带（南北）、副极地低压带（南北）、极地高压带（南北）。<br><b>6 个风带</b>：低纬信风（东北信风/东南信风）、中纬西风、极地东风。<br>口诀：<b>低压上升多雨，高压下沉干燥；由高压吹向低压，北半球右偏</b>。</p></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌊</span><div class="grow"><h2>洋流</h2><p>开「洋流」按钮看球面箭头</p></div></div>' +
+      '<p class="small muted" style="margin:0"><span style="color:#dc2626">红=暖流</span>、<span style="color:#2563eb">蓝=寒流</span>。暖流增温增湿，寒流降温减湿；<b>寒暖流交汇处</b>（纽芬兰、北海道）和<b>上升流处</b>（秘鲁）易形成大渔场。</p></div>' +
+      '</div>' +
+
+      '<div id="gs-earth" class="gsec" style="display:none">' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🗺️</span><div class="grow"><h2>板块与地震带</h2><p>开「板块」按钮看球面边界</p></div></div>' +
+      '<p class="small muted" style="margin:0">橙色=环太平洋地震带，黄色=地中海—喜马拉雅地震带，蓝色=大西洋中脊，绿色=东非裂谷。板块交界处地壳活跃，多火山地震；张裂成裂谷/海岭，碰撞成山脉/海沟。</p></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌦️</span><div class="grow"><h2>气候类型判读</h2><p>选纬度带 + 海陆位置</p></div></div>' +
       '<div class="row"><select id="clLat" onchange="Globe.climate()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="0">0°~10°</option><option value="10">10°~20°</option><option value="20">20°~30°</option><option value="30">30°~40°</option><option value="40">40°~60°</option><option value="60">60°~70°</option></select>' +
       '<select id="clPos" onchange="Globe.climate()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="west">大陆西岸</option><option value="mid">大陆内部</option><option value="east">大陆东岸</option></select></div>' +
       '<p class="small" id="clInfo" style="margin:10px 0 0"></p></div>' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">⛰️</span><div class="grow"><h2>等高线地形判读</h2><p>山峰·鞍部·山谷·陡崖</p></div></div>' +
       '<svg viewBox="0 0 620 250" style="width:100%;height:auto">' +
-      '<ellipse cx="150" cy="115" rx="125" ry="75" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="150" cy="115" rx="92" ry="55" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="150" cy="115" rx="58" ry="34" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="150" cy="115" rx="26" ry="15" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<text x="150" y="119" text-anchor="middle" font-size="13" fill="#0f766e">山峰</text>' +
-      '<ellipse cx="360" cy="105" rx="70" ry="48" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="360" cy="105" rx="44" ry="30" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="360" cy="105" rx="20" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="440" cy="135" rx="58" ry="42" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="440" cy="135" rx="34" ry="24" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<ellipse cx="440" cy="135" rx="14" ry="10" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<text x="400" y="122" text-anchor="middle" font-size="13" fill="#b45309">鞍部</text>' +
-      '<path d="M540 40 L500 105 L555 105 L520 175 L585 175" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<path d="M555 40 L520 105 L575 105 L540 175 L600 175" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
-      '<text x="556" y="205" text-anchor="middle" font-size="13" fill="#2563eb">山谷</text>' +
-      '<line x1="60" y1="212" x2="150" y2="212" stroke="#dc2626" stroke-width="4"/><line x1="66" y1="220" x2="150" y2="220" stroke="#dc2626" stroke-width="4"/><line x1="72" y1="228" x2="150" y2="228" stroke="#dc2626" stroke-width="4"/>' +
-      '<text x="105" y="246" text-anchor="middle" font-size="12" fill="#dc2626">陡崖（等高线重合）</text></svg>' +
-      '<p class="small muted" style="margin:8px 0 0"><b>山峰</b>：闭合曲线、中间高四周低；<b>鞍部</b>：两个山峰之间的低地；<b>山谷</b>：等高线向<b>高处</b>凸（河流发育）；<b>山脊</b>：等高线向<b>低处</b>凸（分水岭）；<b>陡崖</b>：等高线重合。</p></div>' +
-      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌿</span><div class="grow"><h2>自然带</h2><p>从赤道到两极的水平地带性</p></div></div>' +
+      '<ellipse cx="150" cy="115" rx="125" ry="75" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="150" cy="115" rx="92" ry="55" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="150" cy="115" rx="58" ry="34" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="150" cy="115" rx="26" ry="15" fill="none" stroke="#94a3b8" stroke-width="1.6"/><text x="150" y="119" text-anchor="middle" font-size="13" fill="#0f766e">山峰</text>' +
+      '<ellipse cx="360" cy="105" rx="70" ry="48" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="360" cy="105" rx="44" ry="30" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="360" cy="105" rx="20" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.6"/>' +
+      '<ellipse cx="440" cy="135" rx="58" ry="42" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="440" cy="135" rx="34" ry="24" fill="none" stroke="#94a3b8" stroke-width="1.6"/><ellipse cx="440" cy="135" rx="14" ry="10" fill="none" stroke="#94a3b8" stroke-width="1.6"/><text x="400" y="122" text-anchor="middle" font-size="13" fill="#b45309">鞍部</text>' +
+      '<path d="M540 40 L500 105 L555 105 L520 175 L585 175" fill="none" stroke="#94a3b8" stroke-width="1.6"/><path d="M555 40 L520 105 L575 105 L540 175 L600 175" fill="none" stroke="#94a3b8" stroke-width="1.6"/><text x="556" y="205" text-anchor="middle" font-size="13" fill="#2563eb">山谷</text>' +
+      '<line x1="60" y1="212" x2="150" y2="212" stroke="#dc2626" stroke-width="4"/><line x1="66" y1="220" x2="150" y2="220" stroke="#dc2626" stroke-width="4"/><line x1="72" y1="228" x2="150" y2="228" stroke="#dc2626" stroke-width="4"/><text x="105" y="246" text-anchor="middle" font-size="12" fill="#dc2626">陡崖（等高线重合）</text></svg>' +
+      '<p class="small muted" style="margin:8px 0 0"><b>山峰</b>闭合中间高；<b>鞍部</b>两峰之间低地；<b>山谷</b>等高线向<b>高处</b>凸（有河流）；<b>山脊</b>向<b>低处</b>凸（分水岭）；<b>陡崖</b>等高线重合。</p></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">🌿</span><div class="grow"><h2>自然带</h2><p>从赤道到两极</p></div></div>' +
       '<div class="zone"><div style="background:#166534">热带雨林带</div><div style="background:#4d7c0f">热带草原带</div><div style="background:#b45309">热带荒漠带</div><div style="background:#0f766e">亚热带常绿硬叶林</div><div style="background:#15803d">温带落叶阔叶林</div><div style="background:#065f46">亚寒带针叶林</div><div style="background:#7c3aed">苔原带</div><div style="background:#38bdf8">冰原带</div></div>' +
-      '<p class="small muted" style="margin:10px 0 0">规律：<b>赤道→两极</b>随纬度升高，热量减少，自然带依次更替（纬度地带性）；同纬度<b>沿海→内陆</b>，水分减少，出现森林→草原→荒漠的更替（经度地带性）；山地随海拔升高也出现类似由赤道到两极的更替，即<b>垂直地带性</b>。</p></div>';
-
-    wrap = document.getElementById('globeWrap'); cv = document.getElementById('globeCv'); ctx = cv.getContext('2d');
-    document.getElementById('glFrom').value = '北京'; document.getElementById('glTo').value = '纽约';
-    document.getElementById('tzA').value = '北京'; document.getElementById('tzB').value = '伦敦';
-    document.getElementById('ltA').value = '北京'; document.getElementById('ltB').value = '伦敦';
-    updateTZ(); updateSun(); localTimeSwap(); climate();
-    function resize() { var r = wrap.getBoundingClientRect(); cv.width = r.width * (devicePixelRatio || 1); cv.height = r.height * (devicePixelRatio || 1); draw(); }
-    wrap.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; if (wrap.setPointerCapture) wrap.setPointerCapture(e.pointerId); });
-    wrap.addEventListener('pointermove', function (e) { if (!drag) return; rot.yaw += (e.clientX - drag.x) * 0.008; rot.pitch = Math.max(-1.3, Math.min(1.3, rot.pitch + (e.clientY - drag.y) * 0.006)); drag = { x: e.clientX, y: e.clientY }; draw(); });
-    wrap.addEventListener('pointerup', function (e) {
-      if (drag && Math.abs(e.clientX - drag.x) < 3 && Math.abs(e.clientY - drag.y) < 3) {
-        var r = cv.getBoundingClientRect(), cx = cv.width / 2, cy = cv.height / 2, R = Math.min(cv.width, cv.height) * 0.36 * zoom;
-        var mx = (e.clientX - r.left) * (devicePixelRatio || 1), my = (e.clientY - r.top) * (devicePixelRatio || 1);
-        var hit = CITIES.map(function (c) { var p = project(c.lat, c.lng, cx, cy, R); return { c: c, d: p.vis ? Math.hypot(p.x - mx, p.y - my) : 1e9 }; }).sort(function (a, b) { return a.d - b.d; })[0];
-        var box = document.getElementById('globeInfo');
-        if (hit && hit.d < 22) { box.textContent = hit.c.name + ' · ' + zoneText({ lat: hit.c.lat, lng: hit.c.lng }); }
-        else { var p = unproject(mx, my, cx, cy, R); box.textContent = p ? zoneText(p) : '点到了球外，请点球面'; }
-      }
-      drag = null;
-    });
-    wrap.addEventListener('wheel', function (e) { e.preventDefault(); zoom = Math.max(0.6, Math.min(2.4, zoom * (e.deltaY > 0 ? 0.94 : 1.06))); draw(); }, { passive: false });
-    addEventListener('resize', resize);
-    resize();
-    if (!raf) raf = requestAnimationFrame(loop);
+      '<p class="small muted" style="margin:10px 0 0">赤道→两极：热量减少，自然带依次更替（纬度地带性）；同纬度沿海→内陆：水分减少，森林→草原→荒漠（经度地带性）；山地随海拔升高出现类似更替（垂直地带性）。</p></div>' +
+      '</div>';
   }
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
+
+  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, tab: tab, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
