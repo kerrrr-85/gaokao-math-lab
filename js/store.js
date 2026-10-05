@@ -2,10 +2,10 @@
 (function (global) {
   var KEY = 'gml_progress_v1';
   function defaults() {
-    return { version: 1, reviews: {}, attempts: [], mastery: {}, settings: { newPerDay: 6, reviewPerDay: 20, ai: { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }, voice: { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }, weather: { city: '北京' } }, createdAt: Date.now() };
+    return { version: 1, reviews: {}, attempts: [], mastery: {}, settings: { newPerDay: 6, reviewPerDay: 20, ai: { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }, voice: { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }, weather: { city: '青树坪', lat: 27.38083, lon: 112.02056 } }, createdAt: Date.now() };
   }
   var state = load();
-  function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.version === 1) { s.reviews = s.reviews || {}; s.attempts = s.attempts || []; s.mastery = s.mastery || {}; s.settings = s.settings || {}; if (!s.settings.ai) s.settings.ai = { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }; if (!s.settings.voice) s.settings.voice = { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }; if (!s.settings.weather) s.settings.weather = { city: '北京' }; return s; } } catch (e) {} return defaults(); }
+  function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.version === 1) { s.reviews = s.reviews || {}; s.attempts = s.attempts || []; s.mastery = s.mastery || {}; s.settings = s.settings || {}; if (!s.settings.ai) s.settings.ai = { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }; if (!s.settings.voice) s.settings.voice = { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }; if (!s.settings.weather) s.settings.weather = { city: '青树坪', lat: 27.38083, lon: 112.02056 }; return s; } } catch (e) {} return defaults(); }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   var Store = {
     get: function () { return state; },

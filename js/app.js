@@ -37,7 +37,7 @@
     var avg = 0, cnt = 0;
     D.nodes.forEach(function (n) { avg += Store.masteryOf(n.id); cnt++; });
     avg = cnt ? Math.round(avg / cnt) : 0;
-    var html = '<div class="hero"><div class="wxCardContainer"><div class="wxCard" onclick="App.refreshWeather()"><div style="text-align:center"><p class="wxCity" id="wxCity">' + (((Store.get().settings||{}).weather||{}).city || '北京') + '</p><p class="wxWeather" id="wxDesc">加载中…</p></div><div class="wxTemp" id="wxTemp">--°</div><div class="wxMinMax"><div class="wxMin"><span class="wxMinH">最低</span><span class="wxMinT" id="wxMin">--°</span></div><div class="wxMax"><span class="wxMaxH">最高</span><span class="wxMaxT" id="wxMax">--°</span></div></div></div></div><div class="heroText"><h1>今天，先把该复习的做完</h1><p>待复习 ' + due.length + ' 张 · 新卡 ' + nw.length + ' 张 · 累计练习 ' + st.total + ' 题</p><div class="row" style="margin-top:12px"><button class="btn primary" onclick="go(\'#/practice/start\')">开始练习</button><button class="btn" onclick="go(\'#/map\')">看知识图谱</button></div></div></div>';
+    var html = '<div class="hero"><div class="wxCardContainer"><div class="wxCard" onclick="App.refreshWeather()"><div style="text-align:center"><p class="wxCity" id="wxCity">' + (((Store.get().settings||{}).weather||{}).city || '青树坪') + '</p><p class="wxWeather" id="wxDesc">加载中…</p></div><div class="wxTemp" id="wxTemp">--°</div><div class="wxMinMax"><div class="wxMin"><span class="wxMinH">最低</span><span class="wxMinT" id="wxMin">--°</span></div><div class="wxMax"><span class="wxMaxH">最高</span><span class="wxMaxT" id="wxMax">--°</span></div></div></div></div><div class="heroText"><h1>今天，先把该复习的做完</h1><p>待复习 ' + due.length + ' 张 · 新卡 ' + nw.length + ' 张 · 累计练习 ' + st.total + ' 题</p><div class="row" style="margin-top:12px"><button class="btn primary" onclick="go(\'#/practice/start\')">开始练习</button><button class="btn" onclick="go(\'#/map\')">看知识图谱</button></div></div></div>';
     html += '<div class="kpi">' +
       '<div class="card"><b>' + due.length + '</b><span class="small muted">待复习卡</span></div>' +
       '<div class="card"><b>' + nw.length + '</b><span class="small muted">新卡</span></div>' +
@@ -68,10 +68,18 @@
   function applyWeather(d) { var q = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }; q('wxCity', d.city); q('wxDesc', wmoText(d.code)); q('wxTemp', Math.round(d.temp) + '°'); q('wxMin', Math.round(d.min) + '°'); q('wxMax', Math.round(d.max) + '°'); }
   function refreshWeather() { loadWeather(true); }
   function loadWeather(force) {
-    var city = ((Store.get().settings || {}).weather || {}).city || '北京';
+    var wx = ((Store.get().settings || {}).weather || {});
+    var city = wx.city || '青树坪', wlat = wx.lat, wlon = wx.lon;
     var el = document.getElementById('wxCity'); if (el) el.textContent = city;
     var cache = null; try { cache = JSON.parse(localStorage.getItem('gml_weather')); } catch (e) {}
-    if (!force && cache && cache.city === city && Date.now() - cache.at < 1800000) { applyWeather(cache); return; }
+    if (!force && cache && cache.city === city && Date.now() - cache.at < 600000) { applyWeather(cache); return; }
+    if (wlat != null && wlon != null) {
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + wlat + '&longitude=' + wlon + '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1')
+        .then(function (r) { return r.json(); })
+        .then(function (w) { var d = { city: city, at: Date.now(), temp: w.current.temperature_2m, code: w.current.weather_code, max: w.daily.temperature_2m_max[0], min: w.daily.temperature_2m_min[0] }; try { localStorage.setItem('gml_weather', JSON.stringify(d)); } catch (e) {} applyWeather(d); })
+        .catch(function () { var t = document.getElementById('wxDesc'); if (t) t.textContent = '天气获取失败（点卡片重试）'; });
+      return;
+    }
     var desc = document.getElementById('wxDesc'); if (desc) desc.textContent = '加载中…';
     fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&name=' + encodeURIComponent(city))
       .then(function (r) { return r.json(); })
@@ -292,7 +300,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v12</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v13</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
@@ -370,6 +378,7 @@
     }
   });
   window.addEventListener('hashchange', router);
+  setInterval(function () { if (document.getElementById('wxDesc')) loadWeather(true); }, 900000);
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('./sw.js').catch(function () {}); }
   router();
 })();
