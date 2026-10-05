@@ -42,5 +42,8 @@
     h += '<p class="small muted">' + (a.source === 'rule' ? '（离线规则版分析）' : '（AI 分析）') + '</p></div>';
     return h;
   }
-  global.AI = { rule: rule, analyze: analyze, health: health, render: render, pretty: pretty };
+  function blobHTML(text) {
+    return '<div class="ai-blob" role="status" aria-live="polite"><div class="blob-stage"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div><p class="blob-text">' + esc(text || 'AI 思考中…') + '</p></div>';
+  }
+  global.AI = { rule: rule, analyze: analyze, health: health, render: render, pretty: pretty, blobHTML: blobHTML };
 })(window);

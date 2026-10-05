@@ -87,3 +87,13 @@ input[type=text],textarea,select{font-size:16px}
 .modalbox canvas{width:100%;height:auto;touch-action:none;border:1px dashed var(--line);border-radius:12px;margin-top:10px;background:#fff;display:block}
 .aiBox{background:#f0f9f7;border:1px solid #bfe3dd;border-radius:12px;padding:12px;margin-top:12px}
 .aiBox p{margin:6px 0}
+
+.ai-blob{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0 10px}
+.blob-stage{position:relative;width:132px;height:132px;display:flex;align-items:center;justify-content:center}
+.blob{position:absolute;width:82px;height:82px;filter:blur(9px);opacity:.85;mix-blend-mode:multiply;animation:blobmorph 7s ease-in-out infinite, blobspin 12s linear infinite}
+.blob.b1{background:radial-gradient(circle at 30% 30%,#2dd4bf,#0f766e);animation-duration:7s,11s}
+.blob.b2{background:radial-gradient(circle at 70% 40%,#38bdf8,#6366f1);animation-duration:9s,15s;animation-direction:reverse}
+.blob.b3{background:radial-gradient(circle at 50% 70%,#a78bfa,#f472b6);animation-duration:11s,19s}
+@keyframes blobmorph{0%,100%{border-radius:42% 58% 63% 37%/41% 44% 56% 59%;transform:scale(1)}33%{border-radius:62% 38% 42% 58%/56% 62% 38% 44%;transform:scale(1.12)}66%{border-radius:38% 62% 58% 42%/62% 38% 44% 56%;transform:scale(.94)}}
+@keyframes blobspin{to{transform:rotate(360deg)}}
+.blob-text{margin:0;font-size:14px;color:var(--primary);font-weight:600;letter-spacing:1px}
