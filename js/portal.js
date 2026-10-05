@@ -23,6 +23,22 @@
     var bg = TILE_STYLE[key] || TILE_STYLE.study;
     return a + '<span class="tile-badge" style="background:' + bg + '">' + (ICONS[key] || '') + '</span><span class="tlabel">' + label + '</span></a>';
   }
+  function streakDays() {
+    var days = {};
+    Store.get().attempts.forEach(function (a) { var d = new Date(a.createdAt || 0); d.setHours(0, 0, 0, 0); days[d.getTime()] = 1; });
+    var n = 0, t = new Date(); t.setHours(0, 0, 0, 0);
+    while (days[t.getTime()]) { n++; t.setDate(t.getDate() - 1); }
+    return n;
+  }
+  function avgMastery() {
+    var nodes = window.DATA ? DATA.nodes : [], sum = 0;
+    nodes.forEach(function (x) { sum += Store.masteryOf(x.id); });
+    return nodes.length ? Math.round(sum / nodes.length) : 0;
+  }
+  function todayCount() {
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    return Store.get().attempts.filter(function (a) { return (a.createdAt || 0) >= t.getTime(); }).length;
+  }
   function greeting() { var h = new Date().getHours(); return h < 6 ? '凌晨好' : h < 11 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : h < 23 ? '晚上好' : '夜深了'; }
   function dateStr() { var d = new Date(), w = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]; return (d.getMonth() + 1) + '月' + d.getDate() + '日 · 星期' + w; }
   function wmoText(c) { var m = {0:'晴',1:'基本晴朗',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'小雨',55:'中雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',95:'雷阵雨',96:'雷暴',99:'强雷暴'}; return m[c] || '--'; }
@@ -48,10 +64,23 @@
       '<div class="hero2"><div><div class="hi">' + dateStr() + '</div><h1>' + greeting() + '，今天想做什么？</h1></div>' +
       '<div class="quick"><a href="#/today">待复习 ' + Store.dueCards().length + '</a><a href="#/practice/start">开始刷题</a><a href="#/globe">地球</a><a href="#/video">B站</a></div></div>' +
       '<div class="pt-wx" onclick="Portal.loadWeather(true)"><div><div class="small" id="ptCity">青树坪</div><div class="small" id="ptRange">今日 --~--°</div></div><div class="t" id="ptTemp">--°</div><div id="ptDesc">加载中…</div></div>' +
+      '<div class="kpi pt-kpi"><div class="stat"><b>' + Store.dueCards().length + '</b><span>待复习</span></div>' +
+      '<div class="stat"><b>' + todayCount() + '</b><span>今日已练</span></div>' +
+      '<div class="stat"><b>' + avgMastery() + '%</b><span>总掌握度</span></div>' +
+      '<div class="stat"><b>' + streakDays() + '</b><span>连续天数</span></div></div>' +
       '<div class="pt-group">学习</div><div class="pt-grid">' + tile('study','学习台','#/today') + tile('search','搜索','#/search') + '</div>' +
       '<div class="pt-group">工具</div><div class="pt-grid">' + tile('globe','地球','#/globe') + tile('weather','天气','#/today') + tile('settings','设置','#/settings') + '</div>' +
       '<div class="pt-group">娱乐</div><div class="pt-grid">' + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) + '</div>' +
-      '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p></div>';
+      '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p>' +
+      (function () {
+        var wrongs = Store.wrong().slice(0, 3);
+        if (!wrongs.length) return '';
+        return '<div class="pt-note"><b style="font-size:14px">最近错题</b>' + wrongs.map(function (a) {
+          var q = null; (window.DATA.questions || []).forEach(function (x) { if (x.id === a.questionId) q = x; });
+          if (!q) return '';
+          return '<div class="row"><span class="grow small" style="color:rgba(255,255,255,.86)">' + q.stem.slice(0, 26) + '…</span><span class="small" style="color:rgba(255,255,255,.5)">' + (a.errorType || '未归因') + '</span></div>';
+        }).join('') + '<div class="row" style="margin-top:10px"><a href="#/wrong">去错题本攻克 →</a></div></div>';
+      })() + '</div>';
     loadWeather(false);
     if (global.Galaxy) { var gc = document.getElementById('galaxyCanvas'); if (gc) global.Galaxy.mount(gc); }
     if (global.Anim && Anim.ok()) { Anim.fadeIn('.pt-wx', 60); Anim.enter('.pt-tile', 55); }
