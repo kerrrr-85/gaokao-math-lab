@@ -110,36 +110,31 @@ input[type=text],textarea,select{font-size:16px}
 .heroText{max-width:430px;color:#fff}
 .heroText h1{color:#fff;margin-bottom:6px}
 .heroText p{color:#c7d3e8;font-size:14px}
-.cardContainer{width:fit-content;position:relative;display:flex;align-items:center;justify-content:center}
-.card{position:relative;z-index:1;width:220px;height:250px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:20px 10px;border-radius:16px;backdrop-filter:blur(30px);background-color:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);cursor:pointer}
-.city{font-weight:700;font-size:.95em;letter-spacing:1.2px;color:#fff;margin:0}
-.weather{font-weight:500;font-size:.72em;letter-spacing:1.2px;color:#c5c5c5;margin:2px 0 0}
-.temp{font-size:2.6em;font-weight:800;color:#fff;line-height:1}
-.minmaxContainer{width:100%;display:flex;align-items:center;justify-content:space-between}
-.min,.max{width:50%;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0 16px;gap:4px}
-.max{align-items:flex-start;border-left:2px solid rgba(255,255,255,.5)}
-.maxHeading,.minHeading{font-size:.7em;font-weight:600;color:#fff}
-.maxTemp,.minTemp{font-size:.8em;font-weight:500;color:#c5c5c5}
-.cardContainer::before{width:100px;height:100px;content:"";position:absolute;background:linear-gradient(135deg,#90a1ff,#da00ff);z-index:0;border-radius:50%;left:70px;top:40px;transition:all 1s;filter:blur(2px)}
-.cardContainer:hover::before{transform:translate(-50px,50px)}
-
-/* hero-mobile-fix: 手机端缩小天气卡 */
-@media (max-width: 700px){
+.wxCardContainer{width:fit-content;position:relative;display:flex;align-items:center;justify-content:center}
+.wxCard{position:relative;z-index:1;width:220px;height:250px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:20px 10px;border-radius:16px;backdrop-filter:blur(30px);background-color:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);cursor:pointer}
+.wxCity{font-weight:700;font-size:.95em;letter-spacing:1.2px;color:#fff;margin:0}
+.wxWeather{font-weight:500;font-size:.72em;letter-spacing:1.2px;color:#c5c5c5;margin:2px 0 0}
+.wxTemp{font-size:2.6em;font-weight:800;color:#fff;line-height:1}
+.wxMinMax{width:100%;display:flex;align-items:center;justify-content:space-between}
+.wxMin,.wxMax{width:50%;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0 16px;gap:4px}
+.wxMax{align-items:flex-start;border-left:2px solid rgba(255,255,255,.5)}
+.wxMaxH,.wxMinH{font-size:.7em;font-weight:600;color:#fff}
+.wxMaxT,.wxMinT{font-size:.8em;font-weight:500;color:#c5c5c5}
+.wxCardContainer::before{width:100px;height:100px;content:"";position:absolute;background:linear-gradient(135deg,#90a1ff,#da00ff);z-index:0;border-radius:50%;left:70px;top:40px;transition:all 1s;filter:blur(2px)}
+.wxCardContainer:hover::before{transform:translate(-50px,50px)}
+@media (max-width:700px){
   .hero{padding:14px 12px;gap:14px;border-radius:16px}
   .heroText{max-width:100%;text-align:center}
   .heroText h1{font-size:18px;margin-bottom:4px}
   .heroText p{font-size:13px}
   .heroText .row{justify-content:center}
-  .card{width:150px;height:168px;padding:12px 8px;border-radius:14px}
-  .city{font-size:.82em}
-  .weather{font-size:.62em}
-  .temp{font-size:1.7em}
-  .min,.max{padding:0 8px;gap:2px}
-  .maxHeading,.minHeading{font-size:.6em}
-  .maxTemp,.minTemp{font-size:.68em}
-  .cardContainer::before{width:64px;height:64px;left:46px;top:26px}
+  .wxCard{width:150px;height:168px;padding:12px 8px;border-radius:14px}
+  .wxCity{font-size:.82em}
+  .wxWeather{font-size:.62em}
+  .wxTemp{font-size:1.7em}
+  .wxMin,.wxMax{padding:0 8px;gap:2px}
+  .wxMaxH,.wxMinH{font-size:.6em}
+  .wxMaxT,.wxMinT{font-size:.68em}
+  .wxCardContainer::before{width:64px;height:64px;left:46px;top:26px}
 }
-@media (max-width: 380px){
-  .card{width:132px;height:150px}
-  .temp{font-size:1.5em}
-}
+@media (max-width:380px){ .wxCard{width:132px;height:150px} .wxTemp{font-size:1.5em} }
