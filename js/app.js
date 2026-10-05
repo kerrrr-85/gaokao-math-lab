@@ -39,6 +39,10 @@
   function setTab(page) {
     document.body.classList.toggle('portal-dark', page === 'portal' || !page);
     if (page !== 'portal' && window.Galaxy) Galaxy.stop();
+    var studyPages = { today: 1, map: 1, node: 1, method: 1, practice: 1, wrong: 1, stats: 1, settings: 1, search: 1 };
+    var isStudy = !!studyPages[page];
+    document.body.classList.toggle('study-bg', isStudy);
+    if (window.DotGrid) { if (isStudy) DotGrid.mount(document.getElementById('dotCanvas')); else DotGrid.stop(); }
     var bb = document.getElementById('backBtn');
     if (bb) bb.style.display = (page === 'portal' || !page) ? 'none' : 'inline-flex';
     var learn = { today: 1, map: 1, node: 1, method: 1, practice: 1, wrong: 1, stats: 1, settings: 1, study: 1 };
@@ -272,16 +276,24 @@
   }
   function renderMethod(id) {
     var m = methodById[id]; if (!m) { view.innerHTML = '<div class="card">未找到该方法卡。</div>'; return; }
-    var n = nodeById[m.node];
-    var html = '<div class="card"><div class="row">' + diffTag(m.diff) + '<a class="tag p" href="#/node/' + m.node + '">' + esc(n ? n.title : '') + '</a></div><h1 style="margin-top:10px">' + esc(m.title) + '</h1>' +
-      '<p><b>识别信号：</b>' + esc(m.trigger) + '</p>' +
-      '<p><b>公式/依据：</b>' + esc(m.formula) + '</p>' +
-      '<p><b>易错点：</b>' + esc(m.mistake) + '</p>' +
-      '<h3>操作步骤</h3><ol class="steps">' + m.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>' +
-      '<div class="row" style="margin-top:14px"><button class="btn" onclick="App.reviewCard(\'method:' + m.id + '\',0)">不会</button><button class="btn" onclick="App.reviewCard(\'method:' + m.id + '\',1)">半会</button><button class="btn primary" onclick="App.reviewCard(\'method:' + m.id + '\',2)">会了</button></div></div>';
+    var n = nodeById[m.node] || {};
+    var card = Store.get().reviews['method:' + m.id] || {};
+    var html = '<div class="phead"><span class="ico">🧩</span><div class="grow"><h2>方法卡</h2><p>' + esc(n.title || '') + ' · ' + (m.diff || '') + '</p></div></div>';
+    html += '<div class="flip" onclick="App.flipCard()"><div class="flip-inner" id="flipInner">' +
+      '<div class="flip-face front"><div class="flip-tag">识别信号</div><h2>' + esc(m.title) + '</h2><p class="muted">' + esc(m.trigger) + '</p><div class="flip-hint">点击翻面看步骤 →</div></div>' +
+      '<div class="flip-face back"><div class="flip-tag">步骤 · 公式 · 易错点</div><ol class="steps">' + m.steps.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' +
+      '<p class="small"><b>公式/依据：</b>' + esc(m.formula) + '</p><p class="small" style="color:#b91c1c"><b>易错：</b>' + esc(m.mistake) + '</p><div class="flip-hint">点击翻回正面 ←</div></div>' +
+      '</div></div>';
+    html += '<div class="card" style="text-align:center"><p class="small muted" style="margin-top:0">这张卡掌握得怎么样？</p><div class="row" style="justify-content:center"><button class="btn" onclick="event.stopPropagation();App.reviewCard(\'method:' + m.id + '\',0)">不会</button><button class="btn" onclick="event.stopPropagation();App.reviewCard(\'method:' + m.id + '\',1)">半会</button><button class="btn primary" onclick="event.stopPropagation();App.reviewCard(\'method:' + m.id + '\',2)">会了</button></div>' +
+      '<p class="small muted" style="margin:10px 0 0">已复习 ' + (card.reps || 0) + ' 次</p>' +
+      '<a class="btn sm" style="margin-top:10px" href="#/node/' + m.node + '">看所属知识点</a></div>';
     view.innerHTML = html;
+    if (window.Anim && Anim.ok()) Anim.fadeIn('.flip', 40);
   }
-
+  function flipCard() { var el = document.getElementById('flipInner'); if (el) el.classList.toggle('flipped'); }
+  function applyTheme() { var t = (Store.get().settings || {}).theme || 'light'; document.body.classList.toggle('dark', t === 'dark'); }
+  function setTheme(t) { Store.get().settings.theme = t; Store.save(); applyTheme(); toast(t === 'dark' ? '已切换到深色' : '已切换到浅色'); renderSettings(); }
+  function clearDraft() { var q = session.list[session.i]; if (q && window.InputTools && InputTools.clearPad) InputTools.clearPad('draftPad', q.id); }
   /* ============ 练习 ============ */
   var session = { list: [], i: 0, answered: false, lastAttempt: null };
   var pf = { diff: '', type: '', count: 8 };
@@ -328,12 +340,14 @@
       html += '<div style="margin-top:12px"><textarea id="solInput" placeholder="写下你的解答过程"></textarea></div>' + InputTools.toolbarHTML('solInput');
     }
     html += '<div class="seclabel" style="margin-top:16px">你的思路（可选，AI 据此指出错在哪）</div><textarea id="stepsInput" placeholder="例如：先求定义域 → 求导 → 判断单调性 → 找极值"></textarea>' + InputTools.toolbarHTML('stepsInput');
+    html += '<div class="card tight" style="margin-top:12px"><div class="row"><b class="grow small">✍️ 草稿纸（自动保存）</b><button class="btn sm" onclick="App.clearDraft()">清空</button></div><canvas id="draftPad" class="draft" width="760" height="320"></canvas></div>';
     html += '<div id="ansArea"></div>';
     html += '<div class="row" style="margin-top:14px"><button class="btn primary" id="submitBtn" onclick="App.submit()">提交</button><button class="btn ghost" onclick="App.nextQ()">跳过</button></div>';
     html += '</div>';
     view.innerHTML = html;
     session.answered = false;
     session.qStart = Date.now();
+    if (window.InputTools && InputTools.pad) InputTools.pad('draftPad', q.id);
   }
   function selOpt(el) { Array.prototype.forEach.call(document.querySelectorAll('#opts .opt'), function (o) { o.classList.remove('sel'); }); el.classList.add('sel'); }
   function norm(s) { return String(s || '').replace(/\s+/g, '').replace(/[×xX]/g, 'x').replace(/[－—–−]/g, '-').replace(/[，,]/g, '').toLowerCase(); }
@@ -509,7 +523,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v28 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v29 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
@@ -523,6 +537,7 @@
       '<label class="small" style="display:block;margin-top:8px">音色<select id="voVoice" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"></select></label>' +
       '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label>' +
       '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.testVoice()">🔊 试听</button><button class="btn sm" onclick="App.voiceDiag()">🩺 语音诊断</button></div><p class="small muted" id="voDiag"></p></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">🎨</span><div class="grow"><h2>外观</h2><p>浅色 / 深色主题</p></div></div><div class="row"><button class="chip' + ((s.theme || 'light') === 'light' ? ' on' : '') + '" onclick="App.setTheme(\'light\')">浅色</button><button class="chip' + (s.theme === 'dark' ? ' on' : '') + '" onclick="App.setTheme(\'dark\')">深色</button></div></div>';
     html += '<div class="card" style="text-align:center"><button class="btn primary" onclick="App.saveSettings()">保存设置</button></div>';
     view.innerHTML = html;
     fillVoices();
@@ -572,7 +587,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, setPF: setPF,
+    go: go, back: back, setModule: setModule, setPF: setPF, flipCard: flipCard, setTheme: setTheme, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
@@ -601,5 +616,6 @@
   window.addEventListener('hashchange', router);
   setInterval(function () { if (document.getElementById('wxDesc')) loadWeather(true); }, 900000);
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('./sw.js').catch(function () {}); }
+  applyTheme();
   router();
 })();

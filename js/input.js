@@ -76,6 +76,17 @@
       m.parentNode.removeChild(m);
     };
   }
+  function pad(id, key) {
+    var cv = document.getElementById(id); if (!cv) return;
+    var ctx = cv.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
+    try { var saved = localStorage.getItem('gml_draft_' + key); if (saved) { var img = new Image(); img.onload = function () { ctx.drawImage(img, 0, 0, cv.width, cv.height); }; img.src = saved; } } catch (e) {}
+    var drawing = false;
+    function pos(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; }
+    cv.addEventListener('pointerdown', function (e) { e.preventDefault(); drawing = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (cv.setPointerCapture) cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', function (e) { if (!drawing) return; e.preventDefault(); var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    cv.addEventListener('pointerup', function () { drawing = false; try { localStorage.setItem('gml_draft_' + key, cv.toDataURL('image/png')); } catch (err) {} });
+  }
+  function clearPad(id, key) { var cv = document.getElementById(id); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); try { localStorage.removeItem('gml_draft_' + key); } catch (e) {} }
   function getImage(id) { return images[id] || null; }
   function clearImage(id) { delete images[id]; }
 
@@ -206,5 +217,5 @@
   function copyText(t) { try { navigator.clipboard.writeText(String(t || '')); return true; } catch (e) { return false; } }
   if (global.speechSynthesis && typeof speechSynthesis.addEventListener === 'function') { speechSynthesis.addEventListener('voiceschanged', refreshVoices); }
 
-  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record, showCube: showCube, hideCube: hideCube };
+  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record, showCube: showCube, hideCube: hideCube, pad: pad, clearPad: clearPad };
 })(window);

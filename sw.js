@@ -1,5 +1,5 @@
-const CACHE='gml-v28';
-const ASSETS=['./','./index.html','./css/style.css','./js/data.js','./data/module-trig.js','./data/module-seq.js','./js/srs.js','./js/store.js','./js/input.js','./js/ai.js','./vendor/anime.umd.min.js','./js/anim.js','./js/galaxy.js','./js/portal.js','./js/globe.js','./data/videos.js','./data/cities.js','./js/app.js','./manifest.webmanifest','./icon.svg'];
+const CACHE='gml-v29';
+const ASSETS=['./','./index.html','./css/style.css','./js/data.js','./data/module-trig.js','./data/module-seq.js','./js/srs.js','./js/store.js','./js/input.js','./js/ai.js','./vendor/anime.umd.min.js','./js/anim.js','./js/dotgrid.js','./js/galaxy.js','./js/portal.js','./js/globe.js','./data/videos.js','./data/cities.js','./js/app.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).catch(()=>{}).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
