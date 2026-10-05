@@ -1,0 +1,12 @@
+﻿name = "gaokao-math-ai"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+ALLOW_ORIGINS = "https://kerrrr-85.github.io,http://localhost:8000,http://127.0.0.1:8000"
+TEXT_MODEL = "qwen-plus"
+VISION_MODEL = "qwen-vl-max"
+RATE_LIMIT_PER_HOUR = "60"
+MAX_TOKENS = "1200"
+# 密钥不要写在这里！用命令行设置：
+#   wrangler secret put DASHSCOPE_API_KEY

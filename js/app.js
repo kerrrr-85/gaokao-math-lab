@@ -136,10 +136,11 @@
     if (q.type === 'choice') {
       html += '<div style="margin-top:12px" id="opts">' + q.options.map(function (o, i) { return '<div class="opt" data-k="' + 'ABCD'[i] + '" onclick="App.selOpt(this)"><b>' + 'ABCD'[i] + '.</b><span>' + esc(o) + '</span></div>'; }).join('') + '</div>';
     } else if (q.type === 'fill') {
-      html += '<div style="margin-top:12px"><input type="text" id="fillInput" placeholder="输入答案，如 x≥1"></div>';
+      html += '<div style="margin-top:12px"><input type="text" id="fillInput" placeholder="输入答案，如 x≥1"></div>' + InputTools.toolbarHTML('fillInput');
     } else {
-      html += '<div style="margin-top:12px"><textarea id="solInput" placeholder="写下你的思路（可选），再对照答案自评"></textarea></div>';
+      html += '<div style="margin-top:12px"><textarea id="solInput" placeholder="写下你的解答过程"></textarea></div>' + InputTools.toolbarHTML('solInput');
     }
+    html += '<div class="seclabel" style="margin-top:16px">你的思路（可选，AI 据此指出错在哪）</div><textarea id="stepsInput" placeholder="例如：先求定义域 → 求导 → 判断单调性 → 找极值"></textarea>' + InputTools.toolbarHTML('stepsInput');
     html += '<div id="ansArea"></div>';
     html += '<div class="row" style="margin-top:14px"><button class="btn primary" id="submitBtn" onclick="App.submit()">提交</button><button class="btn ghost" onclick="App.nextQ()">跳过</button></div>';
     html += '</div>';
@@ -154,8 +155,10 @@
     if (q.type === 'choice') { var sel = document.querySelector('#opts .opt.sel'); if (!sel) { toast('请选择一个选项'); return; } userAnswer = sel.dataset.k; result = (userAnswer === q.answer) ? 'ok' : 'no'; }
     else if (q.type === 'fill') { userAnswer = (document.getElementById('fillInput') || {}).value || ''; result = (norm(userAnswer) === norm(q.answer)) ? 'ok' : 'no'; }
     else { userAnswer = (document.getElementById('solInput') || {}).value || ''; result = 'half'; }
+    var userSteps = (document.getElementById('stepsInput') || {}).value || '';
+    var img = (window.InputTools ? (InputTools.getImage('fillInput') || InputTools.getImage('solInput') || InputTools.getImage('stepsInput')) : null);
     session.answered = true;
-    var attempt = { id: 'a' + Date.now(), questionId: q.id, nodeIds: [q.node], methodIds: q.methods, difficulty: q.diff, userAnswer: userAnswer, result: result, errorType: '', createdAt: Date.now() };
+    var attempt = { id: 'a' + Date.now(), questionId: q.id, nodeIds: [q.node], methodIds: q.methods, difficulty: q.diff, userAnswer: userAnswer, userSteps: userSteps, imageDataUrl: img || '', result: result, errorType: '', createdAt: Date.now() };
     Store.addAttempt(attempt); session.lastAttempt = attempt;
     Store.grade('question:' + q.id, result === 'ok' ? 2 : result === 'half' ? 1 : 0);
     q.methods.forEach(function (mid) { if (Store.get().reviews['method:' + mid]) Store.grade('method:' + mid, result === 'ok' ? 2 : result === 'half' ? 1 : 0); });
@@ -172,7 +175,8 @@
     } else if (result !== 'ok') {
       html += '<p class="small muted" style="margin-top:8px">错因归类（帮助统计薄弱点）：</p><div class="row">' + ['知识', '方法', '计算', '审题', '心态'].map(function (t) { return '<button class="btn sm" onclick="App.tagError(\'' + t + '\')">' + t + '</button>'; }).join('') + '</div><p style="margin-top:8px"><button class="btn sm" onclick="App.overrideOk()">其实我会，标为掌握</button></p>';
     }
-    html += '<p style="margin-top:10px"><button class="btn primary" onclick="App.nextQ()">下一题 →</button></p></div>';
+    html += '<div id="aiArea"></div>';
+    html += '<div class="row" style="margin-top:12px"><button class="btn accent" onclick="App.aiExplain()">🤖 AI 讲解</button><button class="btn" onclick="App.speakAnswer()">🔊 朗读解析</button><button class="btn" onclick="App.stopSpeak()">⏹ 停止</button><button class="btn primary" onclick="App.nextQ()">下一题 →</button></div></div>';
     document.getElementById('ansArea').innerHTML = html;
     document.getElementById('submitBtn').disabled = true;
   }
@@ -185,6 +189,29 @@
   }
   function resetPractice() { session = { list: [], i: 0, answered: false }; renderPractice(); }
 
+  function speakAnswer() { var q = session.list[session.i]; if (!q) return; InputTools.speak('题目。' + q.stem + '。参考答案：' + q.answer + '。解析：' + q.steps, Store.get().settings.voice || {}); }
+  function stopSpeak() { InputTools.stopSpeak(); }
+  function aiExplain() {
+    var q = session.list[session.i], box = document.getElementById('aiArea'); if (!q || !box) return;
+    var att = session.lastAttempt || {}, cfg = Store.get().settings.ai || {};
+    if (!cfg.enabled || !cfg.proxyUrl) { renderAI(AI.rule(q, att.userAnswer, att.userSteps)); return; }
+    box.innerHTML = '<p class="muted small">AI 正在分析你的思路…</p>';
+    AI.analyze({ question: q.stem, reference: q.answer, refSteps: q.steps, userAnswer: att.userAnswer || '', userSteps: att.userSteps || '', errorType: att.errorType || '', imageDataUrl: att.imageDataUrl || '' }, cfg.proxyUrl)
+      .then(function (a) { a.source = 'ai'; renderAI(a); })
+      .catch(function () { renderAI(AI.rule(q, att.userAnswer, att.userSteps)); });
+  }
+  function renderAI(a) {
+    var box = document.getElementById('aiArea'); if (!box) return;
+    box.innerHTML = AI.render(a);
+    if (session.lastAttempt) {
+      session.lastAttempt.aiAnalysis = a; session.lastAttempt.aiAt = Date.now();
+      var arr = Store.get().attempts;
+      for (var i = 0; i < arr.length; i++) { if (arr[i].id === session.lastAttempt.id) { arr[i].aiAnalysis = a; arr[i].aiAt = Date.now(); } }
+      Store.save();
+    }
+    var v = Store.get().settings.voice || {};
+    if (v.autoSpeak) { var txt = '判定：' + (a.verdict || '') + '。' + (a.whereWrong || []).map(function (x) { return (x.where || '') + '：' + (x.what || '') + '。' + (x.why || ''); }).join('') + ' 正确步骤：' + (a.correctSteps || ''); InputTools.speak(txt, v); }
+  }
   /* ============ 错题本 ============ */
   function renderWrong() {
     var wrongs = Store.wrong(), seen = {}, list = [];
@@ -244,12 +271,22 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v3</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v4</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
+      '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
+      '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
+      '<div class="row" style="margin-top:10px"><label class="small"><input type="checkbox" id="aiEnabled" ' + ((s.ai && s.ai.enabled) ? 'checked' : '') + '> 启用 AI 讲解</label><button class="btn sm" onclick="App.testAI()">测试连接</button></div><p class="small muted" id="aiTest"></p></div>' +
+      '<div class="card"><h2>语音</h2><p class="small muted">朗读用浏览器语音（免费）；语音输入需安卓 Chrome/Edge。</p>' +
+      '<label class="small">语速 <input type="range" id="voRate" min="0.6" max="1.6" step="0.1" value="' + ((s.voice && s.voice.rate) || 1) + '"></label>' +
+      '<label class="small" style="display:block;margin-top:8px">音色<select id="voVoice" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"></select></label>' +
+      '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label></div>' +
       '<div class="card"><h2>数据</h2><p class="small muted">进度只存在本机浏览器，不上传。换设备时可导出再导入。</p><div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn" onclick="App.resetData()">清空进度</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>' +
       '<div class="card"><h2>安装到手机</h2><p class="small muted">用手机浏览器打开线上网址后，选择“添加到主屏幕”，即可像 App 一样使用。</p></div>';
+    fillVoices();
   }
-  function saveSettings() { var s = Store.get().settings; s.newPerDay = parseInt(document.getElementById('sNew').value, 10); s.reviewPerDay = parseInt(document.getElementById('sRev').value, 10); Store.save(); toast('已保存'); updateMini(); }
+  function fillVoices() { setTimeout(function () { var sel = document.getElementById('voVoice'); if (!sel) return; var vs = InputTools.voices(); var cur = (Store.get().settings.voice || {}).voiceUri || ''; sel.innerHTML = '<option value="">系统默认</option>' + vs.map(function (v) { return '<option value="' + v.voiceURI + '"' + (cur === v.voiceURI ? ' selected' : '') + '>' + v.name + '（' + v.lang + '）</option>'; }).join(''); }, 250); }
+  function testAI() { var url = (document.getElementById('aiUrl') || {}).value || ''; var box = document.getElementById('aiTest'); if (box) box.textContent = '检测中…'; AI.health(url).then(function (r) { if (box) box.textContent = (r && r.ok) ? '连接成功 ✓' : '返回异常'; }).catch(function (e) { if (box) box.textContent = '连接失败：' + e.message; }); }
+  function saveSettings() { var s = Store.get().settings; s.newPerDay = parseInt(document.getElementById('sNew').value, 10); s.reviewPerDay = parseInt(document.getElementById('sRev').value, 10); s.ai = s.ai || {}; s.ai.proxyUrl = (document.getElementById('aiUrl') || {}).value || ''; s.ai.enabled = !!(document.getElementById('aiEnabled') || {}).checked; s.voice = s.voice || {}; s.voice.rate = parseFloat((document.getElementById('voRate') || {}).value || '1'); s.voice.voiceUri = (document.getElementById('voVoice') || {}).value || ''; s.voice.autoSpeak = !!(document.getElementById('voAuto') || {}).checked; Store.save(); toast('已保存'); updateMini(); }
   function exportData() { var b = new Blob([Store.exportJSON()], { type: 'application/json' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'gaokao-math-progress.json'; a.click(); }
   function importData(input) { var f = input.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { try { Store.importJSON(r.result); toast('导入成功'); router(); } catch (e) { toast('导入失败：' + e.message); } }; r.readAsText(f); }
   function forceUpdate() {
@@ -268,7 +305,7 @@
     if (page === 'node') renderNode(parts[1]);
     else if (page === 'method') renderMethod(parts[1]);
     else if (page === 'map') renderMap();
-    else if (page === 'practice') renderPractice();
+    else if (page === 'practice') { renderPractice(); if (parts[1] === 'start' && !session.list.length) { setTimeout(function () { beginPractice(false); }, 0); } }
     else if (page === 'wrong') renderWrong();
     else if (page === 'stats') renderStats();
     else if (page === 'search') renderSearch();
@@ -283,7 +320,8 @@
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
     startPractice: startPractice, startSingle: startSingle, selfRate: selfRate, tagError: tagError, overrideOk: overrideOk,
-    doSearch: doSearch, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData
+    doSearch: doSearch, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData,
+    aiExplain: aiExplain, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI
   };
   /* A+C：站内跳转用 replaceState（不堆历史），返回键不再一页页退 */
   function go(path) {
