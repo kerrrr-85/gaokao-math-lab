@@ -89,32 +89,63 @@
       .replace(/圆周率|派/g, 'π').replace(/阿尔法/g, 'α').replace(/贝塔/g, 'β').replace(/西塔/g, 'θ').replace(/德尔塔/g, 'Δ')
       .replace(/属于/g, '∈').replace(/空集/g, '∅').replace(/大于/g, '>').replace(/小于/g, '<');
   }
+  var activeRec = null;
   function voice(id) {
     var SR = global.SpeechRecognition || global.webkitSpeechRecognition;
-    if (!SR) { alert('当前浏览器不支持语音输入。建议用安卓 Chrome / Edge，或改用符号面板和手写。'); return; }
-    var r = new SR(); r.lang = 'zh-CN'; r.interimResults = false; r.maxAlternatives = 1;
-    r.onresult = function (e) { var t = e.results[0][0].transcript; insert(id, mathify(t)); };
-    r.onerror = function (e) { alert('语音识别失败：' + (e.error || '未知错误')); };
-    try { r.start(); } catch (err) {}
+    if (!SR) { alert('当前浏览器不支持网页语音输入。\n\n替代方案：\n1) 点输入框，用手机输入法自带的麦克风说话；\n2) 用「✍️ 手写」或「∑ 符号」输入。'); return; }
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') { alert('语音输入需要 HTTPS。请用线上网址打开：https://kerrrr-85.github.io/gaokao-math-lab/'); return; }
+    if (activeRec) { try { activeRec.abort(); } catch (e) {} activeRec = null; }
+    var r = new SR(); activeRec = r;
+    r.lang = 'zh-CN'; r.interimResults = false; r.continuous = false; r.maxAlternatives = 1;
+    var finalText = '';
+    r.onresult = function (e) { finalText = e.results[0][0].transcript; };
+    r.onerror = function (e) {
+      var msg = {
+        'not-allowed': '麦克风权限被拒绝。请点地址栏的锁形图标，把“麦克风”设为允许，再试一次。',
+        'service-not-allowed': '浏览器不允许使用语音服务（设备策略限制）。请改用手机输入法的麦克风。',
+        'audio-capture': '没有找到麦克风，或麦克风被其他应用占用。',
+        'network': '浏览器的语音服务连不上（国内 Chrome 常见，走的是谷歌服务）。建议：① 用手机输入法自带的麦克风说话；② 换 Edge 安卓版；③ 用符号面板/手写。',
+        'aborted': '识别被中断（可能是重复点击或权限弹窗被关掉）。请再点一次「🎤 语音」，并允许麦克风。',
+        'no-speech': '没有听到声音，请靠近麦克风再说一次。'
+      };
+      alert('语音识别失败：' + (msg[e.error] || e.error));
+    };
+    r.onend = function () { if (finalText) insert(id, mathify(finalText)); activeRec = null; };
+    try { r.start(); } catch (err) { alert('无法启动语音识别：' + (err && err.message ? err.message : err) + '\n可改用手机输入法的麦克风。'); activeRec = null; }
   }
 
   /* ---- 语音朗读 ---- */
-  function voices() {
-    if (!global.speechSynthesis) return [];
-    return (speechSynthesis.getVoices() || []).filter(function (v) { return /zh|Chinese/i.test(v.lang + ' ' + v.name); });
-  }
+  var voiceCache = [];
+  function refreshVoices() { try { voiceCache = global.speechSynthesis ? (speechSynthesis.getVoices() || []) : []; } catch (e) { voiceCache = []; } }
+  function voices() { if (!voiceCache.length) refreshVoices(); var zh = voiceCache.filter(function (v) { return /zh|Chinese/i.test(v.lang + ' ' + v.name); }); return zh.length ? zh : voiceCache; }
   function speak(text, opt) {
-    if (!global.speechSynthesis || !text) return;
+    if (!global.speechSynthesis) { alert('当前浏览器不支持语音朗读。'); return false; }
+    var full = String(text || '').trim(); if (!full) return false;
     try { speechSynthesis.cancel(); } catch (e) {}
-    var u = new SpeechSynthesisUtterance(String(text));
-    u.lang = 'zh-CN';
-    if (opt) {
-      if (opt.rate) u.rate = Math.max(0.5, Math.min(2, opt.rate));
-      if (opt.voiceUri) { var v = voices().filter(function (x) { return x.voiceURI === opt.voiceUri; })[0]; if (v) u.voice = v; }
+    var chunks = full.match(/[^。！？!?；;\n]{1,120}[。！？!?；;]?/g) || [full];
+    var chosen = null, vs = voices(), k;
+    if (opt && opt.voiceUri) { for (k = 0; k < vs.length; k++) { if (vs[k].voiceURI === opt.voiceUri) chosen = vs[k]; } }
+    var i = 0;
+    function next() {
+      if (i >= chunks.length) return;
+      var u = new SpeechSynthesisUtterance(chunks[i++]);
+      u.lang = 'zh-CN';
+      if (opt && opt.rate) u.rate = Math.max(0.5, Math.min(2, opt.rate));
+      if (chosen) u.voice = chosen;
+      u.onend = next;
+      u.onerror = function () { setTimeout(next, 40); };
+      try { speechSynthesis.speak(u); } catch (e) {}
     }
-    speechSynthesis.speak(u);
+    setTimeout(function () { try { speechSynthesis.resume(); } catch (e) {} next(); }, 80);
+    return true;
   }
   function stopSpeak() { if (global.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} } }
+  function diag() {
+    var hasTTS = !!global.speechSynthesis; if (hasTTS) refreshVoices();
+    return { https: location.protocol === 'https:', hasASR: !!(global.SpeechRecognition || global.webkitSpeechRecognition), hasTTS: hasTTS, voices: voiceCache.length, zhVoices: hasTTS ? voiceCache.filter(function (v) { return /zh|Chinese/i.test(v.lang + ' ' + v.name); }).length : 0, ua: navigator.userAgent };
+  }
+  function copyText(t) { try { navigator.clipboard.writeText(String(t || '')); return true; } catch (e) { return false; } }
+  if (global.speechSynthesis && typeof speechSynthesis.addEventListener === 'function') { speechSynthesis.addEventListener('voiceschanged', refreshVoices); }
 
-  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify };
+  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText };
 })(window);

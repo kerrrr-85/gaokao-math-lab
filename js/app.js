@@ -271,7 +271,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v4</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v5</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
@@ -279,12 +279,19 @@
       '<div class="card"><h2>语音</h2><p class="small muted">朗读用浏览器语音（免费）；语音输入需安卓 Chrome/Edge。</p>' +
       '<label class="small">语速 <input type="range" id="voRate" min="0.6" max="1.6" step="0.1" value="' + ((s.voice && s.voice.rate) || 1) + '"></label>' +
       '<label class="small" style="display:block;margin-top:8px">音色<select id="voVoice" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"></select></label>' +
-      '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label></div>' +
+      '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label>' + '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.testVoice()">🔊 试听</button><button class="btn sm" onclick="App.voiceDiag()">🩺 语音诊断</button></div><p class="small muted" id="voDiag"></p></div>' +
       '<div class="card"><h2>数据</h2><p class="small muted">进度只存在本机浏览器，不上传。换设备时可导出再导入。</p><div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn" onclick="App.resetData()">清空进度</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>' +
       '<div class="card"><h2>安装到手机</h2><p class="small muted">用手机浏览器打开线上网址后，选择“添加到主屏幕”，即可像 App 一样使用。</p></div>';
     fillVoices();
   }
   function fillVoices() { setTimeout(function () { var sel = document.getElementById('voVoice'); if (!sel) return; var vs = InputTools.voices(); var cur = (Store.get().settings.voice || {}).voiceUri || ''; sel.innerHTML = '<option value="">系统默认</option>' + vs.map(function (v) { return '<option value="' + v.voiceURI + '"' + (cur === v.voiceURI ? ' selected' : '') + '>' + v.name + '（' + v.lang + '）</option>'; }).join(''); }, 250); }
+  function testVoice() { InputTools.speak('这是一段语音试听。如果听到了，说明朗读功能正常。', Store.get().settings.voice || {}); }
+  function voiceDiag() {
+    var d = InputTools.diag(), box = document.getElementById('voDiag');
+    var txt = 'HTTPS：' + (d.https ? '是' : '否（语音输入会失败）') + '｜网页语音识别：' + (d.hasASR ? '支持' : '不支持') + '｜朗读：' + (d.hasTTS ? '支持' : '不支持') + '｜可用音色：' + d.voices + ' 个（中文 ' + d.zhVoices + ' 个）';
+    if (!d.zhVoices && d.hasTTS) txt += '｜未检测到中文音色，朗读可能无声，请在系统设置安装中文语音包。';
+    if (box) box.textContent = txt; else alert(txt);
+  }
   function testAI() { var url = (document.getElementById('aiUrl') || {}).value || ''; var box = document.getElementById('aiTest'); if (box) box.textContent = '检测中…'; AI.health(url).then(function (r) { if (box) box.textContent = (r && r.ok) ? '连接成功 ✓' : '返回异常'; }).catch(function (e) { if (box) box.textContent = '连接失败：' + e.message; }); }
   function saveSettings() { var s = Store.get().settings; s.newPerDay = parseInt(document.getElementById('sNew').value, 10); s.reviewPerDay = parseInt(document.getElementById('sRev').value, 10); s.ai = s.ai || {}; s.ai.proxyUrl = (document.getElementById('aiUrl') || {}).value || ''; s.ai.enabled = !!(document.getElementById('aiEnabled') || {}).checked; s.voice = s.voice || {}; s.voice.rate = parseFloat((document.getElementById('voRate') || {}).value || '1'); s.voice.voiceUri = (document.getElementById('voVoice') || {}).value || ''; s.voice.autoSpeak = !!(document.getElementById('voAuto') || {}).checked; Store.save(); toast('已保存'); updateMini(); }
   function exportData() { var b = new Blob([Store.exportJSON()], { type: 'application/json' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'gaokao-math-progress.json'; a.click(); }
@@ -321,7 +328,7 @@
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
     startPractice: startPractice, startSingle: startSingle, selfRate: selfRate, tagError: tagError, overrideOk: overrideOk,
     doSearch: doSearch, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData,
-    aiExplain: aiExplain, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI
+    aiExplain: aiExplain, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI, testVoice: testVoice, voiceDiag: voiceDiag
   };
   /* A+C：站内跳转用 replaceState（不堆历史），返回键不再一页页退 */
   function go(path) {
