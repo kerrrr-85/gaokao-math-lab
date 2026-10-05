@@ -244,14 +244,21 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置</h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v3</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
-      '<div class="card"><h2>数据</h2><p class="small muted">进度只存在本机浏览器，不上传。换设备时可导出再导入。</p><div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>' +
+      '<div class="card"><h2>数据</h2><p class="small muted">进度只存在本机浏览器，不上传。换设备时可导出再导入。</p><div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn" onclick="App.resetData()">清空进度</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>' +
       '<div class="card"><h2>安装到手机</h2><p class="small muted">用手机浏览器打开线上网址后，选择“添加到主屏幕”，即可像 App 一样使用。</p></div>';
   }
   function saveSettings() { var s = Store.get().settings; s.newPerDay = parseInt(document.getElementById('sNew').value, 10); s.reviewPerDay = parseInt(document.getElementById('sRev').value, 10); Store.save(); toast('已保存'); updateMini(); }
   function exportData() { var b = new Blob([Store.exportJSON()], { type: 'application/json' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'gaokao-math-progress.json'; a.click(); }
   function importData(input) { var f = input.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { try { Store.importJSON(r.result); toast('导入成功'); router(); } catch (e) { toast('导入失败：' + e.message); } }; r.readAsText(f); }
+  function forceUpdate() {
+    function done() { location.reload(); }
+    if (!('serviceWorker' in navigator)) { done(); return; }
+    var p1 = navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); });
+    var p2 = (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve());
+    Promise.all([p1, p2]).then(done, done);
+  }
   function resetData() { if (confirm('确定清空所有进度吗？此操作不可恢复。')) { Store.reset(); toast('已清空'); router(); } }
 
   /* ============ 路由 ============ */
@@ -272,6 +279,7 @@
 
   window.App = {
     go: go,
+    forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
     startPractice: startPractice, startSingle: startSingle, selfRate: selfRate, tagError: tagError, overrideOk: overrideOk,
