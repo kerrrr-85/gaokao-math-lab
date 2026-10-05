@@ -2,7 +2,7 @@
 (function (global) {
   var CITIES = global.CITIES || [];
   var rot = { yaw: -1.9, pitch: 0.5 }, zoom = 1, drag = null, auto = true, night = true;
-  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false;
+  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false, platesOn = false;
 
   function rad(d) { return d * Math.PI / 180; }
   function toVec(lat, lng) { var f = rad(lat), l = rad(lng); return { x: Math.cos(f) * Math.sin(l), y: Math.sin(f), z: Math.cos(f) * Math.cos(l) }; }
@@ -124,6 +124,25 @@
     { n: '西澳大利亚寒流', w: false, p: [[-32, 110], [-24, 110], [-16, 112]] },
     { n: '西风漂流', w: false, p: [[-52, -60], [-55, 0], [-52, 60], [-55, 120], [-52, 180]] }
   ];
+  var PLATES = [
+    { n: '环太平洋地震带', c: 'rgba(251,146,60,.95)', w: 3, p: [[58, -152], [52, -132], [40, -124], [26, -112], [14, -94], [-2, -80], [-22, -70], [-40, -74], [-54, -66], [-42, -100], [-20, -140], [0, -162], [20, 160], [34, 142], [46, 152], [56, 168], [60, -175], [58, -152]] },
+    { n: '地中海—喜马拉雅地震带', c: 'rgba(250,204,21,.95)', w: 3, p: [[40, 8], [37, 24], [34, 44], [30, 60], [28, 76], [27, 88], [20, 100], [6, 104], [-6, 115], [-9, 126], [-5, 136], [4, 142]] },
+    { n: '大西洋中脊', c: 'rgba(56,189,248,.85)', w: 2.2, p: [[64, -22], [54, -30], [40, -40], [22, -44], [2, -32], [-20, -16], [-40, -12], [-54, -2]] },
+    { n: '东非裂谷带', c: 'rgba(52,211,153,.85)', w: 2.2, p: [[16, 40], [6, 36], [-6, 35], [-16, 34]] }
+  ];
+  function drawPlates(cx, cy, R) {
+    PLATES.forEach(function (pl) {
+      ctx.strokeStyle = pl.c; ctx.lineWidth = pl.w;
+      ctx.beginPath(); var started = false;
+      pl.p.forEach(function (pt) {
+        var q = project(pt[0], pt[1], cx, cy, R);
+        if (q.vis) { if (started) ctx.lineTo(q.x, q.y); else { ctx.moveTo(q.x, q.y); started = true; } } else started = false;
+      });
+      ctx.stroke();
+      var mid = pl.p[Math.floor(pl.p.length / 2)], lp = project(mid[0], mid[1], cx, cy, R);
+      if (lp.vis) { ctx.fillStyle = pl.c; ctx.font = (11 * (devicePixelRatio || 1)) + 'px sans-serif'; ctx.fillText(pl.n, lp.x + 8, lp.y - 4); }
+    });
+  }
   function drawCurrents(cx, cy, R) {
     CURRENTS.forEach(function (c) {
       var col = c.w ? 'rgba(248,113,113,.95)' : 'rgba(96,165,250,.95)';
@@ -202,6 +221,7 @@
     }
     if (pressure) drawPressure(cx, cy, R);
     if (currentsOn) drawCurrents(cx, cy, R);
+    if (platesOn) drawPlates(cx, cy, R);
     if (night) {
       var ss = subsolar(), sv = toVec(ss.lat, ss.lng), sp = projectVec(sv, cx, cy, R);
       if (sp.vis) {
@@ -222,6 +242,7 @@
 
   function loop(ts) { var dt = last ? Math.min(3, (ts - last) / 16.7) : 1; last = ts; if (auto && !drag) rot.yaw += 0.0035 * dt; if (route) phase = (phase + 0.004 * dt) % 1; if ((auto || route) && !drag) draw(); raf = requestAnimationFrame(loop); }
   function setAuto(v) { auto = !!v; var b = document.getElementById('glAuto'); if (b) b.textContent = auto ? '⏸ 暂停自转' : '▶ 开始自转'; }
+  function togglePlates() { platesOn = !platesOn; var b = document.getElementById('glPlate'); if (b) b.textContent = platesOn ? '🗺 板块开' : '🗺 板块关'; draw(); }
   function toggleCurrents() { currentsOn = !currentsOn; var b = document.getElementById('glCur'); if (b) b.textContent = currentsOn ? '🌊 洋流开' : '🌊 洋流关'; draw(); }
   function togglePressure() { pressure = !pressure; var b = document.getElementById('glPres'); if (b) b.textContent = pressure ? '🌀 气压带开' : '🌀 气压带关'; draw(); }
   function sunChartSVG(lat) {
@@ -282,7 +303,7 @@
     var v = document.getElementById('view');
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
     v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理考点</h2><p>航线 / 经纬网 / 昼夜 / 时区</p></div></div>' +
-      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button><button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
+      '<div class="card elev2"><div class="row"><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button><button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button><button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button><button class="btn sm" id="glCur" onclick="Globe.toggleCurrents()">🌊 洋流关</button><button class="btn sm" id="glPlate" onclick="Globe.togglePlates()">🗺 板块关</button><button class="btn sm" onclick="Globe.reset()">↺ 重置</button><select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div>' +
       '<div class="row" style="margin-top:10px"><select id="glFrom" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><span class="muted">→</span><select id="glTo" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Globe.applyRoute()">画航线</button><button class="btn sm" onclick="Globe.clearRoute()">清除</button></div>' +
       '<div class="row" style="margin-top:10px"><button class="chip" onclick="Globe.setRoute(&#39;北京&#39;,&#39;纽约&#39;)">北京→纽约</button><button class="chip" onclick="Globe.setRoute(&#39;上海&#39;,&#39;伦敦&#39;)">上海→伦敦</button><button class="chip" onclick="Globe.setRoute(&#39;青树坪&#39;,&#39;东京&#39;)">青树坪→东京</button></div>' +
       '<p class="small muted" id="routeInfo" style="margin:10px 0 0">未选择航线</p>' +
@@ -299,7 +320,7 @@
       '<input type="time" id="ltT" value="08:00" onchange="Globe.localTime()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' +
       '<span class="muted">→</span><select id="ltB" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px" onchange="Globe.localTime()">' + opts + '</select></div>' +
       '<p class="small" id="ltInfo" style="margin:10px 0 0"></p></div>' +
-      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>四个地理考点</h2><p>点下面的按钮直接看</p></div></div><p class="small muted" style="margin:0"><b>① 最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成弧线。<br><b>② 经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>③ 昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。<br><b>④ 洋流</b>：<span style="color:#dc2626">红=暖流</span>、<span style="color:#2563eb">蓝=寒流</span>，箭头是流向；暖流增温增湿、寒流降温减湿，寒暖流交汇处易形成大渔场。</p></div>';
+      '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">📐</span><div class="grow"><h2>五个地理考点</h2><p>点下面的按钮直接看</p></div></div><p class="small muted" style="margin:0"><b>① 最短航线</b>：球面两点最短路径是大圆，投到平面地图上就成弧线。<br><b>② 经纬网</b>：点球面任意位置，读出经纬度、东西/南北半球、低中高纬。<br><b>③ 昼夜</b>：亮线=昼半球、暗线=夜半球，分界就是晨昏线（随时间移动）。<br><b>④ 洋流</b>：<span style="color:#dc2626">红=暖流</span>、<span style="color:#2563eb">蓝=寒流</span>，箭头是流向；暖流增温增湿、寒流降温减湿，寒暖流交汇处易形成大渔场。<br><b>⑤ 板块与地震带</b>：橙色=环太平洋地震带、黄色=地中海—喜马拉雅地震带、蓝色=大西洋中脊、绿色=东非裂谷；板块交界处地壳活跃，多火山地震。</p></div>';
     wrap = document.getElementById('globeWrap'); cv = document.getElementById('globeCv'); ctx = cv.getContext('2d');
     document.getElementById('glFrom').value = '北京'; document.getElementById('glTo').value = '纽约';
     document.getElementById('tzA').value = '北京'; document.getElementById('tzB').value = '伦敦';
@@ -324,5 +345,5 @@
     resize();
     if (!raf) raf = requestAnimationFrame(loop);
   }
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, togglePressure: togglePressure, toggleCurrents: toggleCurrents, updateSun: updateSun, localTime: localTimeSwap };
+  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
