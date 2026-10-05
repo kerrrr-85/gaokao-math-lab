@@ -26,11 +26,39 @@
     document.getElementById('todayMini').textContent = '待复习 ' + dueReview().length + ' · 新卡 ' + newCards().length + ' · 已练 ' + Store.stats().total + ' 题';
   }
   function setTab(page) {
-    var map = { today: 'today', map: 'map', node: 'map', method: 'map', practice: 'practice', wrong: 'wrong', stats: 'stats', settings: 'settings', search: 'search' };
-    var t = map[page] || 'today';
+    var map = { hub: 'hub', today: 'today', map: 'map', node: 'map', method: 'map', practice: 'practice', wrong: 'wrong', stats: 'stats', settings: 'settings', search: 'search' };
+    var t = map[page] || 'hub';
     Array.prototype.forEach.call(document.querySelectorAll('#tabbar a'), function (a) { a.classList.toggle('active', a.dataset.tab === t); });
   }
 
+  /* ============ 功能中心（前置首页） ============ */
+  var ICONS = {
+    today: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5h-2v6l5 3 1-1.7-4-2.4V7z"/></svg>',
+    practice: '<svg viewBox="0 0 24 24"><path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2zM20.7 7.3a1 1 0 000-1.4l-2.6-2.6a1 1 0 00-1.4 0l-1.8 1.8L18.9 9l1.8-1.7z"/></svg>',
+    map: '<svg viewBox="0 0 24 24"><path d="M6 2a4 4 0 100 8 4 4 0 000-8zm12 12a4 4 0 100 8 4 4 0 000-8zM8 8l7.2 6.5-1.4 1.5L6.6 9.5 8 8z"/></svg>',
+    wrong: '<svg viewBox="0 0 24 24"><path d="M4 3h13a3 3 0 013 3v15l-5-3-5 3-5-3-1 0V3zm3 5h7v2H7V8zm0 4h7v2H7v-2z"/></svg>',
+    stats: '<svg viewBox="0 0 24 24"><path d="M4 20h3V10H4v10zm6 0h3V4h-3v16zm6 0h3v-7h-3v7z"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105 14.3l5.3 5.3 1.4-1.4-5.3-5.3A8 8 0 0010 2zm0 3a5 5 0 110 10 5 5 0 010-10z"/></svg>',
+    weather: '<svg viewBox="0 0 24 24"><path d="M6 19a4 4 0 010-8 6 6 0 0111.6-1.6A4.5 4.5 0 0117 19H6z"/></svg>',
+    settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4a9 9 0 00-.1-1.3l2-1.5-2-3.4-2.3 1a9 9 0 00-2.2-1.3L15.9 3h-4l-.4 2.5a9 9 0 00-2.2 1.3l-2.3-1-2 3.4 2 1.5A9 9 0 006.9 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a9 9 0 002.2 1.3l.4 2.5h4l.4-2.5a9 9 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></svg>'
+  };
+  function hubTile(key, label, href) {
+    return '<a class="hubTile" href="' + href + '">' + (ICONS[key] || '') + '<span>' + label + '</span></a>';
+  }
+  function renderHub() {
+    var st = Store.stats();
+    view.innerHTML = '<div class="hub"><h1 style="text-align:center">学习中心</h1><p class="muted" style="text-align:center">选择要进入的功能</p>' +
+      '<div class="hubGrid">' +
+      hubTile('today', '今日任务', '#/today') +
+      hubTile('practice', '刷题练习', '#/practice') +
+      hubTile('map', '知识图谱', '#/map') +
+      hubTile('wrong', '错题本', '#/wrong') +
+      hubTile('stats', '学习统计', '#/stats') +
+      hubTile('search', '搜索', '#/search') +
+      hubTile('weather', '天气', '#/today') +
+      hubTile('settings', '设置', '#/settings') +
+      '</div><p class="small muted" style="text-align:center;margin-top:18px">已练习 ' + st.total + ' 题 · 待复习 ' + dueReview().length + ' 张</p></div>';
+  }
   /* ============ 今日 ============ */
   function renderToday() {
     var due = dueReview(), nw = newCards(), st = Store.stats();
@@ -300,7 +328,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v13</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v14</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
@@ -336,7 +364,7 @@
 
   /* ============ 路由 ============ */
   function router() {
-    var h = location.hash.replace(/^#\/?/, ''); var parts = h.split('/').filter(Boolean); var page = parts[0] || 'today';
+    var h = location.hash.replace(/^#\/?/, ''); var parts = h.split('/').filter(Boolean); var page = parts[0] || 'hub';
     window.scrollTo(0, 0); setTab(page);
     if (page === 'node') renderNode(parts[1]);
     else if (page === 'method') renderMethod(parts[1]);
@@ -346,7 +374,9 @@
     else if (page === 'stats') renderStats();
     else if (page === 'search') renderSearch();
     else if (page === 'settings') renderSettings();
-    else renderToday();
+    else if (page === 'today') renderToday();
+    else if (page === 'hub') renderHub();
+    else renderHub();
     updateMini();
   }
 
