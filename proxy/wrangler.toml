@@ -9,5 +9,9 @@ VISION_MODEL = "qwen-vl-max"
 RATE_LIMIT_PER_HOUR = "60"
 MAX_TOKENS = "1200"
 ASR_MODEL = "qwen3-asr-flash"
+# AI 讲解用哪家：deepseek 或 qwen（手写/录音始终用通义）
+TEXT_PROVIDER = "deepseek"
+DEEPSEEK_BASE = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = "deepseek-chat"
 # 密钥不要写在这里！用命令行设置：
 #   wrangler secret put DASHSCOPE_API_KEY

@@ -61,7 +61,7 @@ export default {
     if (url.pathname === '/tts') return json({ error: 'tts not enabled in v1' }, h, 501);
     if (url.pathname === '/asr') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, h, 405);
-      if (!env.DASHSCOPE_API_KEY) return json({ error: 'server missing DASHSCOPE_API_KEY' }, h, 500);
+      if (!env.DASHSCOPE_API_KEY) return json({ error: '录音识别需要通义千问 Key（DASHSCOPE_API_KEY）；DeepSeek 目前没有语音识别' }, h, 500);
       let ab;
       try { ab = await request.json(); } catch (e) { return json({ error: 'bad json' }, h, 400); }
       if (!ab || !ab.audio) return json({ error: 'missing audio' }, h, 400);
@@ -83,7 +83,6 @@ export default {
     }
     if (url.pathname === '/analyze') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, h, 405);
-      if (!env.DASHSCOPE_API_KEY) return json({ error: 'server missing DASHSCOPE_API_KEY' }, h, 500);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       if (rateLimited(ip, parseInt(env.RATE_LIMIT_PER_HOUR || '60', 10))) return json({ error: 'too many requests' }, h, 429);
       let b;
@@ -92,17 +91,32 @@ export default {
       const img = b.imageDataUrl || '';
       if (img && img.length > 3000000) return json({ error: 'image too large' }, h, 413);
       const useVision = !!img;
-      const model = useVision ? (env.VISION_MODEL || 'qwen-vl-max') : (env.TEXT_MODEL || 'qwen-plus');
+      let base, key, model;
+      if (useVision) {
+        base = env.DASHSCOPE_BASE || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+        key = env.DASHSCOPE_API_KEY;
+        model = env.VISION_MODEL || 'qwen-vl-max';
+        if (!key) return json({ error: '手写识别需要通义千问 Key（DASHSCOPE_API_KEY）；DeepSeek 目前没有视觉模型' }, h, 400);
+      } else if ((env.TEXT_PROVIDER || 'deepseek').toLowerCase() === 'deepseek') {
+        base = env.DEEPSEEK_BASE || 'https://api.deepseek.com/v1';
+        key = env.DEEPSEEK_API_KEY;
+        model = env.DEEPSEEK_MODEL || 'deepseek-chat';
+        if (!key) return json({ error: 'server missing DEEPSEEK_API_KEY' }, h, 500);
+      } else {
+        base = env.DASHSCOPE_BASE || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+        key = env.DASHSCOPE_API_KEY;
+        model = env.TEXT_MODEL || 'qwen-plus';
+        if (!key) return json({ error: 'server missing DASHSCOPE_API_KEY' }, h, 500);
+      }
       const prompt = buildPrompt(b);
       const content = useVision
         ? [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: img } }]
         : prompt;
-      const base = env.DASHSCOPE_BASE || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
       let resp;
       try {
         resp = await fetch(base + '/chat/completions', {
           method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + env.DASHSCOPE_API_KEY, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: model, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: content }], temperature: 0.2, max_tokens: parseInt(env.MAX_TOKENS || '1200', 10) })
         });
       } catch (e) { return json({ error: 'upstream fetch failed: ' + e.message }, h, 502); }
