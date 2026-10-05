@@ -330,3 +330,7 @@ body.dark .edge.hot{stroke:#2dd4bf}
 .item{transition:box-shadow .24s ease,transform .24s ease,border-color .24s ease}
 .item:hover{box-shadow:var(--sh1);transform:translateY(-1px)}
 .pt-tile{transition:transform .48s cubic-bezier(.23,1,.32,1),background .3s ease,box-shadow .3s ease}
+
+.zone{display:flex;height:46px;border-radius:10px;overflow:hidden;box-shadow:var(--sh1)}
+.zone div{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;text-align:center;padding:2px;line-height:1.2}
+@media (max-width:700px){.zone{height:auto;flex-wrap:wrap}.zone div{flex:1 0 25%;min-height:44px}}
