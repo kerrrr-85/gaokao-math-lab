@@ -136,6 +136,10 @@
     var weak = nodes.slice().sort(function (a, b) { return Store.masteryOf(a.id) - Store.masteryOf(b.id); }).slice(0, 3);
 
     var html = modbar();
+    var next = due.length ? { t: '先清复习队列', d: '有 ' + due.length + ' 张卡片到期，先复习再开新卡', a: '<a class="btn primary" href="#/practice">去复习</a>' }
+      : (Store.wrong().length ? { t: '攻克错题', d: '错题本里还有 ' + Store.wrong().length + ' 道待重做', a: '<a class="btn primary" href="#/wrong">去错题本</a>' }
+      : { t: '开一组新题', d: '没有到期复习，正好开新卡建立记忆', a: '<a class="btn primary" href="#/practice/start">开始练习</a>' });
+    html += '<div class="card elev2" style="border-left:5px solid var(--primary)"><div class="phead" style="margin-bottom:6px"><span class="ico">💡</span><div class="grow"><h2>' + next.t + '</h2><p>' + next.d + '</p></div>' + next.a + '</div></div>';
     html += '<div class="card elev2" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">' +
       ringHTML(pct, pct + '%', '今日 ' + doneToday + '/' + goal) +
       '<div class="grow" style="min-width:220px"><h2 style="margin:0">' + esc(mod) + '</h2>' +
@@ -523,6 +527,18 @@
       '<div class="donut"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="54" fill="none" stroke="#eef1f4" stroke-width="18"/>' + segs + '</svg>' +
       '<div class="val" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--primary)">' + totalErr + '</div></div>' +
       '<div class="legend">' + errs.map(function (e, i) { return '<span><i style="background:' + colors[i] + '"></i>' + e + ' ' + (st.byErr[e] || 0) + '</span>'; }).join('') + '</div></div></div>';
+    html += '<div class="card"><div class="phead"><span class="ico">📚</span><div class="grow"><h2>三个模块对比</h2><p>掌握度 / 题量 / 已练</p></div></div>' +
+      ['函数与导数', '三角函数', '数列'].map(function (mn) {
+        var ns = D.nodes.filter(function (n) { return (n.module || '函数与导数') === mn; });
+        var sum = 0; ns.forEach(function (n) { sum += Store.masteryOf(n.id); });
+        var avg2 = ns.length ? Math.round(sum / ns.length) : 0;
+        var qs2 = D.questions.filter(function (q) { return (q.module || '函数与导数') === mn; });
+        var ids = {}; qs2.forEach(function (q) { ids[q.id] = 1; });
+        var done2 = Store.get().attempts.filter(function (a) { return ids[a.questionId]; }).length;
+        var grad = mn === '三角函数' ? 'linear-gradient(90deg,#2563eb,#38bdf8)' : mn === '数列' ? 'linear-gradient(90deg,#7c3aed,#c084fc)' : 'linear-gradient(90deg,#0f766e,#2dd4bf)';
+        return '<div style="margin:10px 0"><div class="row"><b class="grow small">' + mn + '</b><span class="small muted">已练 ' + done2 + '/' + qs2.length + ' 题 · ' + avg2 + '%</span></div>' +
+          '<div class="bar" style="margin-top:6px"><i style="width:' + avg2 + '%;background:' + grad + '"></i></div></div>';
+      }).join('') + '</div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>掌握度排行</h2><p>按掌握度从低到高</p></div></div><div class="list">' +
       ranked.map(function (r) { return '<div class="item"><div class="row"><span class="grow small">' + esc(r.n.title) + '</span><b class="small">' + r.m + '%</b></div><div class="bar" style="margin-top:6px"><i style="width:' + r.m + '%"></i></div></div>'; }).join('') + '</div></div>';
     view.innerHTML = html;
@@ -560,7 +576,7 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v34 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v35 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
       '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +

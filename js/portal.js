@@ -134,15 +134,20 @@
     });
     if (window.Anim && Anim.ok()) Anim.enter('.card', 45);
   }
-  function play(bvid) {
-    var box = document.getElementById('pl_' + bvid); if (!box) return;
-    if (box.innerHTML) { box.innerHTML = ''; return; }
-    box.innerHTML = '<iframe class="bili-frame" src="https://player.bilibili.com/player.html?bvid=' + bvid + '&page=1&autoplay=0" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>';
+  function play(bvid, title) {
+    var oldm = document.getElementById('vidModal'); if (oldm && oldm.parentNode) oldm.parentNode.removeChild(oldm);
+    var m = document.createElement('div'); m.id = 'vidModal'; m.className = 'modal';
+    m.innerHTML = '<div class="modalbox" style="max-width:940px"><div class="row"><b class="grow">' + (title || bvid) + '</b><button class="btn sm" onclick="Portal.closeVideo()">关闭</button></div>' +
+      '<iframe class="bili-frame" style="margin-top:10px" src="https://player.bilibili.com/player.html?bvid=' + bvid + '&page=1&autoplay=1" scrolling="no" frameborder="0" allowfullscreen="true"></iframe></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) closeVideo(); });
+    document.body.appendChild(m);
+    try { localStorage.setItem('gml_last_bili', bvid); } catch (e) {}
   }
+  function closeVideo() { var m = document.getElementById('vidModal'); if (m && m.parentNode) m.parentNode.removeChild(m); }
   function searchBili() {
     var q = (document.getElementById('biliQ') || {}).value || '';
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
