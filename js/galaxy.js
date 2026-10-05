@@ -45,8 +45,8 @@
     addEventListener('resize', resize); addEventListener('pointermove', onMove);
     var t = 0;
     function frame() {
-      t += 0.016;
-      var pulse = 1 + 0.06 * Math.sin(t * 0.9);
+      t += 0.0065;
+      var pulse = 1 + 0.06 * Math.sin(t * 0.45);
       var cx = w / 2 + mx * w * 0.09, cy = h / 2 + my * h * 0.09, R = Math.min(w, h) * 0.62 * pulse;
 
       ctx.globalCompositeOperation = 'source-over';
@@ -76,7 +76,7 @@
       for (var i = 0; i < stars.length; i++) {
         var st = stars[i], a = st.ang + t * st.sp, rr = st.r * R;
         var x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.58;
-        var tw = 0.5 + 0.5 * Math.sin(st.tw + t * 4.2);
+        var tw = 0.5 + 0.5 * Math.sin(st.tw + t * 2.2);
         var alpha = (1 - st.r) * 0.85 * tw + 0.14;
         if (st.big) {
           var bs = st.s * 5;
