@@ -69,3 +69,5 @@ textarea{min-height:96px;resize:vertical}
 .kpi .card{margin:0;text-align:center}
 .kpi b{display:block;font-size:24px;color:var(--primary)}
 .ans-area{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+
+.homebtn{display:inline-block;padding:5px 12px;border:1px solid #bfe3dd;background:#e6f4f1;color:#0f766e;border-radius:999px;font-size:13px;font-weight:700;text-decoration:none}
