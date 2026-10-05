@@ -55,7 +55,7 @@
       html += '</div>';
     }
     html += '</div>';
-    html += '<div class="card"><div class="row"><h2 class="grow">新卡</h2><button class="btn sm primary" onclick="location.hash=\'#/practice\'">去练习</button></div>';
+    html += '<div class="card"><div class="row"><h2 class="grow">新卡</h2><button class="btn sm primary" onclick="App.go(\'#/practice\')">去练习</button></div>';
     html += '<p class="muted small">先从方法卡和例题开始建立记忆，之后系统会自动安排复习。</p>';
     html += '<div class="list">' + nw.slice(0, Store.get().settings.newPerDay).map(function (c) {
       return '<a class="item" href="' + (c.refType === 'method' ? '#/method/' + c.refId : '#/practice') + '"><b>' + esc(cardTitle(c)) + '</b><div class="small muted">' + (c.refType === 'method' ? '方法卡' : '题目卡') + '</div></a>';
@@ -77,7 +77,7 @@
     D.nodes.forEach(function (n) { n.prereq.forEach(function (p) { if (pos[p] && pos[n.id]) { var a = pos[p], b = pos[n.id]; svg += '<path class="edge" d="M' + a.x + ' ' + (a.y + 22) + ' C' + a.x + ' ' + (a.y + 60) + ', ' + b.x + ' ' + (b.y - 60) + ', ' + b.x + ' ' + (b.y - 22) + '"/>'; } }); });
     D.nodes.forEach(function (n) {
       var p = pos[n.id], m = Store.masteryOf(n.id);
-      svg += '<g class="gnode' + (m >= 60 ? ' done' : '') + '" transform="translate(' + p.x + ',' + p.y + ')" onclick="location.hash=\'#/node/' + n.id + '\'"><circle r="22"/><text y="44">' + esc(n.title) + '</text><text y="0" dy="4" style="font-size:12px;fill:#0f766e">' + m + '%</text></g>';
+      svg += '<g class="gnode' + (m >= 60 ? ' done' : '') + '" transform="translate(' + p.x + ',' + p.y + ')" onclick="App.go(\'#/node/' + n.id + '\')"><circle r="22"/><text y="44">' + esc(n.title) + '</text><text y="0" dy="4" style="font-size:12px;fill:#0f766e">' + m + '%</text></g>';
     });
     svg += '</svg>';
     view.innerHTML = '<h1>知识图谱</h1><p class="muted small">节点为知识模块，连线是先修关系；绿色表示掌握度 ≥ 60%。点击节点查看详情。</p><div class="graph">' + svg + '</div>';
@@ -181,7 +181,7 @@
   function overrideOk() { var q = session.list[session.i]; var a = Store.get().attempts; for (var i = 0; i < a.length; i++) { if (a[i].id === session.lastAttempt.id) { a[i].result = 'ok'; } } Store.save(); Store.grade('question:' + q.id, 2); toast('已标为掌握'); }
   function nextQ() { session.i += 1; session.answered = false; if (session.i >= session.list.length) renderSessionEnd(); else renderQuestion(); }
   function renderSessionEnd() {
-    view.innerHTML = '<div class="card"><h1>本组完成 🎉</h1><p class="muted">这一组的作答已计入掌握度和复习计划。</p><div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button><button class="btn" onclick="location.hash=\'#/stats\'">查看统计</button></div></div>';
+    view.innerHTML = '<div class="card"><h1>本组完成 🎉</h1><p class="muted">这一组的作答已计入掌握度和复习计划。</p><div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button><button class="btn" onclick="App.go(\'#/stats\')">查看统计</button></div></div>';
   }
   function resetPractice() { session = { list: [], i: 0, answered: false }; renderPractice(); }
 
@@ -271,11 +271,30 @@
   }
 
   window.App = {
+    go: go,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
     startPractice: startPractice, startSingle: startSingle, selfRate: selfRate, tagError: tagError, overrideOk: overrideOk,
     doSearch: doSearch, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData
   };
+  /* A+C：站内跳转用 replaceState（不堆历史），返回键不再一页页退 */
+  function go(path) {
+    if (location.hash === path) return;
+    history.replaceState(null, '', path);
+    router();
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[href^="#/"]') : null;
+    if (!a) return;
+    e.preventDefault();
+    go(a.getAttribute('href'));
+  });
+  window.addEventListener('popstate', function () {
+    if (location.hash && location.hash !== '#/' && location.hash !== '#') {
+      history.replaceState(null, '', '#/');
+      router();
+    }
+  });
   window.addEventListener('hashchange', router);
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('./sw.js').catch(function () {}); }
   router();
