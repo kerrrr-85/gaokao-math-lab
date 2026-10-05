@@ -1,10 +1,10 @@
 ﻿/* 原生 Canvas 星系背景 v2：更浓、明显旋转、星云+尘埃+脉冲（零依赖） */
 (function (global) {
-  var raf = null, cv = null, ctx = null, stars = [], dust = [], nebs = [], sprite = null;
+  var raf = null, cv = null, ctx = null, stars = [], dust = [], nebs = [], sprite = null, visCb = null, drawNeb = true;
   var w = 0, h = 0, mx = 0, my = 0, DPR = 1;
 
   function onMove(e) { mx = (e.clientX / innerWidth - 0.5); my = (e.clientY / innerHeight - 0.5); }
-  function resize() { if (!cv) return; DPR = Math.min(devicePixelRatio || 1, 1.5); w = cv.width = cv.clientWidth * DPR; h = cv.height = cv.clientHeight * DPR; }
+  function resize() { if (!cv) return; DPR = Math.min(devicePixelRatio || 1, (global.PERF && global.PERF.low) ? 1 : 1.5); w = cv.width = cv.clientWidth * DPR; h = cv.height = cv.clientHeight * DPR; }
 
   function makeSprite() {
     sprite = document.createElement('canvas'); sprite.width = sprite.height = 64;
@@ -17,13 +17,13 @@
   function make() {
     stars = []; dust = []; nebs = [];
     var arms = 3;
-    for (var i = 0; i < 1600; i++) {
+    var starN = (global.PERF && global.PERF.low) ? 420 : 1600; for (var i = 0; i < starN; i++) {
       var r = Math.pow(Math.random(), 0.58);
       var arm = Math.floor(Math.random() * arms);
       var ang = arm * (Math.PI * 2 / arms) + r * 2.9 + (Math.random() - 0.5) * 0.75;
       stars.push({ r: r, ang: ang, s: (Math.random() * 1.7 + 0.3) * DPR, tw: Math.random() * 6.283, sp: 0.14 + Math.random() * 0.42, big: Math.random() < 0.055 });
     }
-    for (var j = 0; j < 140; j++) {
+    var dustN = (global.PERF && global.PERF.low) ? 0 : 140; for (var j = 0; j < dustN; j++) {
       dust.push({ r: Math.pow(Math.random(), 0.5), ang: Math.random() * 6.283, sz: (18 + Math.random() * 46) * DPR, a: 0.05 + Math.random() * 0.10, sp: 0.04 + Math.random() * 0.12 });
     }
     nebs = [
@@ -35,16 +35,19 @@
 
   function stop() {
     if (raf) { cancelAnimationFrame(raf); raf = null; }
-    removeEventListener('resize', resize); removeEventListener('pointermove', onMove);
+    removeEventListener('resize', resize); removeEventListener('pointermove', onMove); if (visCb) { document.removeEventListener('visibilitychange', visCb); visCb = null; }
   }
 
   function mount(canvas) {
     stop(); cv = canvas; if (!cv) return;
-    ctx = cv.getContext('2d'); resize(); make(); if (!sprite) makeSprite();
-    if (innerWidth < 700 && stars.length > 900) { stars = stars.slice(0, 900); dust = dust.slice(0, 70); }
-    addEventListener('resize', resize); addEventListener('pointermove', onMove);
-    var t = 0;
-    function frame() {
+    ctx = cv.getContext('2d'); resize(); make(); if (!sprite) makeSprite(); drawNeb = !(global.PERF && global.PERF.low);
+    if (!(global.PERF && global.PERF.low) && innerWidth < 700 && stars.length > 900) { stars = stars.slice(0, 900); dust = dust.slice(0, 70); }
+    addEventListener('resize', resize); addEventListener('pointermove', onMove); visCb = function () { if (document.hidden) { if (raf) { cancelAnimationFrame(raf); raf = null; } } else if (!raf) { lastT = 0; raf = requestAnimationFrame(frame); } }; document.addEventListener('visibilitychange', visCb);
+    var t = 0, lastT = 0, MIN_GAP = (global.PERF && global.PERF.low) ? 33 : 16;
+    function frame(ts) {
+      raf = requestAnimationFrame(frame);
+      if (ts && lastT && ts - lastT < MIN_GAP - 1) return;
+      lastT = ts || 0;
       t += 0.0065;
       var pulse = 1 + 0.06 * Math.sin(t * 0.45);
       var cx = w / 2 + mx * w * 0.09, cy = h / 2 + my * h * 0.09, R = Math.min(w, h) * 0.62 * pulse;
@@ -53,7 +56,7 @@
       ctx.fillStyle = '#04050c'; ctx.fillRect(0, 0, w, h);
       ctx.globalCompositeOperation = 'lighter';
 
-      for (var n = 0; n < nebs.length; n++) {
+      for (var n = 0; n < (drawNeb ? nebs.length : 0); n++) {
         var nb = nebs[n];
         var nr = R * nb.r;
         var nx = cx + Math.cos(t * nb.sp + n * 2.1) * R * nb.r * 0.55;
@@ -89,9 +92,8 @@
         ctx.fill();
       }
       ctx.globalCompositeOperation = 'source-over';
-      raf = requestAnimationFrame(frame);
     }
-    frame();
+    raf = requestAnimationFrame(frame);
   }
 
   global.Galaxy = { mount: mount, stop: stop };

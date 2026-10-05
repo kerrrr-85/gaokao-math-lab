@@ -69,61 +69,13 @@
   function renderPortal() {
     var v = document.getElementById('view');
     v.innerHTML = '<canvas class="galaxy-canvas" id="galaxyCanvas"></canvas><div class="pt-wrap">' +
-      '<div class="hero2"><div><div class="hi">' + dateStr() + '</div><h1>' + greeting() + '，今天想做什么？</h1></div>' +
-      '<div class="quick"><a href="#/today">待复习 ' + Store.dueCards().length + '</a><a href="#/practice/start">开始刷题</a><a href="#/globe">地球</a><a href="#/video">B站</a></div></div>' +
       '<div class="pt-wx" onclick="Portal.loadWeather(true)"><div><div class="small" id="ptCity">青树坪</div><div class="small" id="ptRange">今日 --~--°</div></div><div class="t" id="ptTemp">--°</div><div id="ptDesc">加载中…</div></div>' +
-      '<div class="kpi pt-kpi"><div class="stat"><b>' + Store.dueCards().length + '</b><span>待复习</span></div>' +
-      '<div class="stat"><b>' + todayCount() + '</b><span>今日已练</span></div>' +
-      '<div class="stat"><b>' + avgMastery() + '%</b><span>总掌握度</span></div>' +
-      '<div class="stat"><b>' + streakDays() + '</b><span>连续天数</span></div></div>' +
-      (function () {
-        var goal = (Store.get().settings || {}).weekGoal || 100;
-        var now = new Date(); now.setHours(0, 0, 0, 0);
-        var dow = (now.getDay() + 6) % 7; now.setDate(now.getDate() - dow);
-        var cnt = Store.get().attempts.filter(function (a) { return (a.createdAt || 0) >= now.getTime(); }).length;
-        var pct = Math.min(100, Math.round(cnt * 100 / goal));
-        var r = 42, c = 2 * Math.PI * r, off = c * (1 - pct / 100);
-        return '<div class="pt-note" style="display:flex;align-items:center;gap:16px"><div style="position:relative;width:104px;height:104px;flex:none">' +
-          '<svg width="104" height="104" viewBox="0 0 104 104" style="transform:rotate(-90deg)"><circle cx="52" cy="52" r="' + r + '" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="9"/><circle cx="52" cy="52" r="' + r + '" fill="none" stroke="#2dd4bf" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg>' +
-          '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff">' + pct + '%</div></div>' +
-          '<div><b style="font-size:14px">本周目标</b><div class="small" style="color:rgba(255,255,255,.7);margin-top:4px">已完成 ' + cnt + ' / ' + goal + ' 题</div><div class="small" style="color:rgba(255,255,255,.5);margin-top:2px">每周坚持，进度会自己长出来</div></div></div>' +
-          '<div class="modcards">' + (function () {
-        var mods = ['函数与导数', '三角函数', '数列'];
-        return mods.map(function (mn) {
-          var ns = (window.DATA.nodes || []).filter(function (x) { return (x.module || '函数与导数') === mn; });
-          var sum = 0; ns.forEach(function (x) { sum += Store.masteryOf(x.id); });
-          var avg = ns.length ? Math.round(sum / ns.length) : 0;
-          var due = 0;
-          Store.dueCards().forEach(function (c) {
-            var arr = c.refType === 'method' ? (window.DATA.methods || []) : (window.DATA.questions || []);
-            arr.forEach(function (x) { if (x.id === c.refId && (x.module || '函数与导数') === mn) due++; });
-          });
-          return '<a class="modcard" href="#/today" onclick="Portal.openModule(\'' + mn + '\');return false;"><div class="m">' + avg + '%</div><b>' + mn + '</b><div class="s">待复习 ' + due + ' · ' + ns.length + ' 节点</div></a>';
-        }).join('');
-      })() + '</div>';
-      })() +
-      '<div class="pt-grid">' +
+      '<div class="pt-grid" style="margin-top:18px">' +
       tile('study','学习台','#/today') + tile('practice','练习','#/practice') + tile('map','知识图谱','#/map') +
       tile('wrong','错题本','#/wrong') + tile('stats','统计','#/stats') + tile('search','搜索','#/search') +
       tile('globe','地球','#/globe') + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) +
       '</div>' +
-      (function () {
-        var days = [];
-        for (var i = 6; i >= 0; i--) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push({ t: d.getTime(), n: 0, label: (d.getMonth() + 1) + '/' + d.getDate() }); }
-        Store.get().attempts.forEach(function (a) { for (var i = 0; i < days.length; i++) { var end = i < days.length - 1 ? days[i + 1].t : Infinity; if ((a.createdAt || 0) >= days[i].t && (a.createdAt || 0) < end) { days[i].n++; break; } } });
-        var max = Math.max(1, Math.max.apply(null, days.map(function (x) { return x.n; })));
-        return '<div class="pt-note"><b style="font-size:14px">最近 7 天足迹</b><div class="bars7" style="margin-top:10px;height:74px">' + days.map(function (x) { return '<div><i style="height:' + Math.max(4, Math.round(x.n * 100 / max)) + '%"></i><span>' + x.label + '</span></div>'; }).join('') + '</div></div>';
-      })() +
-      '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p>' +
-      (function () {
-        var wrongs = Store.wrong().slice(0, 3);
-        if (!wrongs.length) return '';
-        return '<div class="pt-note"><b style="font-size:14px">最近错题</b>' + wrongs.map(function (a) {
-          var q = null; (window.DATA.questions || []).forEach(function (x) { if (x.id === a.questionId) q = x; });
-          if (!q) return '';
-          return '<div class="row"><span class="grow small" style="color:rgba(255,255,255,.86)">' + q.stem.slice(0, 26) + '…</span><span class="small" style="color:rgba(255,255,255,.5)">' + (a.errorType || '未归因') + '</span></div>';
-        }).join('') + '<div class="row" style="margin-top:10px"><a href="#/wrong">去错题本攻克 →</a></div></div>';
-      })() + '</div>';
+      '</div>';
     loadWeather(false);
     if (global.Galaxy) { var gc = document.getElementById('galaxyCanvas'); if (gc) global.Galaxy.mount(gc); }
     if (global.Anim && Anim.ok()) { Anim.fadeIn('.pt-wx', 60); Anim.enter('.pt-tile', 55); }

@@ -2,7 +2,7 @@
 (function (global) {
   var CITIES = global.CITIES || [];
   var rot = { yaw: -1.9, pitch: 0.5 }, zoom = 1, drag = null, auto = true, night = true;
-  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false, platesOn = false, resizeFn = null, pick = null;
+  var route = null, phase = 0, cv = null, ctx = null, wrap = null, raf = null, last = 0, R0 = 6371, pressure = false, currentsOn = false, platesOn = false, resizeFn = null, pick = null, MIN_DT = (global.PERF && global.PERF.low) ? 33 : 16;
 
   function rad(d) { return d * Math.PI / 180; }
   function toVec(lat, lng) { var f = rad(lat), l = rad(lng); return { x: Math.cos(f) * Math.sin(l), y: Math.sin(f), z: Math.cos(f) * Math.cos(l) }; }
@@ -265,7 +265,15 @@
     });
   }
 
-  function loop(ts) { var dt = last ? Math.min(3, (ts - last) / 16.7) : 1; last = ts; if (auto && !drag) rot.yaw += 0.0035 * dt; if (route) phase = (phase + 0.004 * dt) % 1; if ((auto || route) && !drag) draw(); raf = requestAnimationFrame(loop); }
+  function loop(ts) {
+    if (!ctx || !cv || cv.isConnected === false) { raf = null; return; }
+    raf = requestAnimationFrame(loop);
+    if (ts && last && ts - last < MIN_DT - 1) return;
+    var dt = last ? Math.min(3, (ts - last) / 16.7) : 1; last = ts;
+    if (auto && !drag) rot.yaw += 0.0035 * dt;
+    if (route) phase = (phase + 0.004 * dt) % 1;
+    if ((auto || route) && !drag) draw();
+  }
   function setAuto(v) { auto = !!v; var b = document.getElementById('glAuto'); if (b) b.textContent = auto ? '⏸ 暂停自转' : '▶ 开始自转'; }
   function togglePlates() { platesOn = !platesOn; var b = document.getElementById('glPlate'); if (b) b.textContent = platesOn ? '🗺 板块开' : '🗺 板块关'; draw(); }
   function toggleCurrents() { currentsOn = !currentsOn; var b = document.getElementById('glCur'); if (b) b.textContent = currentsOn ? '🌊 洋流开' : '🌊 洋流关'; draw(); }
@@ -420,9 +428,9 @@
     if (_ta) _ta.value = '北京'; if (_tb) _tb.value = '伦敦';
     if (_la) _la.value = '北京'; if (_lb) _lb.value = '伦敦';
     updateTZ(); updateSun(); localTimeSwap(); climate();
-    function resize() { var r = wrap.getBoundingClientRect(); cv.width = Math.max(1, r.width * (devicePixelRatio || 1)); cv.height = Math.max(1, r.height * (devicePixelRatio || 1)); draw(); }
+    function resize() { var r = wrap.getBoundingClientRect(); var _dpr = Math.min(devicePixelRatio || 1, (global.PERF && global.PERF.low) ? 1.25 : 2); cv.width = Math.max(1, r.width * _dpr); cv.height = Math.max(1, r.height * _dpr); draw(); }
     resizeFn = resize;
-    addEventListener('resize', resize);
+    if (resizeFn && resizeFn !== resize) removeEventListener('resize', resizeFn); resizeFn = resize; addEventListener('resize', resizeFn);
     wrap.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; if (wrap.setPointerCapture) wrap.setPointerCapture(e.pointerId); });
     wrap.addEventListener('pointermove', function (e) { if (!drag) return; rot.yaw += (e.clientX - drag.x) * 0.008; rot.pitch = Math.max(-1.3, Math.min(1.3, rot.pitch + (e.clientY - drag.y) * 0.006)); drag = { x: e.clientX, y: e.clientY }; draw(); });
     wrap.addEventListener('pointerup', function (e) {
@@ -441,5 +449,10 @@
     if (!raf) raf = requestAnimationFrame(loop);
   }
 
-  global.Globe = { render: render, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, tab: tab, fullscreen: fullscreen, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
+  function stop() {
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    if (resizeFn) { removeEventListener('resize', resizeFn); resizeFn = null; }
+    last = 0;
+  }
+  global.Globe = { render: render, stop: stop, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, tab: tab, fullscreen: fullscreen, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
 })(window);

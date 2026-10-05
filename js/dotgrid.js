@@ -9,7 +9,7 @@
     var cols = Math.ceil(w / gap) + 1, rows = Math.ceil(h / gap) + 1;
     for (var i = 0; i < cols; i++) for (var j = 0; j < rows; j++) dots.push({ x: i * gap, y: j * gap, ox: 0, oy: 0, s: 0 });
   }
-  function resize() { if (!cv) return; dpr = Math.min(devicePixelRatio || 1, 1.6); w = cv.width = cv.clientWidth * dpr; h = cv.height = cv.clientHeight * dpr; build(); }
+  function resize() { if (!cv) return; dpr = Math.min(devicePixelRatio || 1, (global.PERF && global.PERF.low) ? 1 : 1.6); w = cv.width = cv.clientWidth * dpr; h = cv.height = cv.clientHeight * dpr; build(); }
   function onMove(e) { mouse.tx = e.clientX * dpr; mouse.ty = e.clientY * dpr; }
   function onLeave() { mouse.tx = -9999; mouse.ty = -9999; }
   function tick() {
@@ -39,7 +39,8 @@
     raf = requestAnimationFrame(tick);
   }
   function mount(canvas) {
-    stop(); cv = canvas; if (!cv) return; ctx = cv.getContext('2d'); resize();
+    if (global.PERF && global.PERF.low) { stop(); if (canvas) canvas.style.display = 'none'; return; }
+    stop(); if (canvas) canvas.style.display = ''; cv = canvas; if (!cv) return; ctx = cv.getContext('2d'); resize();
     addEventListener('resize', resize); addEventListener('pointermove', onMove); addEventListener('pointerleave', onLeave);
     raf = requestAnimationFrame(tick);
   }
