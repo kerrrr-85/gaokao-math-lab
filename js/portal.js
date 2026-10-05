@@ -40,6 +40,7 @@
       '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p></div>';
     loadWeather(false);
     if (global.Galaxy) { var gc = document.getElementById('galaxyCanvas'); if (gc) global.Galaxy.mount(gc); }
+    if (global.Anim && Anim.ok()) { Anim.fadeIn('.pt-wx', 60); Anim.enter('.pt-tile', 55); }
   }
   function renderVideo() {
     var v = document.getElementById('view');
