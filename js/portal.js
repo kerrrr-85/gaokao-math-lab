@@ -7,9 +7,17 @@
     search: '<svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105 14.3l5.3 5.3 1.4-1.4-5.3-5.3A8 8 0 0010 2zm0 3a5 5 0 110 10 5 5 0 010-10z"/></svg>',
     doubao: '<svg viewBox="0 0 24 24"><path d="M7 3h10a4 4 0 014 4v6a4 4 0 01-4 4h-3l-5 4v-4H7a4 4 0 01-4-4V7a4 4 0 014-4zm1 5h8v2H8V8zm0 4h5v2H8v-2z"/></svg>',
     weather: '<svg viewBox="0 0 24 24"><path d="M6 19a4 4 0 010-8 6 6 0 0111.6-1.6A4.5 4.5 0 0117 19H6z"/></svg>',
+    practice: '<svg viewBox="0 0 24 24"><path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2zM20.7 7.3a1 1 0 000-1.4l-2.6-2.6a1 1 0 00-1.4 0l-1.8 1.8L18.9 9l1.8-1.7z"/></svg>',
+    map: '<svg viewBox="0 0 24 24"><path d="M6 2a4 4 0 100 8 4 4 0 000-8zm12 12a4 4 0 100 8 4 4 0 000-8zM8 8l7.2 6.5-1.4 1.5L6.6 9.5 8 8z"/></svg>',
+    wrong: '<svg viewBox="0 0 24 24"><path d="M4 3h13a3 3 0 013 3v15l-5-3-5 3-5-3-1 0V3zm3 5h7v2H7V8zm0 4h7v2H7v-2z"/></svg>',
+    stats: '<svg viewBox="0 0 24 24"><path d="M4 20h3V10H4v10zm6 0h3V4h-3v16zm6 0h3v-7h-3v7z"/></svg>',
     settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4c0-.4 0-.9-.1-1.3l2-1.5-2-3.4-2.3 1a9 9 0 00-2.2-1.3L15.9 3h-4l-.4 2.5a9 9 0 00-2.2 1.3l-2.3-1-2 3.4 2 1.5A9 9 0 006.9 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a9 9 0 002.2 1.3l.4 2.5h4l.4-2.5a9 9 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></svg>'
   };
   var TILE_STYLE = {
+    practice: 'linear-gradient(135deg,#0d9488,#5eead4)',
+    map: 'linear-gradient(135deg,#4f46e5,#818cf8)',
+    wrong: 'linear-gradient(135deg,#dc2626,#f87171)',
+    stats: 'linear-gradient(135deg,#0891b2,#67e8f9)',
     study: 'linear-gradient(135deg,#0f766e,#2dd4bf)',
     video: 'linear-gradient(135deg,#ec4899,#f472b6)',
     globe: 'linear-gradient(135deg,#2563eb,#38bdf8)',
@@ -68,9 +76,11 @@
       '<div class="stat"><b>' + todayCount() + '</b><span>今日已练</span></div>' +
       '<div class="stat"><b>' + avgMastery() + '%</b><span>总掌握度</span></div>' +
       '<div class="stat"><b>' + streakDays() + '</b><span>连续天数</span></div></div>' +
-      '<div class="pt-group">学习</div><div class="pt-grid">' + tile('study','学习台','#/today') + tile('search','搜索','#/search') + '</div>' +
-      '<div class="pt-group">工具</div><div class="pt-grid">' + tile('globe','地球','#/globe') + tile('weather','天气','#/today') + tile('settings','设置','#/settings') + '</div>' +
-      '<div class="pt-group">娱乐</div><div class="pt-grid">' + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) + '</div>' +
+      '<div class="pt-grid">' +
+      tile('study','学习台','#/today') + tile('practice','练习','#/practice') + tile('map','知识图谱','#/map') +
+      tile('wrong','错题本','#/wrong') + tile('stats','统计','#/stats') + tile('search','搜索','#/search') +
+      tile('globe','地球','#/globe') + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) +
+      '</div>' +
       '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p>' +
       (function () {
         var wrongs = Store.wrong().slice(0, 3);
