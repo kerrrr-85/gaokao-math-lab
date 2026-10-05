@@ -71,3 +71,6 @@ textarea{min-height:96px;resize:vertical}
 .ans-area{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 
 .homebtn{display:inline-block;padding:5px 12px;border:1px solid #bfe3dd;background:#e6f4f1;color:#0f766e;border-radius:999px;font-size:13px;font-weight:700;text-decoration:none}
+
+.brand{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:700px){.today-mini{display:none}.topbar{padding:10px 14px}.homebtn{padding:5px 10px}}
