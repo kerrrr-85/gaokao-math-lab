@@ -95,6 +95,13 @@
       tile('wrong','错题本','#/wrong') + tile('stats','统计','#/stats') + tile('search','搜索','#/search') +
       tile('globe','地球','#/globe') + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) +
       '</div>' +
+      (function () {
+        var days = [];
+        for (var i = 6; i >= 0; i--) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push({ t: d.getTime(), n: 0, label: (d.getMonth() + 1) + '/' + d.getDate() }); }
+        Store.get().attempts.forEach(function (a) { for (var i = 0; i < days.length; i++) { var end = i < days.length - 1 ? days[i + 1].t : Infinity; if ((a.createdAt || 0) >= days[i].t && (a.createdAt || 0) < end) { days[i].n++; break; } } });
+        var max = Math.max(1, Math.max.apply(null, days.map(function (x) { return x.n; })));
+        return '<div class="pt-note"><b style="font-size:14px">最近 7 天足迹</b><div class="bars7" style="margin-top:10px;height:74px">' + days.map(function (x) { return '<div><i style="height:' + Math.max(4, Math.round(x.n * 100 / max)) + '%"></i><span>' + x.label + '</span></div>'; }).join('') + '</div></div>';
+      })() +
       '<p class="small muted" style="text-align:center;margin-top:16px">学习进「学习台」，看视频进「B站视频」</p>' +
       (function () {
         var wrongs = Store.wrong().slice(0, 3);

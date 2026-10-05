@@ -324,11 +324,18 @@
       '</div></div>';
     html += '<div class="card" style="text-align:center"><p class="small muted" style="margin-top:0">这张卡掌握得怎么样？</p><div class="row" style="justify-content:center"><button class="btn" onclick="event.stopPropagation();App.reviewCard(\'method:' + m.id + '\',0)">不会</button><button class="btn" onclick="event.stopPropagation();App.reviewCard(\'method:' + m.id + '\',1)">半会</button><button class="btn primary" onclick="event.stopPropagation();App.reviewCard(\'method:' + m.id + '\',2)">会了</button></div>' +
       '<p class="small muted" style="margin:10px 0 0">已复习 ' + (card.reps || 0) + ' 次</p>' +
-      '<a class="btn sm" style="margin-top:10px" href="#/node/' + m.node + '">看所属知识点</a></div>';
+      '<div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm" onclick="event.stopPropagation();App.toggleFav(\'' + m.id + '\')">' + (isFav(m.id) ? '★ 已收藏' : '☆ 收藏') + '</button><a class="btn sm" href="#/node/' + m.node + '">看所属知识点</a></div></div>';
     view.innerHTML = html;
     if (window.Anim && Anim.ok()) Anim.fadeIn('.flip', 40);
   }
   function flipCard() { var el = document.getElementById('flipInner'); if (el) el.classList.toggle('flipped'); }
+  function isFav(id) { var f = (Store.get().settings || {}).fav || []; return f.indexOf(id) >= 0; }
+  function toggleFav(id) {
+    var st = Store.get().settings; st.fav = st.fav || [];
+    var i = st.fav.indexOf(id);
+    if (i >= 0) st.fav.splice(i, 1); else st.fav.push(id);
+    Store.save(); toast(i >= 0 ? '已取消收藏' : '已收藏该方法卡'); router();
+  }
   function applyTheme() { var t = (Store.get().settings || {}).theme || 'light'; document.body.classList.toggle('dark', t === 'dark'); }
   function setTheme(t) { Store.get().settings.theme = t; Store.save(); applyTheme(); toast(t === 'dark' ? '已切换到深色' : '已切换到浅色'); renderSettings(); }
   function clearDraft() { var q = session.list[session.i]; if (q && window.InputTools && InputTools.clearPad) InputTools.clearPad('draftPad', q.id); }
@@ -353,6 +360,8 @@
       '<div><i style="height:' + Math.max(4, Math.round(mid * 100 / total)) + '%"></i><span>中档 ' + mid + '</span></div>' +
       '<div><i style="height:' + Math.max(4, Math.round(hard * 100 / total)) + '%"></i><span>压轴 ' + hard + '</span></div></div>';
     html += '<div class="row" style="margin-top:16px"><button class="btn primary" onclick="App.beginPractice()">开始练习</button><button class="btn" onclick="App.beginPractice(true)">交错练习</button></div></div>';
+    var favs = (Store.get().settings.fav || []).map(function (id) { return methodById[id]; }).filter(Boolean);
+    if (favs.length) html += '<div class="card"><div class="phead"><span class="ico">⭐</span><div class="grow"><h2>收藏的方法</h2><p>共 ' + favs.length + ' 张，随时翻看</p></div></div><div class="list">' + favs.map(function (mm) { return '<a class="item elev" href="#/method/' + mm.id + '"><div class="row"><b class="grow">' + esc(mm.title) + '</b>' + diffTag(mm.diff) + '</div><div class="small muted" style="margin-top:4px">' + esc(mm.trigger) + '</div></a>'; }).join('') + '</div></div>';
     var ns = D.nodes.filter(function (n) { return (n.module || '函数与导数') === curModule(); });
     var rec = ns.map(function (n) { return { n: n, m: Store.masteryOf(n.id) }; }).filter(function (r) { return D.questions.some(function (q) { return q.node === r.n.id; }); }).sort(function (a, b) { return a.m - b.m; }).slice(0, 3);
     if (rec.length) {
@@ -425,6 +434,8 @@
       html += '<p class="small muted">自评（写入复习计划）：</p><div class="row"><button class="btn sm" onclick="App.selfRate(0)">不会</button><button class="btn sm" onclick="App.selfRate(1)">半会</button><button class="btn sm primary" onclick="App.selfRate(2)">会了</button></div>';
     } else if (result !== 'ok') {
       var sug = suggestErr(q, userAnswer, (session.lastAttempt || {}).userSteps || '');
+      var sim = D.questions.filter(function (x) { return x.id !== q.id && x.node === q.node && x.diff === q.diff; })[0] || D.questions.filter(function (x) { return x.id !== q.id && x.node === q.node; })[0];
+      if (sim) html += '<p style="margin-top:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + sim.id + '\')">练一道相似的</button></p>';
       html += '<p class="small muted" style="margin-top:8px">错因归类（已按你的作答自动推荐：<b>' + sug + '</b>，可改）：</p><div class="row">' + ['知识', '方法', '计算', '审题', '心态'].map(function (t) { return '<button class="chip' + (t === sug ? ' on' : '') + '" onclick="App.tagError(\'' + t + '\')">' + t + '</button>'; }).join('') + '</div>' + '<p style="margin-top:8px"><button class="btn sm" onclick="App.overrideOk()">其实我会，标为掌握</button></p>';
     }
     html += '<div id="aiArea"></div>';
@@ -597,9 +608,9 @@
   function renderSettings() {
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v36 · 数据只存在本机</p></div></div>';
+    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v38 · 数据只存在本机</p></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
-      '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
+      '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="App.exportWrongMd()">导出错题本 MD</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
     html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
       '<div class="grid2"><label class="small">新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label>' +
       '<label class="small">复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div></div>';
@@ -627,6 +638,22 @@
   }
   function testAI() { var url = (document.getElementById('aiUrl') || {}).value || ''; var box = document.getElementById('aiTest'); if (box) box.textContent = '检测中…'; AI.health(url).then(function (r) { if (box) box.textContent = (r && r.ok) ? '连接成功 ✓' : '返回异常'; }).catch(function (e) { if (box) box.textContent = '连接失败：' + e.message; }); }
   function saveSettings() { var s = Store.get().settings; s.newPerDay = parseInt(document.getElementById('sNew').value, 10); s.reviewPerDay = parseInt(document.getElementById('sRev').value, 10); s.ai = s.ai || {}; s.ai.proxyUrl = (document.getElementById('aiUrl') || {}).value || ''; s.ai.enabled = !!(document.getElementById('aiEnabled') || {}).checked; s.voice = s.voice || {}; s.voice.rate = parseFloat((document.getElementById('voRate') || {}).value || '1'); s.voice.voiceUri = (document.getElementById('voVoice') || {}).value || ''; s.voice.autoSpeak = !!(document.getElementById('voAuto') || {}).checked; Store.save(); toast('已保存'); updateMini(); }
+  function exportWrongMd() {
+    var list = Store.wrong(), seen = {}, lines = ['# 错题本', '', '导出时间：' + new Date().toLocaleString(), ''];
+    list.forEach(function (a) {
+      if (seen[a.questionId]) return; seen[a.questionId] = 1;
+      var q = qById[a.questionId]; if (!q) return;
+      var node = nodeById[q.node] || {};
+      lines.push('## ' + (q.module || '函数与导数') + ' · ' + node.title + ' · ' + q.diff);
+      lines.push(''); lines.push('**题目：** ' + q.stem);
+      lines.push(''); lines.push('**我的错因：** ' + (a.errorType || '未归因'));
+      lines.push(''); lines.push('**参考答案：** ' + q.answer);
+      lines.push(''); lines.push('**解析：** ' + q.steps);
+      lines.push(''); lines.push('---'); lines.push('');
+    });
+    var b = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+    var a2 = document.createElement('a'); a2.href = URL.createObjectURL(b); a2.download = '错题本.md'; a2.click();
+  }
   function exportData() { var b = new Blob([Store.exportJSON()], { type: 'application/json' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'gaokao-math-progress.json'; a.click(); }
   function importData(input) { var f = input.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { try { Store.importJSON(r.result); toast('导入成功'); router(); } catch (e) { toast('导入失败：' + e.message); } }; r.readAsText(f); }
   function forceUpdate() {
@@ -661,13 +688,13 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, openModule: openModule, setPF: setPF, flipCard: flipCard, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
     startPractice: startPractice, startSingle: startSingle, selfRate: selfRate, tagError: tagError, overrideOk: overrideOk,
     doSearch: doSearch, setWF: setWF, setSE: setSE, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData,
-    aiExplain: aiExplain, refreshWeather: refreshWeather, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI, testVoice: testVoice, voiceDiag: voiceDiag
+    aiExplain: aiExplain, exportWrongMd: exportWrongMd, refreshWeather: refreshWeather, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI, testVoice: testVoice, voiceDiag: voiceDiag
   };
   /* 站内跳转用 pushState：返回键可回到上一页；顶部「首页」一键回门户 */
   var navDepth = 0;
@@ -690,6 +717,19 @@
   window.addEventListener('hashchange', router);
   setInterval(function () { if (document.getElementById('wxDesc')) loadWeather(true); }, 900000);
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('./sw.js').catch(function () {}); }
+  document.addEventListener('keydown', function (e) {
+    if (!session.list.length) return;
+    var tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      if (e.key === 'Enter' && tag === 'input' && !session.answered) { e.preventDefault(); submit(); }
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (session.answered) nextQ(); else submit(); }
+    else if (e.key === 'ArrowRight') nextQ();
+    else if (e.key === '1') selfRate(0);
+    else if (e.key === '2') selfRate(1);
+    else if (e.key === '3') selfRate(2);
+  });
   applyTheme();
   router();
 })();
