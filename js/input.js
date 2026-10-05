@@ -139,6 +139,16 @@
       fr.readAsArrayBuffer(blob);
     });
   }
+  function showCube(text) {
+    var el = document.getElementById('cubeOverlay');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'cubeOverlay'; el.className = 'cube-overlay';
+      el.innerHTML = '<div class="cube-loader"><div class="loader_cube loader_cube--glowing"></div><div class="loader_cube loader_cube--color"></div></div><div class="cube-text" id="cubeText"></div>';
+      document.body.appendChild(el);
+    }
+    var t = document.getElementById('cubeText'); if (t) t.textContent = text || '';
+  }
+  function hideCube() { var el = document.getElementById('cubeOverlay'); if (el && el.parentNode) el.parentNode.removeChild(el); }
   function record(id) {
     var cfg = (global.Store && Store.get().settings.ai) || {};
     var proxy = (cfg.proxyUrl || '').replace(/\/+$/, '');
@@ -148,19 +158,19 @@
       var chunks = [], mr = new MediaRecorder(stream);
       mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
       mr.onstop = function () {
-        stream.getTracks().forEach(function (t) { t.stop(); });
+        stream.getTracks().forEach(function (t) { t.stop(); }); showCube('正在识别语音…');
         var blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
         blobToWavBase64(blob).then(function (b64) {
           fetch(proxy + '/asr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio: b64 }) })
             .then(function (r) { return r.json(); })
-            .then(function (j) { if (j && j.text) { insert(id, mathify(j.text)); } else { alert('识别失败：' + ((j && j.error) || '未知')); } })
-            .catch(function (e) { alert('识别请求失败：' + e.message); });
+            .then(function (j) { hideCube(); if (j && j.text) { insert(id, mathify(j.text)); } else { alert('识别失败：' + ((j && j.error) || '未知')); } })
+            .catch(function (e) { hideCube(); alert('识别请求失败：' + e.message); });
         }).catch(function (e) { alert('音频处理失败：' + e.message); });
       };
-      mr.start();
+      mr.start(); showCube('正在录音…（6 秒）');
       if (global.toast) {} 
       setTimeout(function () { try { mr.stop(); } catch (e) {} }, 6000);
-    }).catch(function (e) { alert('无法使用麦克风：' + e.message); });
+    }).catch(function (e) { hideCube(); alert('无法使用麦克风：' + e.message); });
   }
 
   /* ---- 语音朗读 ---- */
@@ -196,5 +206,5 @@
   function copyText(t) { try { navigator.clipboard.writeText(String(t || '')); return true; } catch (e) { return false; } }
   if (global.speechSynthesis && typeof speechSynthesis.addEventListener === 'function') { speechSynthesis.addEventListener('voiceschanged', refreshVoices); }
 
-  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record };
+  global.InputTools = { insert: insert, toggle: toggle, voice: voice, canvas: canvas, getImage: getImage, clearImage: clearImage, toolbarHTML: toolbarHTML, speak: speak, stopSpeak: stopSpeak, voices: voices, mathify: mathify, diag: diag, copyText: copyText, record: record, showCube: showCube, hideCube: hideCube };
 })(window);

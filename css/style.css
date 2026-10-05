@@ -97,3 +97,11 @@ input[type=text],textarea,select{font-size:16px}
 @keyframes blobmorph{0%,100%{border-radius:42% 58% 63% 37%/41% 44% 56% 59%;transform:scale(1)}33%{border-radius:62% 38% 42% 58%/56% 62% 38% 44%;transform:scale(1.12)}66%{border-radius:38% 62% 58% 42%/62% 38% 44% 56%;transform:scale(.94)}}
 @keyframes blobspin{to{transform:rotate(360deg)}}
 .blob-text{margin:0;font-size:14px;color:var(--primary);font-weight:600;letter-spacing:1px}
+
+.cube-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:250;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+.cube-loader{width:110px;height:110px;position:relative;display:flex;align-items:center;justify-content:center}
+.loader_cube{position:absolute;width:100%;height:100%;border-radius:24px}
+.loader_cube--glowing{z-index:2;background-color:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.35)}
+.loader_cube--color{z-index:1;filter:blur(2px);background:linear-gradient(135deg,#1afbf0,#da00ff);animation:loadtwo 2.5s ease-in-out infinite}
+@keyframes loadtwo{50%{transform:rotate(-80deg)}}
+.cube-text{color:#fff;font-size:15px;letter-spacing:1px}
