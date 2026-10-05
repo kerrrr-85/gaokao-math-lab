@@ -330,7 +330,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v17</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v18</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
@@ -394,10 +394,10 @@
     doSearch: doSearch, saveSettings: saveSettings, exportData: exportData, importData: importData, resetData: resetData,
     aiExplain: aiExplain, refreshWeather: refreshWeather, speakAnswer: speakAnswer, stopSpeak: stopSpeak, testAI: testAI, testVoice: testVoice, voiceDiag: voiceDiag
   };
-  /* A+C：站内跳转用 replaceState（不堆历史），返回键不再一页页退 */
+  /* 站内跳转用 pushState：返回键可回到上一页；顶部「首页」一键回门户 */
   function go(path) {
     if (location.hash === path) return;
-    history.replaceState(null, '', path);
+    history.pushState(null, '', path);
     router();
   }
   document.addEventListener('click', function (e) {
@@ -406,12 +406,7 @@
     e.preventDefault();
     go(a.getAttribute('href'));
   });
-  window.addEventListener('popstate', function () {
-    if (location.hash && location.hash !== '#/' && location.hash !== '#') {
-      history.replaceState(null, '', '#/');
-      router();
-    }
-  });
+  window.addEventListener('popstate', function () { router(); });
   window.addEventListener('hashchange', router);
   setInterval(function () { if (document.getElementById('wxDesc')) loadWeather(true); }, 900000);
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) { navigator.serviceWorker.register('./sw.js').catch(function () {}); }
