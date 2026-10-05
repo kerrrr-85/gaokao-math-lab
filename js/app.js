@@ -18,6 +18,13 @@
   D.questions.forEach(function (q) { cards.push(SRS.newCard('question', q.id)); });
   Store.ensureCards(cards);
 
+  function curModule() { return (Store.get().settings || {}).module || '函数与导数'; }
+  function inMod(x) { return !x.module || x.module === curModule(); }
+  function setModule(m) { Store.get().settings.module = m; Store.save(); toast('已切换到 ' + m); router(); }
+  function modbar() {
+    var ms = ['函数与导数', '三角函数', '数列'];
+    return '<div class="modbar">' + ms.map(function (m) { return '<button class="btn sm' + (m === curModule() ? ' primary' : '') + '" onclick="App.setModule(\'' + m + '\')">' + m + '</button>'; }).join('') + '</div>';
+  }
   function isNew(c) { return c.state === 'new'; }
   function dueReview() { return Store.allCards().filter(function (c) { return !isNew(c) && SRS.isDue(c); }); }
   function newCards() { return Store.allCards().filter(isNew); }
@@ -70,7 +77,7 @@
     var avg = 0, cnt = 0;
     D.nodes.forEach(function (n) { avg += Store.masteryOf(n.id); cnt++; });
     avg = cnt ? Math.round(avg / cnt) : 0;
-    var html = '<h1>今日任务</h1>';
+    var html = modbar() + '<h1>今日任务</h1>';
     html += '<div class="kpi">' +
       '<div class="card"><b>' + due.length + '</b><span class="small muted">待复习卡</span></div>' +
       '<div class="card"><b>' + nw.length + '</b><span class="small muted">新卡</span></div>' +
@@ -171,7 +178,7 @@
   var session = { list: [], i: 0, answered: false, lastAttempt: null };
   function renderPractice() {
     if (session.list.length) { renderQuestion(); return; }
-    var html = '<h1>练习</h1><div class="card"><div class="grid2">' +
+    var html = modbar() + '<h1>练习</h1><div class="card"><div class="grid2">' +
       '<label>知识节点<select id="fNode" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option>' + D.nodes.map(function (n) { return '<option value="' + n.id + '">' + esc(n.title) + '</option>'; }).join('') + '</select></label>' +
       '<label>难度<select id="fDiff" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option><option>基础</option><option>中档</option><option>压轴</option></select></label>' +
       '<label>题型<select id="fType" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"><option value="">全部</option><option value="choice">选择</option><option value="fill">填空</option><option value="solution">解答</option></select></label>' +
@@ -183,7 +190,7 @@
   }
   function pickQuestions(interleave) {
     var n = (document.getElementById('fNode') || {}).value || '', d = (document.getElementById('fDiff') || {}).value || '', t = (document.getElementById('fType') || {}).value || '', c = parseInt((document.getElementById('fCount') || {}).value || '8', 10);
-    var arr = D.questions.filter(function (q) { return (!n || q.node === n) && (!d || q.diff === d) && (!t || q.type === t); });
+    var arr = D.questions.filter(function (q) { return inMod(q) && (!n || q.node === n) && (!d || q.diff === d) && (!t || q.type === t); });
     if (interleave) { var seen = {}, out = []; arr.forEach(function (q) { if (!seen[q.node]) { seen[q.node] = 1; out.push(q); } }); arr.forEach(function (q) { if (out.indexOf(q) < 0) out.push(q); }); arr = out; }
     return arr.slice(0, c);
   }
@@ -332,7 +339,7 @@
   /* ============ 设置 ============ */
   function renderSettings() {
     var s = Store.get().settings;
-    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v19</span></h1>' +
+    view.innerHTML = '<h1>设置 <span class="tag" style="font-size:12px;vertical-align:middle">版本 v20</span></h1>' +
       '<div class="card"><h2>每日上限</h2><div class="grid2"><label>新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label><label>复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div><button class="btn primary" style="margin-top:12px" onclick="App.saveSettings()">保存</button></div>' +
       '<div class="card"><h2>AI 讲解</h2><p class="small muted">需要 Cloudflare Worker 代理；密钥只放在 Worker 里，前端不保存 Key。</p>' +
       '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
@@ -388,7 +395,7 @@
   }
 
   window.App = {
-    go: go, back: back,
+    go: go, back: back, setModule: setModule,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
