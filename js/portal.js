@@ -131,8 +131,8 @@
     setTimeout(function () {
       if (!inkEl || !inkEl.classList.contains('on')) return;
       inkEl.classList.add('lit'); inkReady = true;
-      inkHold = setTimeout(function () { inkHold = null; roomOpen(); }, 1000);
-    }, 700);
+      inkHold = setTimeout(function () { inkHold = null; roomOpen(); }, 450);
+    }, 400);
   }
   function inkHoldStop() { if (inkHold) { clearTimeout(inkHold); inkHold = null; } }
   function roomOpen() {
@@ -191,7 +191,7 @@
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=58" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=61" alt="" decoding="async"></figure>' +
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +

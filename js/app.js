@@ -148,7 +148,7 @@
   }
   /* ============ 今日（四 Tab + 拉杆式牌堆） ============ */
   var dayKey = 'today';
-  var deckState = { open: {}, pick: {}, list: {}, down: null, swiped: 0 };
+  var deckState = { off: {}, list: {}, down: null, swiped: 0, dragging: false };
 
   function ringSm(pct, big) {
     var r = 26, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct || 0));
@@ -171,47 +171,62 @@
     });
   }
   function deckList(kind) { return deckState.list[kind] || []; }
-  function deckSel(kind) {
-    var arr = deckList(kind), id = deckState.pick[kind];
-    for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return { c: arr[i], i: i, n: arr.length };
-    return { c: null, i: -1, n: arr.length };
+  function deckOff(kind) { return deckState.off[kind] || 0; }
+  function deckClamp(kind, v) { var n = deckList(kind).length; return Math.max(0, Math.min(n ? n - 1 : 0, v)); }
+  function deckStepPx(el) {
+    var v = 0; try { v = parseFloat(getComputedStyle(el).getPropertyValue('--step')); } catch (e) {}
+    return v || 78;
+  }
+  function deckApply(kind) {
+    var el = document.getElementById('deck-' + kind);
+    if (!el) return;
+    var cards = el.querySelectorAll('.deck-card');
+    var off = deckOff(kind), step = deckStepPx(el), center = Math.round(off);
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i], pos = i - off, ap = Math.abs(pos);
+      c.classList.toggle('picked', i === center);
+      if (ap > 4.2) { c.style.opacity = '0'; c.style.pointerEvents = 'none'; continue; }
+      c.style.opacity = ap > 3.4 ? '0' : '1';
+      c.style.pointerEvents = '';
+      c.style.transform = 'translateX(' + (pos * step).toFixed(1) + 'px) rotate(' + (pos * 5.5).toFixed(2) +
+        'deg) scale(' + (1 - Math.min(ap, 3) * 0.045).toFixed(3) + ')';
+      c.style.zIndex = String(Math.round(200 - ap * 20));
+    }
   }
   function deckPanel(kind) {
-    var s = deckSel(kind);
+    var arr = deckList(kind), idx = Math.round(deckOff(kind)), sel = arr[idx] || null;
     var nav = '<div class="deck-nav"><button class="deck-arrow" title="上一张" onclick="App.deckStep(\'' + kind + '\',-1)">‹</button>' +
-      '<span class="deck-count">' + (s.n ? ((s.i >= 0 ? s.i + 1 : '–') + ' / ' + s.n) : '0 / 0') + '</span>' +
+      '<span class="deck-count">' + (arr.length ? ((idx + 1) + ' / ' + arr.length) : '0 / 0') + '</span>' +
       '<button class="deck-arrow" title="下一张" onclick="App.deckStep(\'' + kind + '\',1)">›</button></div>';
-    if (!s.n) return nav + '<p class="set-note" style="padding:4px 2px">这里暂时是空的。</p>';
-    if (!s.c) return nav + '<p class="set-note" style="padding:4px 2px">点一张牌，或用 ‹ › / 左右滑动翻牌</p>';
+    if (!arr.length) return nav + '<p class="set-note" style="padding:4px 2px">这里暂时是空的。</p>';
+    if (!sel) return nav + '<p class="set-note" style="padding:4px 2px">拖动牌堆，或点一张牌</p>';
     var act;
     if (kind === 'due') {
       act = '<div class="row" style="margin-top:10px;gap:8px">' +
-        '<button class="btn sm" onclick="App.reviewCard(\'' + s.c.id + '\',0)">不会</button>' +
-        '<button class="btn sm" onclick="App.reviewCard(\'' + s.c.id + '\',1)">半会</button>' +
-        '<button class="btn sm primary" onclick="App.reviewCard(\'' + s.c.id + '\',2)">会了</button></div>';
-    } else if (s.c.refType === 'method') {
-      act = '<div class="row" style="margin-top:10px;gap:8px"><a class="btn sm primary" href="#/method/' + s.c.refId + '">看这张方法卡</a>' +
-        '<a class="btn sm" href="#/practice">去练习</a></div>';
+        '<button class="btn sm" onclick="App.reviewCard(\'' + sel.id + '\',0)">不会</button>' +
+        '<button class="btn sm" onclick="App.reviewCard(\'' + sel.id + '\',1)">半会</button>' +
+        '<button class="btn sm primary" onclick="App.reviewCard(\'' + sel.id + '\',2)">会了</button></div>';
+    } else if (sel.refType === 'method') {
+      act = '<div class="row" style="margin-top:10px;gap:8px"><a class="btn sm primary" href="#/method/' + sel.refId + '">看这张方法卡</a><a class="btn sm" href="#/practice">去练习</a></div>';
     } else {
-      act = '<div class="row" style="margin-top:10px;gap:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + s.c.refId + '\')">练这道题</button>' +
-        '<a class="btn sm" href="#/node/' + (qById[s.c.refId] ? qById[s.c.refId].node : '') + '">看知识点</a></div>';
+      act = '<div class="row" style="margin-top:10px;gap:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + sel.refId + '\')">练这道题</button><a class="btn sm" href="#/node/' + (qById[sel.refId] ? qById[sel.refId].node : '') + '">看知识点</a></div>';
     }
-    return nav + '<div class="deck-detail"><div class="set-lab"><b>' + esc(cardTitle(s.c)) + '</b>' +
-      '<span>' + (s.c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + s.c.reps + ' 次' + (kind === 'due' ? ' · ' + esc(cardMod(s.c)) : '') + '</span></div>' + act + '</div>';
+    return nav + '<div class="deck-detail"><div class="set-lab"><b>' + esc(cardTitle(sel)) + '</b>' +
+      '<span>' + (sel.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + sel.reps + ' 次' +
+      (kind === 'due' ? ' · ' + esc(cardMod(sel)) : '') + '</span></div>' + act + '</div>';
+  }
+  function deckPanelRefresh(kind) {
+    var pn = document.getElementById('deckpanel-' + kind);
+    if (pn) pn.innerHTML = deckPanel(kind);
   }
   function deckHTML(kind, cards, opts) {
     opts = opts || {};
     deckState.list[kind] = cards || [];
-    if (deckState.pick[kind] && !(cards || []).some(function (c) { return c.id === deckState.pick[kind]; })) deckState.pick[kind] = null;
-    var max = opts.max || 5;
+    if (deckState.off[kind] == null) deckState.off[kind] = 0;
+    var max = opts.max || 24;
     var show = (cards || []).slice(0, max);
-    var mid = (show.length - 1) / 2;
-    var open = !!deckState.open[kind];
-    var sel = deckState.pick[kind];
     var body = show.map(function (c, i) {
-      var d = Math.abs(i - mid);
-      return '<button class="deck-card' + (sel === c.id ? ' picked' : '') + '" data-id="' + c.id + '"' +
-        ' style="--i:' + i + ';--mid:' + mid + ';--d:' + d + '"' +
+      return '<button class="deck-card" data-id="' + c.id + '" data-i="' + i + '"' +
         ' onclick="App.deckPick(\'' + kind + '\',\'' + c.id + '\')">' +
         '<span class="dc-top">' + (opts.tag ? opts.tag(c) : '') + '</span>' +
         '<b class="dc-title">' + esc(opts.title(c)) + '</b>' +
@@ -219,70 +234,54 @@
         (opts.meta2 ? '<span class="dc-meta">' + esc(opts.meta2(c)) + '</span>' : '') +
         '</button>';
     }).join('');
-    var more = (cards || []).length > max ? '<span class="deck-more">+' + (cards.length - max) + '</span>' : '';
-    if (!show.length) return '<div class="deck-empty">这里暂时是空的。</div>' + '<div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
-    return '<div class="deck' + (open ? ' open' : '') + '" id="deck-' + kind + '"' +
-      ' onpointerdown="App.deckDown(event,\'' + kind + '\')" onpointermove="App.deckMove(event,\'' + kind + '\')" onpointerup="App.deckUp(event,\'' + kind + '\')" onpointercancel="App.deckCancel(event,\'' + kind + '\')">' +
-      body + more +
-      '<button class="deck-lift" onclick="App.deckOpen(\'' + kind + '\')">' + (open ? '收起' : '展开 ' + cards.length + ' 张') + '</button></div>' +
-      '<div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
+    if (!show.length) return '<div class="deck-empty">这里暂时是空的。</div><div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
+    return '<div class="deck" id="deck-' + kind + '"' +
+      ' onpointerdown="App.deckDown(event,\'' + kind + '\')" onpointermove="App.deckMove(event,\'' + kind + '\')"' +
+      ' onpointerup="App.deckUp(event,\'' + kind + '\')" onpointercancel="App.deckCancel(event,\'' + kind + '\')">' +
+      body + '</div><div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
   }
-  function deckUpdate(kind) {
-    var el = document.getElementById('deck-' + kind);
-    var pn = document.getElementById('deckpanel-' + kind);
-    if (pn) pn.innerHTML = deckPanel(kind);
-    if (!el) return;
-    var sel = deckState.pick[kind];
-    Array.prototype.forEach.call(el.querySelectorAll('.deck-card'), function (c) {
-      c.classList.toggle('picked', c.getAttribute('data-id') === sel);
-    });
-    el.classList.toggle('open', !!deckState.open[kind]);
-    var b = el.querySelector('.deck-lift');
-    if (b) b.textContent = deckState.open[kind] ? '收起' : '展开 ' + deckList(kind).length + ' 张';
+  function deckGoTo(kind, n) {
+    deckState.off[kind] = deckClamp(kind, n);
+    deckApply(kind);
+    deckPanelRefresh(kind);
   }
-  function deckOpen(kind) { deckState.open[kind] = !deckState.open[kind]; deckUpdate(kind); }
   function deckPick(kind, id) {
     if (Date.now() - (deckState.swiped || 0) < 320) return;
-    deckState.pick[kind] = (deckState.pick[kind] === id) ? null : id;
-    deckState.open[kind] = true;
-    deckUpdate(kind);
+    var arr = deckList(kind);
+    for (var i = 0; i < arr.length; i++) if (arr[i].id === id) { deckGoTo(kind, i); return; }
   }
-  function deckStep(kind, dir) {
-    var arr = deckList(kind); if (!arr.length) return;
-    var s = deckSel(kind);
-    var idx = s.i >= 0 ? s.i : (dir > 0 ? -1 : 0);
-    idx = (idx + dir + arr.length) % arr.length;
-    deckState.pick[kind] = arr[idx].id;
-    deckState.open[kind] = true;
-    deckUpdate(kind);
-  }
+  function deckStep(kind, dir) { deckGoTo(kind, Math.round(deckOff(kind)) + dir); }
   function deckDown(ev, kind) {
-    deckState.down = { x: ev.clientX, y: ev.clientY, kind: kind, t: Date.now(), drag: false };
-    deckState.dragging = false;
-    try { if (ev.currentTarget && ev.currentTarget.setPointerCapture) ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+    var el = document.getElementById('deck-' + kind);
+    deckState.down = { x: ev.clientX, y: ev.clientY, kind: kind, t: Date.now(), drag: false, off0: deckOff(kind) };
+    try { if (el && el.setPointerCapture) el.setPointerCapture(ev.pointerId); } catch (e) {}
   }
   function deckMove(ev, kind) {
     var d = deckState.down;
     if (!d || d.kind !== kind) return;
     var dx = ev.clientX - d.x, dy = ev.clientY - d.y;
-    if (!d.drag && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) d.drag = true;
-    if (!d.drag) return;
-    deckState.dragging = true;
+    if (!d.drag) {
+      if (Math.abs(dx) > 4 && Math.abs(dx) > Math.abs(dy)) { d.drag = true; var el0 = document.getElementById('deck-' + kind); if (el0) el0.classList.add('dragging'); }
+      else return;
+    }
     var el = document.getElementById('deck-' + kind);
-    if (el) { el.classList.add('dragging'); el.style.transform = 'translateX(' + (dx * 0.3).toFixed(1) + 'px)'; }
+    if (!el) return;
+    var step = deckStepPx(el);
+    deckState.off[kind] = deckClamp(kind, d.off0 - dx / step);
+    deckApply(kind);
   }
   function deckEnd(ev, kind) {
     var d = deckState.down; deckState.down = null;
     var el = document.getElementById('deck-' + kind);
-    if (el) { el.classList.remove('dragging'); el.style.transform = ''; }
-    try { if (ev.currentTarget && ev.currentTarget.releasePointerCapture) ev.currentTarget.releasePointerCapture(ev.pointerId); } catch (e) {}
+    if (el) el.classList.remove('dragging');
+    try { if (el && el.releasePointerCapture) el.releasePointerCapture(ev.pointerId); } catch (e) {}
     if (!d || d.kind !== kind) return;
-    var dx = ev.clientX - d.x, dy = ev.clientY - d.y, dt = Date.now() - d.t;
-    var far = Math.abs(dx) > 28, flick = Math.abs(dx) > 16 && dt < 260;
-    if ((far || flick) && Math.abs(dx) > Math.abs(dy)) {
-      deckState.swiped = Date.now();
-      deckStep(kind, dx < 0 ? 1 : -1);
-    }
+    if (!d.drag) return;
+    deckState.swiped = Date.now();
+    var off = deckOff(kind), dt = Math.max(16, Date.now() - d.t);
+    var v = (off - d.off0) / dt;
+    var kick = Math.max(-3, Math.min(3, v * 170));
+    deckGoTo(kind, Math.round(off + kick));
   }
   function deckUp(ev, kind) { deckEnd(ev, kind); }
   function deckCancel(ev, kind) { deckEnd(ev, kind); }
@@ -366,6 +365,8 @@
         '<div class="set-panel" id="dayp-focus">' + tabFocus + '</div>' +
       '</div>';
     setDayTab(dayKey);
+    deckApply('nw');
+    deckApply('due');
     animateRings();
     pomoRender();
   }
@@ -941,7 +942,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v60 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v61 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -1022,7 +1023,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckOpen: deckOpen, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
