@@ -998,7 +998,7 @@
   /* ============ 设置（iOS 式分段 Tab） ============ */
   var setKey = 'look';
   function setSetTab(k) {
-    var keys = ['look', 'voice', 'ai', 'data'];
+    var keys = ['look', 'voice', 'ai', 'data', 'sync'];
     var i = keys.indexOf(k); if (i < 0) i = 0;
     setKey = keys[i];
     var seg = document.getElementById('setSeg');
@@ -1019,8 +1019,80 @@
   function select(id, opts, cur) {
     return '<select class="set-select" id="' + id + '">' + opts.map(function (v) { return '<option' + (String(v) === String(cur) ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select>';
   }
+  /* ---------- 云同步：UI 处理 ---------- */
+  function syncMsg(txt, ok) {
+    var el = document.getElementById('syncMsg');
+    if (el) { el.textContent = txt; el.style.color = ok ? '' : 'var(--warn)'; }
+  }
+  function syncRefresh() {
+    if (!window.Sync) { syncMsg('同步模块未加载', false); return; }
+    var st = Sync.status();
+    if (!st.configured) { syncMsg('未启用：先填上面两项', false); return; }
+    var t = st.lastSyncAt ? new Date(st.lastSyncAt).toLocaleString() : '还没同步过';
+    syncMsg('已启用 · ' + st.repo + ' · ' + (st.codeHint ? '当前码 ' + st.codeHint + ' · ' : '') + '最近同步：' + t, true);
+  }
+  function syncSave() {
+    if (!window.Sync) return;
+    var repo = (document.getElementById('syncRepo') || {}).value || '';
+    var token = (document.getElementById('syncToken') || {}).value || '';
+    var branch = ((document.getElementById('syncBranch') || {}).value || 'main').trim() || 'main';
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo.replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/, '').trim())) { syncMsg('仓库要写成 owner/repo，例如 kerrrr-85/gml-sync', false); return; }
+    if (token.trim().length < 20) { syncMsg('Token 看起来不完整', false); return; }
+    if (/^sb_|supabase/i.test(token)) { syncMsg('这是 Supabase 的密钥，这里要填 GitHub token', false); return; }
+    Sync.saveCfg({ repo: repo.trim(), token: token.trim(), branch: branch, mode: 'code' });
+    toast('已保存');
+    syncRefresh();
+  }
+  function syncTest() {
+    if (!window.Sync) return;
+    syncMsg('检测中…', true);
+    Sync.test().then(function (r) {
+      if (!r.private) { syncMsg('⚠️ 这个仓库是公开的！请改成私有，否则密文会被别人看到', false); return; }
+      if (!r.canPush) { syncMsg('token 只能读不能写：请在细粒度 token 里给 Contents 读写权限', false); return; }
+      syncMsg('连接正常：' + r.repo + '（私有）· 可读写', true);
+    }).catch(function (e) { syncMsg(e.message, false); });
+  }
+  function syncShowCode(code, title) {
+    var old = document.getElementById('syncCodeModal');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var box = document.createElement('div');
+    box.className = 'modal'; box.id = 'syncCodeModal';
+    box.innerHTML = '<div class="modalbox" style="max-width:420px;text-align:center">' +
+      '<h2 style="margin-bottom:6px">' + title + '</h2>' +
+      '<p class="small muted" style="margin-bottom:14px">这串码就是密钥，<b>只显示这一次</b>，请抄到安全的地方</p>' +
+      '<div style="font-family:ui-monospace,Consolas,monospace;font-size:19px;font-weight:700;letter-spacing:.14em;padding:16px 10px;border:1px dashed var(--line);border-radius:14px;word-break:break-all">' + code + '</div>' +
+      '<div class="row" style="justify-content:center;margin-top:16px"><button class="btn primary" onclick="App.syncCopy(\'' + code + '\')">复制</button>' +
+      '<button class="btn" onclick="document.getElementById(\'syncCodeModal\').remove()">我已保存</button></div></div>';
+    box.addEventListener('click', function (e) { if (e.target === box) box.remove(); });
+    document.body.appendChild(box);
+  }
+  function syncCopy(code) { if (window.InputTools && InputTools.copyText) { InputTools.copyText(code); toast('已复制'); } else { toast('请手动选中复制'); } }
+  function syncCreate() {
+    if (!window.Sync) return;
+    syncMsg('正在加密上传…', true);
+    Sync.createCode().then(function (code) { syncRefresh(); syncShowCode(code, '同步码已生成'); })
+      .catch(function (e) { syncMsg(e.message, false); });
+  }
+  function syncRotate() {
+    if (!window.Sync) return;
+    syncMsg('正在生成新码并作废旧码…', true);
+    Sync.rotate().then(function (code) { syncRefresh(); syncShowCode(code, '新同步码已生成（旧码已作废）'); })
+      .catch(function (e) { syncMsg(e.message, false); });
+  }
+  function syncRestore() {
+    if (!window.Sync) return;
+    var v = (document.getElementById('syncCodeInput') || {}).value || '';
+    var box = document.getElementById('syncCodeMsg');
+    if (box) box.textContent = '正在拉取并合并…';
+    Sync.restore(v).then(function (r) {
+      if (box) box.textContent = '已合并：作答记录 ' + r.total + ' 条（本次新增 ' + r.added + ' 条）。本机数据只多不少。';
+      toast('恢复完成');
+      updateMini();
+    }).catch(function (e) { if (box) box.textContent = e.message; });
+  }
+
   function renderSettings(startKey) {
-    if (startKey && ['look', 'voice', 'ai', 'data'].indexOf(startKey) >= 0) setKey = startKey;
+    if (startKey && ['look', 'voice', 'ai', 'data', 'sync'].indexOf(startKey) >= 0) setKey = startKey;
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
     var cards = Object.keys(raw.reviews || {}).length, tries = (raw.attempts || []).length;
@@ -1089,24 +1161,49 @@
         '<p class="set-note">清空不可恢复，建议先导出备份。</p>' +
       '</div>';
 
+    var sync =
+      '<div class="set-group">' +
+        '<div class="set-h">GitHub 私有仓</div>' +
+        setRow('仓库', '形如 kerrrr-85/gml-sync，必须是私有的', '<input type="text" class="set-input" id="syncRepo" value="' + esc((s.sync && s.sync.repo) || '') + '" placeholder="owner/repo">') +
+        setRow('Token', '细粒度 PAT，只给这一个库的 Contents 读写', '<input type="password" class="set-input" id="syncToken" value="' + esc((s.sync && s.sync.token) || '') + '" placeholder="github_pat_... 或 ghp_...">') +
+        setRow('分支', '一般不用改', '<input type="text" class="set-input" id="syncBranch" style="max-width:140px" value="' + esc((s.sync && s.sync.branch) || 'main') + '" placeholder="main">') +
+        '<div class="set-row set-actions"><button class="btn sm primary" onclick="App.syncSave()">保存并启用</button><button class="btn sm" onclick="App.syncTest()">连通性自检</button></div>' +
+        '<p class="set-note" id="syncMsg">读取中…</p>' +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">通道一 · 同步码（免登录）</div>' +
+        '<div class="set-row set-actions"><button class="btn sm primary" onclick="App.syncCreate()">生成同步码</button><button class="btn sm" onclick="App.syncRotate()">重新生成（旧码作废）</button></div>' +
+        '<div class="set-row"><div class="set-lab"><b>用同步码恢复</b><span>在另一台设备输入这 20 位</span></div><input type="text" class="set-input" id="syncCodeInput" maxlength="26" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" style="font-family:ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase"></div>' +
+        '<div class="set-row set-actions"><button class="btn sm" onclick="App.syncRestore()">恢复并合并</button></div>' +
+        '<p class="set-note" id="syncCodeMsg">同步码就是密钥，服务端只存密文、我们也解不开，丢了只能重新生成。</p>' +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">通道二 · 账号（邮箱登录）</div>' +
+        '<p class="set-note" id="syncAcct">下一步：GitHub 账号授权（设备码，不用密码）。需要一个 OAuth App 的 Client ID —— 待你注册后填入。</p>' +
+      '</div>' +
+      '<p class="set-note" style="padding:0 4px 14px">只同步 <b>复习卡 / 作答记录 / 掌握度 / 设置</b>；手写草稿纸、天气缓存、B站记录<b>不同步</b>。导出 / 导入本地文件始终可用。</p>';
+
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v63 · 数据只存在本机</p></div></div>' +
-        '<div class="set-seg" id="setSeg">' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v65 · 数据只存在本机</p></div></div>' +
+        '<div class="set-seg five" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
           '<button class="set-segbtn" data-k="ai" onclick="App.setSetTab(\'ai\')">AI</button>' +
           '<button class="set-segbtn" data-k="data" onclick="App.setSetTab(\'data\')">数据</button>' +
+          '<button class="set-segbtn" data-k="sync" onclick="App.setSetTab(\'sync\')">同步</button>' +
           '<span class="set-segind" id="setInd"></span>' +
         '</div>' +
         '<div class="set-panel" id="setp-look">' + look + '</div>' +
         '<div class="set-panel" id="setp-voice">' + voice + '</div>' +
         '<div class="set-panel" id="setp-ai">' + ai + '</div>' +
         '<div class="set-panel" id="setp-data">' + data + '</div>' +
+        '<div class="set-panel" id="setp-sync">' + sync + '</div>' +
         '<div class="set-save"><span class="set-note">改动只保存在这台设备</span><button class="btn primary" onclick="App.saveSettings()">保存设置</button></div>' +
       '</div>';
     setSetTab(setKey);
     fillVoices();
+    syncRefresh();
     var r = document.getElementById('voRate'), rv = document.getElementById('voRateVal');
     if (r && rv) r.addEventListener('input', function () { rv.textContent = r.value + '×'; });
   }
@@ -1172,7 +1269,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, graphZoom: graphZoom, graphFull: graphFull, graphCard: graphCard, graphStep: graphStep, startNode: startNode, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, graphZoom: graphZoom, graphFull: graphFull, graphCard: graphCard, graphStep: graphStep, startNode: startNode, setTheme: setTheme, setSetTab: setSetTab, syncSave: syncSave, syncTest: syncTest, syncCreate: syncCreate, syncRotate: syncRotate, syncRestore: syncRestore, syncCopy: syncCopy, syncRefresh: syncRefresh, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,

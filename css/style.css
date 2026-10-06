@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=63") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=65") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -752,3 +752,36 @@ body.map-full .topbar,body.map-full .tabbar,body.map-full .dot-canvas{display:no
   .gnode-card{width:min(252px,86vw)}
 }
 @media (prefers-reduced-motion: reduce){ .gnode-card,.map-step{transition:none} }
+
+
+/* ===== v64 特殊界面铭牌（Uiverse 卡片复刻，命名空间 irm-） ===== */
+.ink-room-body{display:flex;align-items:center;justify-content:center}
+.irm-card{position:relative;display:grid;place-content:center;width:300px;height:200px;overflow:hidden;
+  background:#243137;border-radius:10px;color:#bd9f67;cursor:pointer;
+  box-shadow:0 30px 70px -42px rgba(0,0,0,.75), inset 0 0 90px 0 rgba(0,0,0,.35);
+  transition:border-radius .5s ease-in-out,transform .5s ease-in-out,box-shadow .5s ease-in-out}
+.irm-border{position:absolute;inset:0;border:2px solid #bd9f67;opacity:0;transform:rotate(10deg);transition:all .5s ease-in-out}
+.irm-content{transition:all .5s ease-in-out}
+.irm-logo{position:relative;width:33px;height:35px;overflow:hidden;transition:all 1s ease-in-out}
+.irm-logo1,.irm-logo2{position:absolute;top:0;height:33px;line-height:33px;font-size:24px;font-weight:800;white-space:nowrap}
+.irm-logo1{left:0;letter-spacing:0}
+.irm-logo2{left:33px;color:#bd9f67}
+.irm-trail{position:absolute;right:0;height:100%;width:100%;opacity:0}
+.irm-under{position:absolute;left:50%;top:50%;margin-top:30px;padding-left:8px;transform:translate(-50%,-50%);
+  font-size:11px;letter-spacing:0;opacity:0;white-space:nowrap;transition:all .5s ease-in-out .5s}
+.irm-sub{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:9px;letter-spacing:.28em;opacity:.5;white-space:nowrap}
+.irm-foot{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);padding:0 5px 0 8px;background:#243137;
+  font-size:6px;letter-spacing:7px;text-transform:uppercase;opacity:0;white-space:nowrap;transition:all .5s ease-in-out}
+.irm-card.open{border-radius:0;transform:scale(1.06)}
+.irm-card.open .irm-logo{width:134px;animation:irmOpacity 1s ease-in-out}
+.irm-card.open .irm-border{inset:15px;opacity:1;transform:rotate(0)}
+.irm-card.open .irm-foot{letter-spacing:3px;opacity:1;transform:translateX(-50%)}
+.irm-card.open .irm-under{opacity:1;letter-spacing:9.5px}
+.irm-card.open .irm-trail{animation:irmTrail 1s ease-in-out}
+@keyframes irmOpacity{0%{border-right:1px solid transparent}10%{border-right:1px solid #bd9f67}80%{border-right:1px solid #bd9f67}100%{border-right:1px solid transparent}}
+@keyframes irmTrail{0%{background:linear-gradient(90deg,rgba(189,159,103,0) 90%,#bd9f67 100%);opacity:0}30%{background:linear-gradient(90deg,rgba(189,159,103,0) 70%,#bd9f67 100%);opacity:1}70%{background:linear-gradient(90deg,rgba(189,159,103,0) 70%,#bd9f67 100%);opacity:1}95%{background:linear-gradient(90deg,rgba(189,159,103,0) 90%,#bd9f67 100%);opacity:0}}
+@media (max-width:400px){ .irm-card{width:86vw;height:190px} .irm-card.open{transform:none} .irm-card.open .irm-under{letter-spacing:5px;font-size:10px} }
+@media (prefers-reduced-motion: reduce){ .irm-card,.irm-card *{transition:none;animation:none!important} }
+
+.set-seg.five{grid-template-columns:repeat(5,1fr)}
+.set-seg.five .set-segind{width:calc(20% - 2px)}

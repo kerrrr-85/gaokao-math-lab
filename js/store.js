@@ -2,14 +2,18 @@
 (function (global) {
   var KEY = 'gml_progress_v1';
   function defaults() {
-    return { version: 1, reviews: {}, attempts: [], mastery: {}, settings: { newPerDay: 6, reviewPerDay: 20, ai: { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }, voice: { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }, weather: { city: '青树坪', lat: 27.38083, lon: 112.02056 }, module: '函数与导数', theme: 'light', fav: [], weekGoal: 100 }, createdAt: Date.now() };
+    return { version: 1, reviews: {}, attempts: [], mastery: {}, settings: { newPerDay: 6, reviewPerDay: 20, ai: { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }, voice: { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }, weather: { city: '青树坪', lat: 27.38083, lon: 112.02056 }, module: '函数与导数', theme: 'light', fav: [], weekGoal: 100, sync: { url: '', key: '', mode: 'off', codeHash: '', codeHint: '', lastSyncAt: 0, auto: true }, updatedAt: Date.now() }, createdAt: Date.now() };
   }
   var state = load();
   function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.version === 1) { s.reviews = s.reviews || {}; s.attempts = s.attempts || []; s.mastery = s.mastery || {}; s.settings = s.settings || {}; if (!s.settings.ai) s.settings.ai = { enabled: false, proxyUrl: '', textModel: 'qwen-plus', visionModel: 'qwen-vl-max' }; if (!s.settings.voice) s.settings.voice = { engine: 'browser', rate: 1, voiceUri: '', autoSpeak: false }; if (!s.settings.weather) s.settings.weather = { city: '青树坪', lat: 27.38083, lon: 112.02056 }; if (!s.settings.module) s.settings.module = '函数与导数'; if (!s.settings.theme) s.settings.theme = 'light'; if (!s.settings.fav) s.settings.fav = []; if (!s.settings.weekGoal) s.settings.weekGoal = 100; return s; } } catch (e) {} return defaults(); }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  var _watchers = [];
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} for (var i = 0; i < _watchers.length; i++) { try { _watchers[i](); } catch (e) {} } }
   var Store = {
     get: function () { return state; },
     save: save,
+    onChange: function (fn) { if (typeof fn === 'function') _watchers.push(fn); },
+    touchSettings: function () { state.settings.updatedAt = Date.now(); save(); },
+    applyMerged: function (m) { if (!m) return; state.reviews = m.reviews || state.reviews; state.attempts = m.attempts || state.attempts; state.mastery = m.mastery || state.mastery; state.settings = m.settings || state.settings; state.createdAt = m.createdAt || state.createdAt; save(); },
     reset: function () { state = defaults(); save(); },
     exportJSON: function () { return JSON.stringify(state, null, 2); },
     importJSON: function (json) { var s = JSON.parse(json); if (!s || !s.reviews) throw new Error('数据格式不正确'); state = s; state.attempts = state.attempts || []; state.mastery = state.mastery || {}; save(); },

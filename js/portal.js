@@ -135,13 +135,50 @@
     }, 520);
   }
   function inkHoldStop() { if (inkHold) { clearTimeout(inkHold); inkHold = null; } }
+  /* ============================================================
+     特殊界面内容（以后改这里就行）
+     - 铭牌上的字：mark / word / line / sub / foot 五个变量
+     - 想换成别的东西，直接替换 roomHTML 里的结构即可
+     ============================================================ */
+  var ROOM = {
+    mark: '在',                 // 方块里的标记字
+    word: '我在呢',              // 展开后的主字
+    line: '函 数 · 三 角 · 数 列', // 展开后的小字
+    sub: 'STUDY DESK',          // 常驻小注
+    foot: 'GAOKAO MATH LAB'     // 展开后底部铭文
+  };
+  function roomHTML() {
+    return '<div class="irm-card" id="irmCard">' +
+      '<div class="irm-border"></div>' +
+      '<div class="irm-content">' +
+        '<div class="irm-logo"><span class="irm-logo1">' + ROOM.mark + '</span>' +
+        '<span class="irm-logo2">' + ROOM.word + '</span><span class="irm-trail"></span></div>' +
+        '<div class="irm-under">' + ROOM.line + '</div>' +
+      '</div>' +
+      '<div class="irm-sub">' + ROOM.sub + '</div>' +
+      '<div class="irm-foot">' + ROOM.foot + '</div>' +
+    '</div>';
+  }
   function roomOpen() {
     if (!roomEl || roomOn) return;
     roomOn = true;
     inkEl.classList.add('room-open');
     roomEl.classList.add('on');
     var b = document.getElementById('roomBody');
-    if (b) b.innerHTML = '';
+    if (b) {
+      b.innerHTML = roomHTML();
+      var card = document.getElementById('irmCard');
+      if (card) {
+        var isTouch = false; try { isTouch = matchMedia('(hover:none)').matches; } catch (e) {}
+        if (isTouch) {
+          card.addEventListener('click', function () { card.classList.toggle('open'); });
+        } else {
+          card.addEventListener('mouseenter', function () { card.classList.add('open'); });
+          card.addEventListener('mouseleave', function () { card.classList.remove('open'); });
+          card.addEventListener('click', function () { card.classList.toggle('open'); });
+        }
+      }
+    }
   }
   function inkClose() {
     inkHoldStop();
@@ -191,7 +228,7 @@
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=62" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=65" alt="" decoding="async"></figure>' +
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
