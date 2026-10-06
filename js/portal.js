@@ -173,16 +173,37 @@
     roomEl.classList.add('on');
     var b = document.getElementById('roomBody');
     if (b) {
-      b.innerHTML = roomHTML() + '<div class="irm-hint">轻触中心 · 打开相册</div>';
+      b.innerHTML = roomHTML() + '<div class="irm-hint">轻触中心 · 展开「我在呢」</div>';
       var card = document.getElementById('irmCard');
       if (card) {
+        card.addEventListener('pointerup', function (e) { e.stopPropagation(); });
         var isTouch = false; try { isTouch = matchMedia('(hover:none)').matches; } catch (e) {}
         if (isTouch) {
-          card.addEventListener('click', function (e) { e.stopPropagation(); card.classList.add('open'); setTimeout(function () { if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody')); }, 260); });
+          card.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!card.classList.contains('open')) {
+              card.classList.add('open');
+              var hint = document.querySelector('.irm-hint'); if (hint) hint.textContent = '再点一下 · 进入相册';
+              card.setAttribute('data-ready-at', String(Date.now() + 1000));
+              return;
+            }
+            if (Date.now() < Number(card.getAttribute('data-ready-at') || 0)) return;
+            if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody'));
+          });
         } else {
           card.addEventListener('mouseenter', function () { card.classList.add('open'); });
           card.addEventListener('mouseleave', function () { card.classList.remove('open'); });
-          card.addEventListener('click', function (e) { e.stopPropagation(); card.classList.add('open'); setTimeout(function () { if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody')); }, 260); });
+          card.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!card.classList.contains('open')) {
+              card.classList.add('open');
+              var hint = document.querySelector('.irm-hint'); if (hint) hint.textContent = '再点一下 · 进入相册';
+              card.setAttribute('data-ready-at', String(Date.now() + 1000));
+              return;
+            }
+            if (Date.now() < Number(card.getAttribute('data-ready-at') || 0)) return;
+            if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody'));
+          });
         }
       }
     }
@@ -530,6 +551,8 @@
   }
   global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+
+
 
 
 

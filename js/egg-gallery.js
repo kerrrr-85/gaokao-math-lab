@@ -1,9 +1,28 @@
 ﻿/* 隐藏彩蛋相册：无限螺旋卡牌 + 点击灯箱放大 */
 (function (global) {
+  var CAPTIONS = [
+    ['宝宝，快进我怀里来', '我们奔现啦'],
+    ['难得的娃娃', '我们的新崽崽'],
+    ['宝宝的七匹狼', '七夕礼物'],
+    ['我们的崽崽', '宝宝的16岁生日礼物'],
+    ['我们的崽崽', '我的18岁生日礼物'],
+    ['宝宝给我的过年礼物', '好贴心'],
+    ['哇，宝宝这张太好看啦', '我的壁纸呢'],
+    ['宝宝的精心制作', '我好爱你！'],
+    ['我们缠缠绵绵', '小手扎针了'],
+    ['这身真的漂亮', '看篮球比赛那天'],
+    ['朋友圈的我', '幸福来之不易'],
+    ['惊喜呀，宝宝爱我', '视频也拍同款啦'],
+    ['抹药药', '发现卫生纸和见你时是同款'],
+    ['一起听歌', '喜欢宝宝的品味'],
+    ['贴心润唇膏', '凡士林，美国货'],
+    ['我的精心钩织', '毯毯见面礼']
+  ];
   var DEFAULT_PHOTOS = [];
   for (var i = 1; i <= 16; i++) {
     var n = ('0' + i).slice(-2);
-    DEFAULT_PHOTOS.push({ src: './assets/egg/photo-' + n + '.jpg', thumb: './assets/egg/photo-' + n + '-thumb.jpg', title: '\u7167\u7247 ' + n, sub: '\u751f\u6d3b\u7559\u5f71' });
+    var c = CAPTIONS[i - 1] || ['照片 ' + n, '生活留影'];
+    DEFAULT_PHOTOS.push({ src: './assets/egg/photo-' + n + '.jpg', thumb: './assets/egg/photo-' + n + '-thumb.jpg', title: c[0], sub: c[1] });
   }
   var activeRoot = null, activeContainer = null, raf = 0, cleanup = [];
   var stage, spiral, cards = [], photos = [], progress = 0, target = 0, lastTime = 0;
@@ -170,4 +189,5 @@
 
   global.EggGallery = { open: open, close: close, isOpen: function () { return !!activeRoot; } };
 })(window);
+
 
