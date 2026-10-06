@@ -1,15 +1,10 @@
 ﻿/* 隐藏彩蛋相册：无限螺旋卡牌 + 点击灯箱放大 */
 (function (global) {
-  var DEFAULT_PHOTOS = [
-    { src: './assets/egg/ink-01.jpg', title: '潮汐之后', sub: '有些安静，会在夜里发光' },
-    { src: './assets/map-paper.jpg', title: '地图之外', sub: '把远方折成一张纸' },
-    { src: './assets/ink-hero.jpg', title: '我在呢', sub: '给每一次靠近留一盏灯' },
-    { src: './assets/egg/map-01.jpg', title: '越过边界', sub: '世界很大，先从这里出发' },
-    { src: './assets/egg/ink-01.jpg', title: '留白', sub: '慢一点，才看得见细节' },
-    { src: './assets/map-paper.jpg', title: '纸上星河', sub: '所有路径都通向自己' },
-    { src: './assets/ink-hero.jpg', title: '回声', sub: '你认真生活的样子，会留下光' },
-    { src: './assets/egg/map-01.jpg', title: '下一站', sub: '把未知也当作风景' }
-  ];
+  var DEFAULT_PHOTOS = [];
+  for (var i = 1; i <= 16; i++) {
+    var n = ('0' + i).slice(-2);
+    DEFAULT_PHOTOS.push({ src: './assets/egg/photo-' + n + '.jpg', thumb: './assets/egg/photo-' + n + '-thumb.jpg', title: '\u7167\u7247 ' + n, sub: '\u751f\u6d3b\u7559\u5f71' });
+  }
   var activeRoot = null, activeContainer = null, raf = 0, cleanup = [];
   var stage, spiral, cards = [], photos = [], progress = 0, target = 0, lastTime = 0;
   var radius = 150, spacing = 58, cardW = 98, cardH = 122;
@@ -46,7 +41,7 @@
       card.type = 'button';
       card.className = 'egm__card';
       card.setAttribute('aria-label', item.title || ('照片 ' + (i + 1)));
-      card.innerHTML = '<img src="' + item.src + '" alt="' + (item.title || '') + '" draggable="false"><span class="egm__cap"><b>' + (item.title || '') + '</b><i>' + (item.sub || '') + '</i></span>';
+      card.innerHTML = '<img src="' + (item.thumb || item.src) + '" alt="' + (item.title || '') + '" draggable="false"><span class="egm__cap"><b>' + (item.title || '') + '</b><i>' + (item.sub || '') + '</i></span>';
       card.addEventListener('click', function (e) {
         e.preventDefault(); e.stopPropagation();
         if (dragMoved) return;
@@ -175,3 +170,4 @@
 
   global.EggGallery = { open: open, close: close, isOpen: function () { return !!activeRoot; } };
 })(window);
+
