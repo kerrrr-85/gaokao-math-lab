@@ -148,7 +148,7 @@
   }
   /* ============ 今日（四 Tab + 拉杆式牌堆） ============ */
   var dayKey = 'today';
-  var deckState = { open: {}, pick: {} };
+  var deckState = { open: {}, pick: {}, list: {}, down: null, swiped: 0 };
 
   function ringSm(pct, big) {
     var r = 26, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct || 0));
@@ -170,15 +170,47 @@
       var pn = document.getElementById('dayp-' + key); if (pn) pn.classList.toggle('on', n === i);
     });
   }
+  function deckList(kind) { return deckState.list[kind] || []; }
+  function deckSel(kind) {
+    var arr = deckList(kind), id = deckState.pick[kind];
+    for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return { c: arr[i], i: i, n: arr.length };
+    return { c: null, i: -1, n: arr.length };
+  }
+  function deckPanel(kind) {
+    var s = deckSel(kind);
+    var nav = '<div class="deck-nav"><button class="deck-arrow" title="上一张" onclick="App.deckStep(\'' + kind + '\',-1)">‹</button>' +
+      '<span class="deck-count">' + (s.n ? ((s.i >= 0 ? s.i + 1 : '–') + ' / ' + s.n) : '0 / 0') + '</span>' +
+      '<button class="deck-arrow" title="下一张" onclick="App.deckStep(\'' + kind + '\',1)">›</button></div>';
+    if (!s.n) return nav + '<p class="set-note" style="padding:4px 2px">这里暂时是空的。</p>';
+    if (!s.c) return nav + '<p class="set-note" style="padding:4px 2px">点一张牌，或用 ‹ › / 左右滑动翻牌</p>';
+    var act;
+    if (kind === 'due') {
+      act = '<div class="row" style="margin-top:10px;gap:8px">' +
+        '<button class="btn sm" onclick="App.reviewCard(\'' + s.c.id + '\',0)">不会</button>' +
+        '<button class="btn sm" onclick="App.reviewCard(\'' + s.c.id + '\',1)">半会</button>' +
+        '<button class="btn sm primary" onclick="App.reviewCard(\'' + s.c.id + '\',2)">会了</button></div>';
+    } else if (s.c.refType === 'method') {
+      act = '<div class="row" style="margin-top:10px;gap:8px"><a class="btn sm primary" href="#/method/' + s.c.refId + '">看这张方法卡</a>' +
+        '<a class="btn sm" href="#/practice">去练习</a></div>';
+    } else {
+      act = '<div class="row" style="margin-top:10px;gap:8px"><button class="btn sm primary" onclick="App.startSingle(\'' + s.c.refId + '\')">练这道题</button>' +
+        '<a class="btn sm" href="#/node/' + (qById[s.c.refId] ? qById[s.c.refId].node : '') + '">看知识点</a></div>';
+    }
+    return nav + '<div class="deck-detail"><div class="set-lab"><b>' + esc(cardTitle(s.c)) + '</b>' +
+      '<span>' + (s.c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + s.c.reps + ' 次' + (kind === 'due' ? ' · ' + esc(cardMod(s.c)) : '') + '</span></div>' + act + '</div>';
+  }
   function deckHTML(kind, cards, opts) {
     opts = opts || {};
-    var max = opts.max || 6;
-    var show = cards.slice(0, max);
+    deckState.list[kind] = cards || [];
+    if (deckState.pick[kind] && !(cards || []).some(function (c) { return c.id === deckState.pick[kind]; })) deckState.pick[kind] = null;
+    var max = opts.max || 5;
+    var show = (cards || []).slice(0, max);
     var mid = (show.length - 1) / 2;
     var open = !!deckState.open[kind];
+    var sel = deckState.pick[kind];
     var body = show.map(function (c, i) {
       var d = Math.abs(i - mid);
-      return '<button class="deck-card' + (deckState.pick[kind] === c.id ? ' picked' : '') + '"' +
+      return '<button class="deck-card' + (sel === c.id ? ' picked' : '') + '" data-id="' + c.id + '"' +
         ' style="--i:' + i + ';--mid:' + mid + ';--d:' + d + '"' +
         ' onclick="App.deckPick(\'' + kind + '\',\'' + c.id + '\')">' +
         '<span class="dc-top">' + (opts.tag ? opts.tag(c) : '') + '</span>' +
@@ -187,32 +219,54 @@
         (opts.meta2 ? '<span class="dc-meta">' + esc(opts.meta2(c)) + '</span>' : '') +
         '</button>';
     }).join('');
-    if (!show.length) return '<p class="set-note" style="padding:14px 2px">这里暂时是空的。</p>';
-    var more = cards.length > max ? '<span class="deck-more">+' + (cards.length - max) + '</span>' : '';
-    return '<div class="deck' + (open ? ' open' : '') + '" id="deck-' + kind + '">' + body + more +
-      '<button class="deck-lift" onclick="App.deckOpen(\'' + kind + '\')">' + (open ? '收起' : '展开 ' + cards.length + ' 张') + '</button></div>';
+    var more = (cards || []).length > max ? '<span class="deck-more">+' + (cards.length - max) + '</span>' : '';
+    if (!show.length) return '<div class="deck-empty">这里暂时是空的。</div>' + '<div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
+    return '<div class="deck' + (open ? ' open' : '') + '" id="deck-' + kind + '"' +
+      ' onpointerdown="App.deckDown(event,\'' + kind + '\')" onpointerup="App.deckUp(event,\'' + kind + '\')">' +
+      body + more +
+      '<button class="deck-lift" onclick="App.deckOpen(\'' + kind + '\')">' + (open ? '收起' : '展开 ' + cards.length + ' 张') + '</button></div>' +
+      '<div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
   }
-  function deckOpen(kind) {
-    deckState.open[kind] = !deckState.open[kind];
+  function deckUpdate(kind) {
     var el = document.getElementById('deck-' + kind);
-    if (el) {
-      el.classList.toggle('open', !!deckState.open[kind]);
-      var b = el.querySelector('.deck-lift');
-      if (b) b.textContent = deckState.open[kind] ? '收起' : '展开';
-    }
+    var pn = document.getElementById('deckpanel-' + kind);
+    if (pn) pn.innerHTML = deckPanel(kind);
+    if (!el) return;
+    var sel = deckState.pick[kind];
+    Array.prototype.forEach.call(el.querySelectorAll('.deck-card'), function (c) {
+      c.classList.toggle('picked', c.getAttribute('data-id') === sel);
+    });
+    el.classList.toggle('open', !!deckState.open[kind]);
+    var b = el.querySelector('.deck-lift');
+    if (b) b.textContent = deckState.open[kind] ? '收起' : '展开 ' + deckList(kind).length + ' 张';
   }
+  function deckOpen(kind) { deckState.open[kind] = !deckState.open[kind]; deckUpdate(kind); }
   function deckPick(kind, id) {
+    if (Date.now() - (deckState.swiped || 0) < 320) return;
     deckState.pick[kind] = (deckState.pick[kind] === id) ? null : id;
     deckState.open[kind] = true;
-    router();
+    deckUpdate(kind);
   }
-  function deckGradeBar(rec) {
-    if (!rec) return '<p class="set-note" style="padding:6px 2px">点一张牌 → 这里出现评分按钮</p>';
-    return '<div class="deck-grade"><div class="set-lab"><b>' + esc(cardTitle(rec)) + '</b><span>已复习 ' + rec.reps + ' 次 · ' + esc(cardMod(rec)) + '</span></div>' +
-      '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.reviewCard(\'' + rec.id + '\',0)">不会</button>' +
-      '<button class="btn sm" onclick="App.reviewCard(\'' + rec.id + '\',1)">半会</button>' +
-      '<button class="btn sm primary" onclick="App.reviewCard(\'' + rec.id + '\',2)">会了</button></div></div>';
+  function deckStep(kind, dir) {
+    var arr = deckList(kind); if (!arr.length) return;
+    var s = deckSel(kind);
+    var idx = s.i >= 0 ? s.i : (dir > 0 ? -1 : 0);
+    idx = (idx + dir + arr.length) % arr.length;
+    deckState.pick[kind] = arr[idx].id;
+    deckState.open[kind] = true;
+    deckUpdate(kind);
   }
+  function deckDown(ev, kind) { deckState.down = { x: ev.clientX, y: ev.clientY, kind: kind }; }
+  function deckUp(ev, kind) {
+    var d = deckState.down; deckState.down = null;
+    if (!d || d.kind !== kind) return;
+    var dx = ev.clientX - d.x, dy = ev.clientY - d.y;
+    if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy)) {
+      deckState.swiped = Date.now();
+      deckStep(kind, dx < 0 ? 1 : -1);
+    }
+  }
+
   function renderToday(startKey) {
     if (startKey && ['today', 'review', 'weak', 'focus'].indexOf(startKey) >= 0) dayKey = startKey;
     var mod = curModule();
@@ -229,8 +283,6 @@
     var weak = nodes.slice().sort(function (a, b) { return Store.masteryOf(a.id) - Store.masteryOf(b.id); }).slice(0, 3);
     var nextTxt = due.length ? ('先清复习队列：有 ' + due.length + ' 张到期')
       : (Store.wrong().length ? ('错题本还有 ' + Store.wrong().length + ' 道待重做') : '没有到期复习，正好开新卡建立记忆');
-    var picked = null;
-    for (var pi = 0; pi < due.length; pi++) { if (due[pi].id === deckState.pick['due']) picked = due[pi]; }
 
     var tabToday =
       '<div class="day-hero">' + ringSm(pct, doneToday + '') +
@@ -257,7 +309,7 @@
           title: function (c) { return cardTitle(c); },
           meta1: function (c) { return (c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + c.reps + ' 次'; },
           meta2: function (c) { return cardMod(c); }
-        }) + '<div class="deck-grade-wrap">' + deckGradeBar(picked) + '</div></div></div>' +
+        }) + '</div></div>' +
       '<p class="set-note">牌堆叠在一起，点「展开」或直接把鼠标移上去 → 像扇子一样张开；点某张牌即可评分。</p>';
 
     var tabWeak =
@@ -869,7 +921,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v58 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v59 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -950,7 +1002,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckOpen: deckOpen, deckPick: deckPick, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckOpen: deckOpen, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckUp: deckUp, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
