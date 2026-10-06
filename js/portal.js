@@ -228,7 +228,7 @@
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=75" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=76" alt="" decoding="async"></figure>' +
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
@@ -352,10 +352,13 @@
     function fd(s) { s = s || 0; return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
     function card(b) {
       var ttl = String(b.title || '').replace(/'/g, '');
+      var go = 'https://www.bilibili.com/video/' + b.bvid;
+      var mm = (b.parts || 1) > 1 ? '<span class="vcard__parts">合集 ' + b.parts + ' 集</span>' : '';
       return '<article class="vcard" onclick="Portal.play(\'' + b.bvid + '\',\'' + ttl + '\')">' +
+        '<a class="vcard__go" href="' + go + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">去B站看 ↗</a>' + mm +
         '<div class="vcard__view" style="background-image:url(\'' + (b.cover || '') + '\')">' +
           '<div class="vcard__badges"><span class="vcard__len">' + fd(b.dur) + '</span>' +
-          '<span class="vcard__play">▶</span><span class="vcard__prev">点击播放</span></div></div>' +
+          '<span class="vcard__play">▶</span><span class="vcard__prev">站内试看·去B站选集</span></div></div>' +
         '<div class="vcard__content"><div class="vcard__name">' + (b.title || '') + '</div>' +
           '<div class="vcard__data"><div class="vcard__img">' + String(b.up || '?').slice(0, 1) + '</div>' +
           '<div class="vcard__text"><span class="vcard__up">' + (b.up || '') + '</span>' +
@@ -400,5 +403,5 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { videoTag: videoTag, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);

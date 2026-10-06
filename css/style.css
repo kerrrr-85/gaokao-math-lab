@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=75") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=76") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -824,3 +824,6 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .vcard:nth-child(4n)::before{background-color:#e2ff99;background-image:radial-gradient(at 22% 80%,hsla(265,77%,67%,1) 0px,transparent 50%),radial-gradient(at 91% 77%,hsla(292,60%,78%,1) 0px,transparent 50%),radial-gradient(at 66% 7%,hsla(46,95%,76%,1) 0px,transparent 50%),radial-gradient(at 16% 32%,hsla(275,90%,75%,1) 0px,transparent 50%),radial-gradient(at 26% 23%,hsla(283,60%,69%,1) 0px,transparent 50%),radial-gradient(at 2% 64%,hsla(208,62%,62%,1) 0px,transparent 50%),radial-gradient(at 62% 77%,hsla(112,88%,75%,1) 0px,transparent 50%)}
 .vcard:nth-child(5n)::before{background-color:#99d1ff;background-image:radial-gradient(at 21% 94%,hsla(270,95%,76%,1) 0px,transparent 50%),radial-gradient(at 56% 5%,hsla(252,65%,79%,1) 0px,transparent 50%),radial-gradient(at 67% 94%,hsla(194,81%,67%,1) 0px,transparent 50%),radial-gradient(at 15% 72%,hsla(304,97%,77%,1) 0px,transparent 50%),radial-gradient(at 63% 56%,hsla(38,98%,63%,1) 0px,transparent 50%),radial-gradient(at 41% 67%,hsla(321,61%,77%,1) 0px,transparent 50%),radial-gradient(at 68% 68%,hsla(263,67%,69%,1) 0px,transparent 50%)}
 @media (max-width:700px){.vcard{--size:210px}.vrail{gap:10px}}
+
+.vcard__go{position:absolute;right:8px;top:8px;z-index:4;background:rgba(0,0,0,.62);color:#fff;font-size:10px;font-weight:700;padding:5px 8px;border-radius:7px;text-decoration:none}
+.vcard__parts{position:absolute;left:8px;top:8px;z-index:4;background:rgba(234,88,12,.9);color:#fff;font-size:10px;font-weight:700;padding:5px 8px;border-radius:7px}
