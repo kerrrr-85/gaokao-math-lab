@@ -403,12 +403,16 @@
   }
 
   function tab(id) {
+    var GROUPS = { real: ['real'], map: ['map'], topic: ['motion', 'route', 'air', 'earth'] };
+    var show = GROUPS[id] || [];
     ['real', 'map', 'motion', 'route', 'air', 'earth'].forEach(function (k) {
-      var el = document.getElementById('gs-' + k); if (el) el.style.display = (k === id) ? 'block' : 'none';
+      var el = document.getElementById('gs-' + k); if (el) el.style.display = show.indexOf(k) >= 0 ? 'block' : 'none';
+    });
+    ['real', 'map', 'topic'].forEach(function (k) {
       var ch = document.getElementById('tab-' + k); if (ch) ch.className = 'chip' + (k === id ? ' on' : '');
     });
     var gw = document.getElementById('globeWrap'), gt = document.getElementById('globeTools');
-    var is3d = (id === 'real' || id === 'map');   /* 真实地球与卫星地图都不需要 2D 球 */
+    var is3d = (id === 'real' || id === 'map');   /* 专题页仍需要 2D 示意图球 */   /* 真实地球与卫星地图都不需要 2D 球 */
     if (gw) gw.style.display = is3d ? 'none' : 'block';
     if (gt) gt.style.display = is3d ? 'none' : 'block';
     if (id === 'map') mapInit();
@@ -420,12 +424,10 @@
     var v = document.getElementById('view');
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
     v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理</h2><p>分板块查看：点下面的标签切换</p></div></div>' +
-      '<div class="row" style="margin-bottom:10px"><button class="chip on" id="tab-real" onclick="Globe.tab(&#39;real&#39;)">真实地球</button>' +
+      '<div class="row" style="margin-bottom:10px">' +
+      '<button class="chip on" id="tab-real" onclick="Globe.tab(&#39;real&#39;)">地球（3D）</button>' +
       '<button class="chip" id="tab-map" onclick="Globe.tab(&#39;map&#39;)">卫星地图</button>' +
-      '<button class="chip" id="tab-motion" onclick="Globe.tab(&#39;motion&#39;)">地球运动</button>' +
-      '<button class="chip" id="tab-route" onclick="Globe.tab(&#39;route&#39;)">航线与经纬</button>' +
-      '<button class="chip" id="tab-air" onclick="Globe.tab(&#39;air&#39;)">大气与海洋</button>' +
-      '<button class="chip" id="tab-earth" onclick="Globe.tab(&#39;earth&#39;)">地质·气候·植被</button></div>' +
+      '<button class="chip" id="tab-topic" onclick="Globe.tab(&#39;topic&#39;)">专题示意图</button></div>' +
       '<div class="card elev2" id="globeTools" style="margin-bottom:12px"><div class="row"><button class="btn sm" id="glFull" onclick="Globe.fullscreen()">⛶ 全屏</button><button class="btn sm" id="glAuto" onclick="Globe.setAuto(!Globe.isAuto())">⏸ 暂停自转</button>' +
       '<button class="btn sm" id="glNight" onclick="Globe.toggleNight()">🌗 昼夜开</button>' +
       '<button class="btn sm" id="glPres" onclick="Globe.togglePressure()">🌀 气压带关</button>' +
@@ -457,6 +459,13 @@
       '<button class="btn sm" id="e3Lbl" onclick="Earth3D.toggleLabels()">城市名关</button>' +
       '<button class="btn sm" id="e3Night" onclick="Earth3D.toggleNight()">夜景开</button>' +
       '<button class="btn sm" onclick="Earth3D.reset()">复位视角</button></div>' +
+      '<div class="row" style="margin-top:10px"><b class="small">季节</b>' +
+      '<button class="btn sm" id="e3Chun" onclick="Earth3D.setSeason(80)">春分</button>' +
+      '<button class="btn sm" id="e3Xia" onclick="Earth3D.setSeason(172)">夏至</button>' +
+      '<button class="btn sm" id="e3Qiu" onclick="Earth3D.setSeason(266)">秋分</button>' +
+      '<button class="btn sm" id="e3Dong" onclick="Earth3D.setSeason(355)">冬至</button>' +
+      '<button class="btn sm primary" id="e3Live" onclick="Earth3D.setSeason(null)">实时</button>' +
+      '<span class="small muted">切季节看晨昏线怎么变</span></div>' +
       '<div class="row" style="margin-top:10px"><b class="small">时间轴</b><input type="range" id="e3Hour" min="0" max="24" step="0.25" value="12" oninput="Earth3D.setHour(this.value)" style="flex:1;min-width:150px"><span class="small muted" id="e3Time"></span><button class="btn sm primary" id="e3Live" onclick="Earth3D.setLive()">实时</button></div>' +
       '<div class="row" style="margin-top:10px"><b class="small">最短航线</b><select id="e3From" onchange="Earth3D.applyRoute()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><select id="e3To" onchange="Earth3D.applyRoute()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Earth3D.applyRoute()">画大圆航线</button><button class="btn sm" onclick="Earth3D.clearRoute()">清除</button></div>' +
       '<div class="small muted" id="e3Route" style="margin-top:8px"></div></div>' +
@@ -464,6 +473,7 @@
       '<p class="small muted" style="margin:0">球面上两点间最短路径 = 过球心的<b>大圆</b>劣弧。所以北半球中高纬之间的飞行/航海，多选择<b>偏向极地</b>的路线；赤道附近两点才接近沿纬线。橙色弧线即大圆航线，距离按地球半径 6371km 计算。</p></div>' +
       '</div>' +
       '<div id="gs-motion" class="gsec" style="display:none">' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><div class="grow"><h2>专题示意图</h2><p>气压带风带 / 洋流 / 板块画在这个球面示意图上；球面几何请看「地球（3D）」</p></div></div></div>' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">☀️</span><div class="grow"><h2>太阳直射点 · 正午太阳高度</h2><p>H = 90° − |当地纬度 − 直射点纬度|</p></div></div>' +
       '<div class="row"><select id="sunLat" onchange="Globe.updateSun()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">选择地点…</option>' +
       CITIES.map(function (c) { return '<option value="' + c.lat + '">' + c.name + '（' + c.lat + '°）</option>'; }).join('') +

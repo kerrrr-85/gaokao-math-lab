@@ -26,7 +26,7 @@
   var st = {
     yaw: 0.9, pitch: 0.32, dist: 3.1, minD: 1.6, maxD: 6.5,
     hour: null, live: true, auto: true, showLabels: false, showGrid: true,
-    showNight: true, showZones: true, showGeo: true, route: null, drag: null, moved: 0, lastT: 0, frame: 0
+    showNight: true, showZones: true, showGeo: true, doy: null, route: null, drag: null, moved: 0, lastT: 0, frame: 0
   };
   var LOW = !!(global.PERF && global.PERF.low);
 
@@ -86,9 +86,10 @@
     return { lat: decl, lon: lon, date: d };
   }
   function nowTs() {
-    if (st.live) return Date.now();
+    if (st.doy == null && st.live) return Date.now();
     var d = new Date();
-    d.setHours(Math.floor(st.hour), Math.round((st.hour % 1) * 60), 0, 0);
+    if (st.doy != null) { d = new Date(d.getFullYear(), 0, 1); d.setDate(st.doy); }
+    if (st.hour != null && !st.live) d.setHours(Math.floor(st.hour), Math.round((st.hour % 1) * 60), 0, 0);
     return d.getTime();
   }
 
@@ -455,6 +456,15 @@
   function toggleNight() { st.showNight = !st.showNight; if (earth) earth.userData.uni.nightOn.value = st.showNight ? 1 : 0; var b = document.getElementById('e3Night'); if (b) b.textContent = st.showNight ? '夜景开' : '夜景关'; }
   function setHour(v) { st.live = false; st.hour = parseFloat(v); setTime(); var b = document.getElementById('e3Live'); if (b) b.className = 'btn sm'; }
   function setLive() { st.live = true; setTime(); var b = document.getElementById('e3Live'); if (b) b.className = 'btn sm primary'; }
+  function setSeason(doy) {
+    st.doy = (doy == null ? null : doy);
+    st.live = (doy == null);
+    setTime(true);
+    [['e3Live', doy == null], ['e3Chun', doy === 80], ['e3Xia', doy === 172], ['e3Qiu', doy === 266], ['e3Dong', doy === 355]].forEach(function (p) {
+      var b = document.getElementById(p[0]); if (b) b.className = 'btn sm' + (p[1] ? ' primary' : '');
+    });
+    var hu = document.getElementById('e3Hour'); if (hu && doy != null) hu.value = '12';
+  }
   function reset() { st.yaw = 0.9; st.pitch = 0.32; st.dist = 3.1; }
   function resizeEv() { if (mounted) resize(); }
 
@@ -462,6 +472,6 @@
   global.Earth3D = {
     mount: mount, unmount: unmount, resize: resize, pause: pause, resume: resume,
     toggleAuto: toggleAuto, toggleLabels: toggleLabels, toggleGrid: toggleGrid, toggleZones: toggleZones, toggleGeo: toggleGeo, toggleNight: toggleNight,
-    setHour: setHour, setLive: setLive, reset: reset, applyRoute: applyRoute, clearRoute: clearRoute
+    setHour: setHour, setLive: setLive, setSeason: setSeason, reset: reset, applyRoute: applyRoute, clearRoute: clearRoute
   };
 })(window);
