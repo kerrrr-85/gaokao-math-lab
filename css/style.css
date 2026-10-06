@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=67") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=68") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -788,4 +788,11 @@ body.map-full .topbar,body.map-full .tabbar,body.map-full .dot-canvas{display:no
 
 .e3-lb-geo{font-size:11.5px;font-weight:600;color:#ffeec2;background:rgba(30,22,8,.52);border:1px solid rgba(255,212,121,.42);padding:2px 7px}
 .e3-lb-zone{font-size:10px;color:#ffd479;background:rgba(12,10,4,.5);border:1px solid rgba(255,212,121,.32);padding:1px 5px;font-weight:600}
+
+
+.gmap-wrap{position:relative;width:100%;height:min(62vh,520px);border-radius:14px;overflow:hidden;background:#0b1220}
+.gmap-wrap .leaflet-container{width:100%;height:100%;background:#0b1220}
+.gmap-fail{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center;color:#fca5a5;font-size:13px}
+body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-radius:0}
+@media (max-width:700px){.gmap-wrap{height:min(56vh,460px)}}
 

@@ -345,17 +345,75 @@
     if (box) box.textContent = '航线：' + pick.a.name + ' → ' + c.name + '（再点城市重新选）';
     pick = null;
   }
+  /* ---------- 卫星地图：Leaflet 懒加载 + Esri 瓦片（无限缩放） ---------- */
+  var gmap = null, gmapLoading = false, gmapTried = false;
+  function mapLoad(cb) {
+    if (global.L) { cb(); return; }
+    if (!gmapTried) { gmapTried = true; }
+    if (gmapLoading) { setTimeout(function () { mapLoad(cb); }, 150); return; }
+    gmapLoading = true;
+    var css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = './vendor/leaflet.css?v=68';
+    document.head.appendChild(css);
+    var s = document.createElement('script');
+    s.src = './vendor/leaflet.js?v=68';
+    s.onload = function () { gmapLoading = false; cb(); };
+    s.onerror = function () {
+      gmapLoading = false;
+      var el = document.getElementById('gmap');
+      if (el) el.innerHTML = '<div class="gmap-fail">地图库加载失败：首次使用需要联网（之后会离线缓存）</div>';
+    };
+    document.head.appendChild(s);
+  }
+  function mapReadout(e, fixed) {
+    var box = document.getElementById('gmapInfo'); if (!box) return;
+    var la = e.latlng.lat, ln = e.latlng.lng, z = gmap.getZoom();
+    var zone = zoneText({ lat: la, lng: ln });
+    box.textContent = la.toFixed(3) + '°' + (la >= 0 ? 'N' : 'S') + '  ' + Math.abs(ln).toFixed(3) + '°' + (ln >= 0 ? 'E' : 'W') +
+      '　缩放 z' + z + '　' + zone + (fixed ? '（已固定）' : '');
+  }
+  function mapInit() {
+    var el = document.getElementById('gmap'); if (!el) return;
+    if (gmap) { setTimeout(function () { try { gmap.invalidateSize(); } catch (e) {} }, 80); return; }
+    mapLoad(function () {
+      if (!global.L || gmap) return;
+      gmap = L.map(el, { center: [27.38, 112.02], zoom: 4, minZoom: 2, maxZoom: 19, worldCopyJump: true });
+      var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 19, attribution: 'Esri World Imagery' }).addTo(gmap);
+      var ter = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', { maxZoom: 13, maxNativeZoom: 13, attribution: 'Esri' });
+      var lbl = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 19, attribution: 'Esri' });
+      L.control.layers({ '卫星影像': sat, '地形起伏': ter }, { '地名与国界': lbl }, { collapsed: false, position: 'topright' }).addTo(gmap);
+      L.control.scale({ imperial: false }).addTo(gmap);
+      gmap.on('mousemove', function (e) { mapReadout(e, false); });
+      gmap.on('click', function (e) { mapReadout(e, true); });
+      gmap.on('zoomend', function () { var b = document.getElementById('gmapZoom'); if (b) b.textContent = 'z' + gmap.getZoom(); });
+      var sel = document.getElementById('gmapCity');
+      if (sel) {
+        sel.innerHTML = '<option value="">快速定位…</option>' + CITIES.map(function (c) {
+          return '<option value="' + c.lat + ',' + c.lng + ',' + c.name + '">' + c.name + '</option>';
+        }).join('');
+        sel.onchange = function () {
+          var v = sel.value; if (!v) return;
+          var a = v.split(',');
+          gmap.setView([parseFloat(a[0]), parseFloat(a[1])], 9);
+        };
+      }
+      var zb = document.getElementById('gmapZoom'); if (zb) zb.textContent = 'z' + gmap.getZoom();
+      setTimeout(function () { try { gmap.invalidateSize(); } catch (e) {} }, 120);
+    });
+  }
+
   function tab(id) {
-    ['real', 'motion', 'route', 'air', 'earth'].forEach(function (k) {
+    ['real', 'map', 'motion', 'route', 'air', 'earth'].forEach(function (k) {
       var el = document.getElementById('gs-' + k); if (el) el.style.display = (k === id) ? 'block' : 'none';
       var ch = document.getElementById('tab-' + k); if (ch) ch.className = 'chip' + (k === id ? ' on' : '');
     });
     var gw = document.getElementById('globeWrap'), gt = document.getElementById('globeTools');
-    var isReal = (id === 'real');
-    if (gw) gw.style.display = isReal ? 'none' : 'block';
-    if (gt) gt.style.display = isReal ? 'none' : 'block';
-    if (global.Earth3D) { if (isReal) Earth3D.resume(); else Earth3D.pause(); }
-    if (!isReal) { setTimeout(function () { if (resizeFn) resizeFn(); }, 0); }
+    var is3d = (id === 'real' || id === 'map');   /* 真实地球与卫星地图都不需要 2D 球 */
+    if (gw) gw.style.display = is3d ? 'none' : 'block';
+    if (gt) gt.style.display = is3d ? 'none' : 'block';
+    if (id === 'map') mapInit();
+    if (global.Earth3D) { if (id === 'real') Earth3D.resume(); else Earth3D.pause(); }
+    if (!is3d) { setTimeout(function () { if (resizeFn) resizeFn(); }, 0); }
     draw();
   }
   function render(startTab) {
@@ -363,6 +421,7 @@
     var opts = CITIES.map(function (c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
     v.innerHTML = '<div class="phead"><span class="ico">🌏</span><div class="grow"><h2>地球 · 地理</h2><p>分板块查看：点下面的标签切换</p></div></div>' +
       '<div class="row" style="margin-bottom:10px"><button class="chip on" id="tab-real" onclick="Globe.tab(&#39;real&#39;)">真实地球</button>' +
+      '<button class="chip" id="tab-map" onclick="Globe.tab(&#39;map&#39;)">卫星地图</button>' +
       '<button class="chip" id="tab-motion" onclick="Globe.tab(&#39;motion&#39;)">地球运动</button>' +
       '<button class="chip" id="tab-route" onclick="Globe.tab(&#39;route&#39;)">航线与经纬</button>' +
       '<button class="chip" id="tab-air" onclick="Globe.tab(&#39;air&#39;)">大气与海洋</button>' +
@@ -375,6 +434,18 @@
       '<select id="glCity" onchange="if(this.value)Globe.focus(this.value)" style="padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">定位城市…</option>' + opts + '</select></div></div>' +
       '<div class="globe-wrap" id="globeWrap"><canvas id="globeCv"></canvas><div class="globe-info" id="globeInfo">点城市=设航线起点/终点；点球面=读经纬度</div><button class="globe-x" onclick="Globe.fullscreen()">✕ 退出全屏</button></div>' +
 
+      '<div id="gs-map" class="gsec" style="display:none">' +
+      '<div class="card elev2" style="margin-top:12px;padding:12px">' +
+      '<div class="row" style="margin-bottom:10px"><b class="small">卫星地图 · 可一直放大到街区</b>' +
+      '<select id="gmapCity" style="padding:7px;border:1px solid var(--line);border-radius:10px"></select>' +
+      '<span class="small muted">当前 <b id="gmapZoom">z4</b></span></div>' +
+      '<div class="gmap-wrap" id="gmap"><div class="gmap-fail">正在加载地图…</div></div>' +
+      '<p class="small muted" id="gmapInfo" style="margin:8px 0 0">滚轮 / 双指缩放 · 拖拽平移 · 右上角可切换图层 · 点地图固定读数</p>' +
+      '</div>' +
+      '<div class="card"><div class="phead"><div class="grow"><h2>为什么这里能“无限放大”</h2><p>球面贴图放大 3 倍就糊了，卫星地图靠的是瓦片金字塔</p></div></div>' +
+      '<p class="small muted" style="margin:0">地球仪是一张 2048×1024 的贴图贴在球上，放大到一定程度必然模糊。这里用的是<b>瓦片金字塔</b>：按缩放级别分层存放，你每放大一级，浏览器只取当前范围内更细的那一层瓦片 —— 这也是 Google Earth 的原理。' +
+      '所以：<b>全球尺度看球面（昼夜、大圆航线、五带），局部尺度看瓦片（地形、河流、城市、海岸线）</b>。</p></div>' +
+      '</div>' +
       '<div id="gs-real" class="gsec">' +
       '<div class="card elev2" style="margin-top:12px;padding:12px">' +
       '<div class="e3-wrap" id="e3Wrap"><div class="e3-labels" id="e3Labels"></div><div class="e3-hud" id="e3Info">拖动=转视角 · 滚轮/双指=缩放 · 点击球面读经纬度</div></div>' +
