@@ -234,6 +234,30 @@
     }
     ctx.strokeStyle = 'rgba(150,200,255,.45)'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
 
+    /* 五带纬线（与 3D 地球同一口径，金色强调） */
+    var _dpr = devicePixelRatio || 1;
+    [[0], [23.44], [-23.44], [66.56], [-66.56]].forEach(function (z) {
+      latBand(z[0], 'rgba(255,212,121,.5)', 1.6 * _dpr, cx, cy, R);
+    });
+
+    /* 大洲大洋标注（“贴纸”） */
+    var GEO2 = [['亚洲', 34, 90], ['欧洲', 52, 18], ['非洲', 5, 20], ['北美洲', 45, -100], ['南美洲', -15, -60],
+                ['大洋洲', -25, 140], ['南极洲', -78, 0], ['太平洋', 0, -150], ['大西洋', 10, -30],
+                ['印度洋', -20, 80], ['北冰洋', 80, 0]];
+    ctx.font = '600 ' + (11 * _dpr) + 'px system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    GEO2.forEach(function (g) {
+      var pp = project(g[1], g[2], cx, cy, R);
+      if (!pp.vis) return;
+      var w = ctx.measureText(g[0]).width + 10 * _dpr, h = 15 * _dpr;
+      ctx.fillStyle = 'rgba(30,22,8,.55)';
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(pp.x - w / 2, pp.y - h / 2, w, h, 6 * _dpr); ctx.fill(); }
+      else ctx.fillRect(pp.x - w / 2, pp.y - h / 2, w, h);
+      ctx.fillStyle = '#ffeec2';
+      ctx.fillText(g[0], pp.x, pp.y);
+    });
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+
     if (route) {
       var pts = [];
       for (var t = 0; t <= 90; t++) pts.push(slerp(toVec(route.a.lat, route.a.lng), toVec(route.b.lat, route.b.lng), t / 90));
@@ -452,7 +476,7 @@
       '<div class="card elev2" style="margin-top:12px;padding:12px">' +
       '<div class="e3-wrap" id="e3Wrap"><div class="e3-labels" id="e3Labels"></div><div class="e3-hud" id="e3Info">拖动=转视角 · 滚轮/双指=缩放 · 点击球面读经纬度</div></div>' +
       '<div class="row" style="margin-top:10px">' +
-      '<button class="btn sm" id="e3Auto" onclick="Earth3D.toggleAuto()">暂停自转</button>' +
+      '<button class="btn sm" id="e3Auto" onclick="Earth3D.toggleAuto()">开始自转</button>' +
       '<button class="btn sm" id="e3Geo" onclick="Earth3D.toggleGeo()">大洲大洋开</button>' +
       '<button class="btn sm" id="e3Zone" onclick="Earth3D.toggleZones()">五带开</button>' +
       '<button class="btn sm" id="e3Grid" onclick="Earth3D.toggleGrid()">经纬网开</button>' +

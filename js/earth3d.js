@@ -25,7 +25,7 @@
 
   var st = {
     yaw: 0.9, pitch: 0.32, dist: 3.1, minD: 1.6, maxD: 6.5,
-    hour: null, live: true, auto: true, showLabels: false, showGrid: true,
+    hour: null, live: true, auto: false, showLabels: false, showGrid: true,
     showNight: true, showZones: true, showGeo: true, doy: null, route: null, drag: null, moved: 0, lastT: 0, frame: 0
   };
   var LOW = !!(global.PERF && global.PERF.low);
