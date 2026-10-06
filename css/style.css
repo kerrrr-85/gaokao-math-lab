@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=56") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=57") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -573,8 +573,8 @@ body.dark .set-segbtn.on{color:#e6edf7}
 .set-actions{flex-wrap:wrap;gap:10px}
 .set-note{margin:0;padding:10px 16px 14px;font-size:12px;line-height:1.65;color:var(--muted)}
 .set-row .set-note{padding:0}
-.set-select{min-width:96px;padding:8px 12px;font:inherit;font-size:14px;color:inherit;background:var(--card);
-  border:1px solid var(--line);border-radius:11px}
+.set-select{flex:0 0 auto;min-width:96px;max-width:min(280px,52%);padding:8px 12px;font:inherit;font-size:14px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:11px;text-overflow:ellipsis}
+.set-lab{flex:1 1 auto}
 .set-input{width:min(260px,100%);padding:9px 12px;font:inherit;font-size:13.5px;color:inherit;background:var(--card);
   border:1px solid var(--line);border-radius:11px}
 .set-range{display:flex;align-items:center;gap:10px}
@@ -600,7 +600,7 @@ body.dark .set-save{background:rgba(15,23,42,.92)}
 @media (max-width:640px){
   .set-segbtn{font-size:13px}
   .set-row{flex-wrap:wrap;padding:12px 14px}
-  .set-select,.set-input{width:100%}
+  .set-select,.set-input{width:100%;max-width:none}
   .set-range{width:100%}
   .set-range input[type=range]{flex:1;width:auto}
   .set-save{bottom:70px}

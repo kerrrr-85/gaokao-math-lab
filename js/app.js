@@ -869,7 +869,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v56 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v57 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -889,7 +889,7 @@
     if (r && rv) r.addEventListener('input', function () { rv.textContent = r.value + '×'; });
   }
 
-  function fillVoices() { setTimeout(function () { var sel = document.getElementById('voVoice'); if (!sel) return; var vs = InputTools.voices(); var cur = (Store.get().settings.voice || {}).voiceUri || ''; sel.innerHTML = '<option value="">系统默认</option>' + vs.map(function (v) { return '<option value="' + v.voiceURI + '"' + (cur === v.voiceURI ? ' selected' : '') + '>' + v.name + '（' + v.lang + '）</option>'; }).join(''); }, 250); }
+  function fillVoices() { setTimeout(function () { var sel = document.getElementById('voVoice'); if (!sel) return; var vs = InputTools.voices(); var cur = (Store.get().settings.voice || {}).voiceUri || ''; sel.innerHTML = '<option value="">系统默认</option>' + vs.map(function (v) { var nm = String(v.name).replace(/^Microsoft\s+/i, '').replace(/\s*-\s*[^-]*$/, ''); if (nm.length > 16) nm = nm.slice(0, 16) + '…'; return '<option value="' + v.voiceURI + '"' + (cur === v.voiceURI ? ' selected' : '') + '>' + nm + '（' + v.lang + '）</option>'; }).join(''); }, 250); }
   function testVoice() { InputTools.speak('这是一段语音试听。如果听到了，说明朗读功能正常。', Store.get().settings.voice || {}); }
   function voiceDiag() {
     var d = InputTools.diag(), box = document.getElementById('voDiag');
