@@ -8,6 +8,8 @@
   var cities = global.CITIES || [];
   var markers = [], labels = [], labelPool = [], geoLabels = [], geoGroup = null, zoneObj = null;
   var pressureGroup = null, currentsGroup = null, platesGroup = null;
+  var solarRoot = null, solarEarth = null, solarAxis = null, solarLabels = [], solarSunDir = null;
+  var D_ORBIT = 10, EPS = 23.44 * Math.PI / 180;
   /* 默认极简：首屏只呈现“课本地球仪”的要素 —— 大洲大洋 + 五带 */
   var GEO = [
     { n: '亚洲', t: '洲', lat: 34, lon: 90 }, { n: '欧洲', t: '洲', lat: 52, lon: 18 },
@@ -28,7 +30,7 @@
     yaw: 0.9, pitch: 0.32, dist: 3.1, minD: 1.6, maxD: 6.5,
     hour: null, live: true, auto: false, showLabels: false, showGrid: true,
     showNight: true, showZones: true, showGeo: true, doy: null,
-    showPressure: false, showCurrents: false, showPlates: false, route: null, drag: null, moved: 0, lastT: 0, frame: 0
+    showPressure: false, showCurrents: false, showPlates: false, solar: false, distS: 26, route: null, drag: null, moved: 0, lastT: 0, frame: 0
   };
   var LOW = !!(global.PERF && global.PERF.low);
 
@@ -168,6 +170,75 @@
     });
   }
 
+  /* ---------- 太阳系：季节原理 ---------- */
+  var AXIS = null;
+  function doyOf(d) { var s = new Date(d.getFullYear(), 0, 0); return Math.floor((d - s) / 86400000); }
+  function axisVec() { if (!AXIS) AXIS = new THREE.Vector3(0, Math.cos(EPS), -Math.sin(EPS)).normalize(); return AXIS; }
+  function buildSolar() {
+    solarRoot = new THREE.Group(); solarRoot.visible = false; scene.add(solarRoot);
+    var sun = new THREE.Mesh(new THREE.SphereGeometry(1.05, 32, 24), new THREE.MeshBasicMaterial({ color: 0xffd257 }));
+    solarRoot.add(sun);
+    solarRoot.add(new THREE.Mesh(new THREE.SphereGeometry(1.85, 32, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffa726, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending })));
+    var pts = [];
+    for (var a = 0; a <= 360; a += 3) pts.push(new THREE.Vector3(Math.cos(a * Math.PI / 180) * D_ORBIT, 0, Math.sin(a * Math.PI / 180) * D_ORBIT));
+    solarRoot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: 0x7f8ea3, transparent: true, opacity: 0.55 })));
+    /* 地球（复用同一材质与贴图，零额外体积） */
+    solarEarth = new THREE.Mesh(new THREE.SphereGeometry(0.52, 48, 32), earth.material);
+    solarRoot.add(solarEarth);
+    solarAxis = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 1.75, 6),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 }));
+    solarRoot.add(solarAxis);
+    /* 四季位置标记 */
+    [[80, '春分 3/21'], [172, '夏至 6/22'], [266, '秋分 9/23'], [355, '冬至 12/22']].forEach(function (m) {
+      var th = (m[0] - 80) / 365.25 * Math.PI * 2;
+      var o = new THREE.Object3D();
+      o.position.set(Math.cos(th) * D_ORBIT, 0, Math.sin(th) * D_ORBIT);
+      solarRoot.add(o);
+      var el = document.createElement('div');
+      el.className = 'e3-lb e3-lb-geo'; el.textContent = m[1];
+      if (labelBox) { labelBox.appendChild(el); labelPool.push(el); }
+      solarLabels.push({ el: el, obj: o, grp: 'solar' });
+    });
+    var so = new THREE.Object3D(); solarRoot.add(so);
+    var sel = document.createElement('div'); sel.className = 'e3-lb e3-lb-zone'; sel.textContent = '☀ 太阳';
+    if (labelBox) { labelBox.appendChild(sel); labelPool.push(sel); }
+    solarLabels.push({ el: sel, obj: so, grp: 'solar' });
+  }
+  function updateSolar() {
+    if (!solarRoot) return;
+    var doy = (st.doy == null) ? doyOf(new Date()) : st.doy;
+    var th = (doy - 80) / 365.25 * Math.PI * 2;
+    var pos = new THREE.Vector3(Math.cos(th) * D_ORBIT, 0, Math.sin(th) * D_ORBIT);
+    var q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), axisVec());
+    solarEarth.position.copy(pos); solarEarth.quaternion.copy(q);
+    solarAxis.position.copy(pos); solarAxis.quaternion.copy(q);
+    var sd = pos.clone().negate().normalize();
+    if (earth.userData.uni) earth.userData.uni.sunDir.value.copy(sd);
+    if (sunLight) sunLight.position.copy(sd).multiplyScalar(10);
+    var decl = Math.asin(Math.max(-1, Math.min(1, axisVec().dot(sd)))) * 180 / Math.PI;
+    var info = document.getElementById('e3SolarInfo');
+    if (info) info.textContent = '直射点 ' + decl.toFixed(1) + '°' + (decl >= 0 ? 'N' : 'S') + '　' +
+      (Math.abs(decl) < 1.2 ? '春/秋分：全球昼夜等长' : (decl > 0 ? '北半球昼长夜短，北极圈内出现极昼' : '北半球昼短夜长，北极圈内出现极夜'));
+  }
+  function toggleSolar() {
+    st.solar = !st.solar;
+    if (!solarRoot) return;
+    solarRoot.visible = st.solar;
+    earth.visible = !st.solar; if (atmo) atmo.visible = !st.solar;
+    if (gridObj) gridObj.visible = !st.solar && st.showGrid;
+    if (zoneObj) zoneObj.visible = !st.solar && st.showZones;
+    if (markerGroup) markerGroup.visible = !st.solar && st.showLabels;
+    if (geoGroup) geoGroup.visible = !st.solar;
+    if (pressureGroup) pressureGroup.visible = !st.solar && st.showPressure;
+    if (currentsGroup) currentsGroup.visible = !st.solar && st.showCurrents;
+    if (platesGroup) platesGroup.visible = !st.solar && st.showPlates;
+    var b = document.getElementById('e3Solar'); if (b) b.textContent = st.solar ? '← 回到地球' : '☀ 季节原理';
+    var box = document.getElementById('e3SolarBox'); if (box) box.style.display = st.solar ? 'block' : 'none';
+    if (st.solar) updateSolar();
+  }
+
   function buildGraticule() {
     var pts = [], r = 1.001, i, j, a;
     for (i = -60; i <= 60; i += 30) {
@@ -239,6 +310,7 @@
 
     gridObj = buildGraticule(); gridObj.visible = st.showGrid; earth.add(gridObj);
     buildOverlays();
+    buildSolar();
 
     /* 五带纬线（比普通经纬网更醒目） */
     zoneObj = (function () {
@@ -362,12 +434,14 @@
     }
     if (st.live && st.frame % 30 === 0) setTime();
     placeCamera();
-    if (st.showLabels || st.showGeo || st.showZones) updateLabels();
+    if (st.solar) updateSolar();
+    if (st.showLabels || st.showGeo || st.showZones || st.solar) updateLabels();
     renderer.render(scene, camera);
   }
   function placeCamera() {
+    var d = st.solar ? st.distS : st.dist;
     var cp = Math.cos(st.pitch), sp = Math.sin(st.pitch);
-    camera.position.set(st.dist * cp * Math.sin(st.yaw), st.dist * sp, st.dist * cp * Math.cos(st.yaw));
+    camera.position.set(d * cp * Math.sin(st.yaw), d * sp, d * cp * Math.cos(st.yaw));
     camera.lookAt(0, 0, 0);
   }
   function updateLabels() {
@@ -378,9 +452,10 @@
     var all = labels.concat(geoLabels);
     for (var i = 0; i < all.length; i++) {
       var L = all[i];
-      var vis = L.grp === 'city' ? st.showLabels : (L.grp === 'geo' ? st.showGeo : st.showZones);
+      if (!L.obj) continue;
+      var vis = st.solar ? (L.grp === 'solar') : (L.grp === 'city' ? st.showLabels : (L.grp === 'geo' ? st.showGeo : (L.grp === 'zone' ? st.showZones : false)));
       if (!vis) { if (L.el.style.display !== 'none') L.el.style.display = 'none'; continue; }
-      v.copy(L.obj.position).applyMatrix4(earth.matrixWorld);
+      L.obj.getWorldPosition(v);
       var nrm = v.clone().normalize();
       var facing = nrm.dot(camDir);
       var p = v.clone().project(camera);
@@ -414,7 +489,7 @@
       if (ptrs[e.pointerId]) { ptrs[e.pointerId].x = e.clientX; ptrs[e.pointerId].y = e.clientY; }
       if (pinch && Object.keys(ptrs).length >= 2) {
         var d = ptrDist();
-        if (d > 8 && pinch.d > 8) st.dist = Math.max(st.minD, Math.min(st.maxD, pinch.dist * (pinch.d / d)));
+        if (d > 8 && pinch.d > 8) { if (st.solar) st.distS = Math.max(5, Math.min(60, st.distS * (pinch.d / d))); else st.dist = Math.max(st.minD, Math.min(st.maxD, pinch.dist * (pinch.d / d))); }
         st.moved = 99;
         return;
       }
@@ -437,6 +512,7 @@
     wrap.addEventListener('pointercancel', function () { st.drag = null; });
     wrap.addEventListener('wheel', function (e) {
       e.preventDefault();
+      if (st.solar) { st.distS = Math.max(5, Math.min(60, st.distS * (e.deltaY > 0 ? 1.08 : 0.93))); return; }
       st.dist = Math.max(st.minD, Math.min(st.maxD, st.dist * (e.deltaY > 0 ? 1.06 : 0.94)));
     }, { passive: false });
   }
@@ -502,6 +578,7 @@
   function setLive() { st.live = true; setTime(); var b = document.getElementById('e3Live'); if (b) b.className = 'btn sm primary'; }
   function setSeason(doy) {
     st.doy = (doy == null ? null : doy);
+    if (st.solar) updateSolar();
     st.live = (doy == null);
     setTime(true);
     [['e3Live', doy == null], ['e3Chun', doy === 80], ['e3Xia', doy === 172], ['e3Qiu', doy === 266], ['e3Dong', doy === 355]].forEach(function (p) {
@@ -516,6 +593,6 @@
   global.Earth3D = {
     mount: mount, unmount: unmount, resize: resize, pause: pause, resume: resume,
     toggleAuto: toggleAuto, toggleLabels: toggleLabels, toggleGrid: toggleGrid, toggleZones: toggleZones, toggleGeo: toggleGeo, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, toggleNight: toggleNight,
-    setHour: setHour, setLive: setLive, setSeason: setSeason, reset: reset, applyRoute: applyRoute, clearRoute: clearRoute
+    setHour: setHour, setLive: setLive, setSeason: setSeason, toggleSolar: toggleSolar, updateSolar: updateSolar, reset: reset, applyRoute: applyRoute, clearRoute: clearRoute
   };
 })(window);

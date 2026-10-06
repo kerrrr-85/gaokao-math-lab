@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=71") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=72") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -796,3 +796,6 @@ body.map-full .topbar,body.map-full .tabbar,body.map-full .dot-canvas{display:no
 body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-radius:0}
 @media (max-width:700px){.gmap-wrap{height:min(56vh,460px)}}
 
+
+.e3-solarbox{margin-top:10px;padding:11px 13px;border:1px solid rgba(255,212,121,.35);border-radius:14px;background:rgba(30,22,8,.32)}
+.e3-solarbox .small{color:#e6d3a8}

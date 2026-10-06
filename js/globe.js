@@ -485,7 +485,12 @@
       '<button class="btn sm" id="e3Pres" onclick="Earth3D.togglePressure()">气压带关</button>' +
       '<button class="btn sm" id="e3Cur" onclick="Earth3D.toggleCurrents()">洋流关</button>' +
       '<button class="btn sm" id="e3Plate" onclick="Earth3D.togglePlates()">板块关</button>' +
+      '<button class="btn sm primary" id="e3Solar" onclick="Earth3D.toggleSolar()">☀ 季节原理</button>' +
       '<button class="btn sm" onclick="Earth3D.reset()">复位视角</button></div>' +
+      '<div id="e3SolarBox" class="e3-solarbox" style="display:none">' +
+      '<div class="row" style="margin-bottom:6px"><b class="small">季节原理</b><span class="small" id="e3SolarInfo"></span></div>' +
+      '<p class="small muted" style="margin:0">地轴倾斜 <b>23°26′</b>，而且<b>始终指向同一方向</b>——这才是季节的原因。地球轨道接近正圆（偏心率仅 0.0167），所以<b>季节不是离太阳远近造成的</b>。</p>' +
+      '<div class="row" style="margin-top:8px"><a class="btn sm" target="_blank" rel="noopener" href="https://phet.colorado.edu/sims/html/gravity-and-orbits/latest/gravity-and-orbits_zh_CN.html">更多模拟 → PhET（需联网）</a><span class="small muted">拖动旋转 · 滚轮/双指缩放 · 点季节看变化</span></div></div>' +
       '<div class="row" style="margin-top:10px"><b class="small">季节</b>' +
       '<button class="btn sm" id="e3Chun" onclick="Earth3D.setSeason(80)">春分</button>' +
       '<button class="btn sm" id="e3Xia" onclick="Earth3D.setSeason(172)">夏至</button>' +
