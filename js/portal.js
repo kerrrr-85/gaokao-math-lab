@@ -86,6 +86,7 @@
   ];
   var fxRaf = null, fxCanvas = null, fxCtx = null, fxDots = [], fxW = 0, fxH = 0, fxLast = 0;
   var fxIo = null, fxTimer = null;
+  var vidSubject = 'math';
 
   function isNight() {
     var q = String(location.search || '');
@@ -342,8 +343,9 @@
 
   function renderVideo() {
     var v = document.getElementById('view');
-    var list = global.BILI || [];
-    var ORDER = ['函数与导数', '圆锥曲线', '数列', '立体几何', '三角与解三角形', '概率统计', '不等式', '直线与圆', '总复习'];
+    var isPhy = vidSubject === 'phy';
+    var list = isPhy ? (global.BILI_PHY || []) : (global.BILI || []);
+    var ORDER = isPhy ? ['基础', '一轮', '力学', '电磁', '动量', '实验', '选修', '压轴', '方法', '真题', '资讯'] : ['函数与导数', '圆锥曲线', '数列', '立体几何', '三角与解三角形', '概率统计', '不等式', '直线与圆', '总复习'];
     var groups = {};
     list.forEach(function (b) { var k = b.tag || '未分类'; (groups[k] = groups[k] || []).push(b); });
     var keys = ORDER.filter(function (k) { return groups[k] && groups[k].length; });
@@ -365,16 +367,28 @@
           '<span class="vcard__sub"><span>' + fv(b.views) + '播放</span><span>' + fd(b.dur) + '</span></span>' +
           '</div></div></div></article>';
     }
-    var html = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>视频 · 数学</h2><p>共 ' + list.length + ' 条，按专题分板块 · 左右滑动看更多</p></div></div>';
+    var html = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>视频 · ' + (isPhy ? '物理' : '数学') + '</h2><p>共 ' + list.length + ' 条 · 按专题分板块 · 精选优先，备选按需展开</p></div></div>';
     html += '<div class="card tight" style="margin-bottom:12px"><div class="row"><input type="text" id="biliQ" placeholder="搜 B站（新标签打开）" style="flex:1">' +
       '<button class="btn sm primary" onclick="Portal.searchBili()">去 B站搜</button></div>' +
+      '<div class="row vsubs">' +
+        '<button class="chip vsub' + (!isPhy ? ' on' : '') + '" onclick="Portal.videoSubject(\'math\')">数学 <b>' + (global.BILI || []).length + '</b></button>' +
+        '<button class="chip vsub' + (isPhy ? ' on' : '') + '" onclick="Portal.videoSubject(\'phy\')">物理 <b>' + (global.BILI_PHY || []).length + '</b></button>' +
+      '</div>' +
       '<div class="row" style="margin-top:10px">' + keys.map(function (k, n) {
-        return '<button class="chip' + (n === 0 ? ' on' : '') + '" onclick="Portal.videoTag(\'' + k + '\')">' + k + ' <b>' + groups[k].length + '</b></button>';
+        return '<button class="chip vtag' + (n === 0 ? ' on' : '') + '" onclick="Portal.videoTag(\'' + k + '\')">' + k + ' <b>' + groups[k].length + '</b></button>';
       }).join('') + '</div></div>';
     keys.forEach(function (k, n) {
+      var main = groups[k].filter(function (b) { return (b.tier || 'main') !== 'more'; });
+      var more = groups[k].filter(function (b) { return b.tier === 'more'; });
+      if (!main.length) { main = more; more = []; }
       html += '<section class="vsec" data-tag="' + k + '" style="display:' + (n === 0 ? 'block' : 'none') + '">' +
-        '<div class="small muted" style="margin:12px 2px 6px">' + k + ' · ' + groups[k].length + ' 条</div>' +
-        '<div class="vrail">' + groups[k].map(card).join('') + '</div></section>';
+        '<div class="vsec__head"><span>' + k + '</span><span class="muted">精选 ' + main.length + ' 条' + (more.length ? ' · 备选 ' + more.length + ' 条' : '') + '</span></div>' +
+        '<div class="vrail">' + main.map(card).join('') + '</div>';
+      if (more.length) {
+        html += '<details class="vmore"><summary>展开备选 · ' + more.length + ' 条 <span>内容有重复或非必需，按需查看</span></summary>' +
+          '<div class="vrail vrail--more">' + more.map(card).join('') + '</div></details>';
+      }
+      html += '</section>';
     });
     v.innerHTML = html;
   }
@@ -382,14 +396,18 @@
     Array.prototype.forEach.call(document.querySelectorAll('.vsec'), function (s) {
       s.style.display = s.getAttribute('data-tag') === k ? 'block' : 'none';
     });
-    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('.vtag'), function (b) {
       b.classList.toggle('on', b.textContent.indexOf(k) === 0);
     });
     window.scrollTo(0, 0);
   }
+  function videoSubject(s) {
+    vidSubject = s === 'phy' ? 'phy' : 'math';
+    renderVideo();
+  }
 
   function partInfo(bvid) {
-    var list = global.BILI || [];
+    var list = (global.BILI_PHY || []).concat(global.BILI || []);
     for (var i = 0; i < list.length; i++) if (list[i].bvid === bvid) return list[i];
     return null;
   }
@@ -431,5 +449,6 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { videoTag: videoTag, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+

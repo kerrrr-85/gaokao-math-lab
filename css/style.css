@@ -831,3 +831,17 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .vparts{display:flex;gap:6px;overflow-x:auto;padding:8px 2px;-webkit-overflow-scrolling:touch}
 .vpart{flex:0 0 auto;font:inherit;font-size:11.5px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;white-space:nowrap;color:var(--ink)}
 .vpart.on{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700}
+
+/* ===== 视频区：学科切换与备选卡分级 ===== */
+.vsubs{gap:8px;margin-top:10px}
+.vsec__head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:14px 2px 6px;font-size:13px;font-weight:700}
+.vsec__head .muted{font-size:12px;font-weight:400}
+.vmore{margin-top:2px}
+.vmore summary{cursor:pointer;color:#64748b;font-size:12px;padding:9px 2px;list-style:none;user-select:none}
+.vmore summary::-webkit-details-marker{display:none}
+.vmore summary span{color:#94a3b8;margin-left:6px}
+.vrail--more{opacity:.74;padding-top:0}
+.vrail--more .vcard{--size:180px;opacity:.68;filter:saturate(.55)}
+.vrail--more .vcard:hover{opacity:1;filter:none}
+.vrail--more .vcard__name{font-size:.68em}
+@media (max-width:700px){.vrail--more .vcard{--size:166px}}
