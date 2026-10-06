@@ -97,6 +97,70 @@
   function isLow() { return !!(global.PERF && global.PERF.low); }
   function reduceMotion() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
 
+  /* ---------- 隐藏彩蛋：晕染 → 空白特殊界面 ---------- */
+  var inkEl = null, inkTxt = null, roomEl = null, inkHold = null, inkReady = false, roomOn = false;
+
+  function inkBuild() {
+    if (inkEl) return;
+    inkEl = document.createElement('div');
+    inkEl.className = 'ink-veil';
+    inkEl.innerHTML = '<div class="ink-grain"></div><div class="ink-txt" id="inkTxt"><span>我</span><span>在</span><span>呢</span></div>';
+    document.body.appendChild(inkEl);
+    inkTxt = inkEl.querySelector('#inkTxt');
+    roomEl = document.createElement('div');
+    roomEl.className = 'ink-room';
+    roomEl.innerHTML = '<div class="ink-room-body" id="roomBody"></div>';
+    document.body.appendChild(roomEl);
+    inkEl.addEventListener('pointerenter', inkHoldStart);
+    inkEl.addEventListener('pointerleave', inkHoldStop);
+    inkEl.addEventListener('touchstart', inkHoldStart, { passive: true });
+    inkEl.addEventListener('touchend', inkHoldStop);
+    var lastTap = 0;
+    roomEl.addEventListener('pointerup', function () {
+      var now = Date.now();
+      if (now - lastTap < 380) inkClose();
+      lastTap = now;
+    });
+    if (!global.__inkKey) { global.__inkKey = 1; document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && (roomOn || inkReady)) inkClose(); }); }
+  }
+  function inkOpen(e) {
+    inkBuild();
+    var x = 50, y = 50;
+    if (e && e.clientX) { x = (e.clientX / global.innerWidth) * 100; y = (e.clientY / global.innerHeight) * 100; }
+    inkEl.style.setProperty('--x', x.toFixed(2) + '%');
+    inkEl.style.setProperty('--y', y.toFixed(2) + '%');
+    inkEl.classList.remove('room-open');
+    inkEl.classList.add('on');
+    roomOn = false; inkReady = false;
+    setTimeout(function () { if (inkEl && inkEl.classList.contains('on')) { inkEl.classList.add('lit'); inkReady = true; } }, 720);
+  }
+  function inkHoldStart() {
+    if (!inkReady || roomOn) return;
+    inkHoldStop();
+    inkHold = setTimeout(function () { inkHold = null; roomOpen(); }, 1000);
+  }
+  function inkHoldStop() { if (inkHold) { clearTimeout(inkHold); inkHold = null; } }
+  function roomOpen() {
+    if (!roomEl || roomOn) return;
+    roomOn = true;
+    inkEl.classList.add('room-open');
+    roomEl.classList.add('on');
+    var b = document.getElementById('roomBody');
+    if (b) b.innerHTML = '';
+  }
+  function inkClose() {
+    inkHoldStop();
+    roomOn = false; inkReady = false;
+    if (roomEl) roomEl.classList.remove('on');
+    if (inkEl) { inkEl.classList.remove('lit'); inkEl.classList.remove('room-open'); inkEl.classList.remove('on'); }
+  }
+  function inkDestroy() {
+    inkClose();
+    if (inkEl && inkEl.parentNode) inkEl.parentNode.removeChild(inkEl);
+    if (roomEl && roomEl.parentNode) roomEl.parentNode.removeChild(roomEl);
+    inkEl = null; roomEl = null; inkTxt = null;
+  }
+
   function gridHTML() {
     var cells = [
       ['study', '学习台', '#/today', 0],
@@ -125,14 +189,14 @@
           '<div class="pt-hero-copy">' +
             '<p class="pt-eyebrow pt-reveal">' + dateStr() + ' · 青树坪</p>' +
             '<h1 class="pt-title" aria-label="我在呢"><span style="--i:0">我</span><span style="--i:1">在</span><span style="--i:2">呢</span></h1>' +
-            '<p class="pt-lede pt-reveal">今天想从哪儿开始？</p>' +
+            '<p class="pt-lede pt-reveal" id="ptTrigger" title="">今天想从哪儿开始？</p>' +
             '<button class="pt-weather pt-reveal" onclick="Portal.loadWeather(true)" title="点一下刷新天气">' +
               '<span class="pt-temp" id="ptTemp">--°</span>' +
               '<span class="pt-wxmeta"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=53" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=56" alt="" decoding="async"></figure>' +
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
@@ -224,6 +288,8 @@
       Array.prototype.forEach.call(els, function (e) { fxIo.observe(e); });
     }
     global.addEventListener('resize', fxResize);
+    var _trig = document.getElementById('ptTrigger');
+    if (_trig) _trig.addEventListener('click', function (ev) { ev.preventDefault(); inkOpen(ev); });
     setTimeout(function () {
       var vh = global.innerHeight || 800;
       Array.prototype.forEach.call(document.querySelectorAll('.pt-reveal:not(.in)'), function (e) {
@@ -234,6 +300,7 @@
     fxTimer = setInterval(applyNightNow, 60000);
   }
   function fxStop() {
+    inkDestroy();
     if (fxRaf) { cancelAnimationFrame(fxRaf); fxRaf = null; }
     if (fxTimer) { clearInterval(fxTimer); fxTimer = null; }
     if (fxIo) { fxIo.disconnect(); fxIo = null; }
@@ -281,5 +348,5 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);

@@ -146,8 +146,75 @@
     }
     return '<div class="card"><div class="phead"><span class="ico">🗓️</span><div class="grow"><h2>学习热力图</h2><p>近 12 周 · 颜色越深当天练得越多</p></div></div><div class="heatmap">' + cells + '</div></div>';
   }
-  /* ============ 今日 ============ */
-  function renderToday() {
+  /* ============ 今日（四 Tab + 拉杆式牌堆） ============ */
+  var dayKey = 'today';
+  var deckState = { open: {}, pick: {} };
+
+  function ringSm(pct, big) {
+    var r = 26, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct || 0));
+    var off = c * (1 - p / 100);
+    return '<div class="ring sm"><svg width="64" height="64" viewBox="0 0 64 64">' +
+      '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#e8eaee" stroke-width="6"/>' +
+      '<circle class="rprog" cx="32" cy="32" r="' + r + '" fill="none" stroke="#0f766e" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + c.toFixed(1) + '" data-off="' + off.toFixed(1) + '"/>' +
+      '</svg><div class="val"><b>' + big + '</b></div></div>';
+  }
+  function setDayTab(k) {
+    var keys = ['today', 'review', 'weak', 'focus'];
+    var i = keys.indexOf(k); if (i < 0) i = 0;
+    dayKey = keys[i];
+    var seg = document.getElementById('daySeg');
+    if (seg) Array.prototype.forEach.call(seg.querySelectorAll('.set-segbtn'), function (b, n) { b.classList.toggle('on', n === i); });
+    var ind = document.getElementById('dayInd');
+    if (ind) ind.style.transform = 'translateX(' + (i * 100) + '%)';
+    keys.forEach(function (key, n) {
+      var pn = document.getElementById('dayp-' + key); if (pn) pn.classList.toggle('on', n === i);
+    });
+  }
+  function deckHTML(kind, cards, opts) {
+    opts = opts || {};
+    var max = opts.max || 6;
+    var show = cards.slice(0, max);
+    var mid = (show.length - 1) / 2;
+    var open = !!deckState.open[kind];
+    var body = show.map(function (c, i) {
+      var d = Math.abs(i - mid);
+      return '<button class="deck-card' + (deckState.pick[kind] === c.id ? ' picked' : '') + '"' +
+        ' style="--i:' + i + ';--mid:' + mid + ';--d:' + d + '"' +
+        ' onclick="App.deckPick(\'' + kind + '\',\'' + c.id + '\')">' +
+        '<span class="dc-top">' + (opts.tag ? opts.tag(c) : '') + '</span>' +
+        '<b class="dc-title">' + esc(opts.title(c)) + '</b>' +
+        '<span class="dc-meta">' + esc(opts.meta1 ? opts.meta1(c) : '') + '</span>' +
+        (opts.meta2 ? '<span class="dc-meta">' + esc(opts.meta2(c)) + '</span>' : '') +
+        '</button>';
+    }).join('');
+    if (!show.length) return '<p class="set-note" style="padding:14px 2px">这里暂时是空的。</p>';
+    var more = cards.length > max ? '<span class="deck-more">+' + (cards.length - max) + '</span>' : '';
+    return '<div class="deck' + (open ? ' open' : '') + '" id="deck-' + kind + '">' + body + more +
+      '<button class="deck-lift" onclick="App.deckOpen(\'' + kind + '\')">' + (open ? '收起' : '展开 ' + cards.length + ' 张') + '</button></div>';
+  }
+  function deckOpen(kind) {
+    deckState.open[kind] = !deckState.open[kind];
+    var el = document.getElementById('deck-' + kind);
+    if (el) {
+      el.classList.toggle('open', !!deckState.open[kind]);
+      var b = el.querySelector('.deck-lift');
+      if (b) b.textContent = deckState.open[kind] ? '收起' : '展开';
+    }
+  }
+  function deckPick(kind, id) {
+    deckState.pick[kind] = (deckState.pick[kind] === id) ? null : id;
+    deckState.open[kind] = true;
+    router();
+  }
+  function deckGradeBar(rec) {
+    if (!rec) return '<p class="set-note" style="padding:6px 2px">点一张牌 → 这里出现评分按钮</p>';
+    return '<div class="deck-grade"><div class="set-lab"><b>' + esc(cardTitle(rec)) + '</b><span>已复习 ' + rec.reps + ' 次 · ' + esc(cardMod(rec)) + '</span></div>' +
+      '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.reviewCard(\'' + rec.id + '\',0)">不会</button>' +
+      '<button class="btn sm" onclick="App.reviewCard(\'' + rec.id + '\',1)">半会</button>' +
+      '<button class="btn sm primary" onclick="App.reviewCard(\'' + rec.id + '\',2)">会了</button></div></div>';
+  }
+  function renderToday(startKey) {
+    if (startKey && ['today', 'review', 'weak', 'focus'].indexOf(startKey) >= 0) dayKey = startKey;
     var mod = curModule();
     var due = dueReview().filter(function (c) { return cardMod(c) === mod; });
     var nw = newCards().filter(function (c) { return cardMod(c) === mod; });
@@ -160,60 +227,73 @@
     var goal = Store.get().settings.reviewPerDay || 20;
     var pct = Math.min(100, Math.round(doneToday * 100 / goal));
     var weak = nodes.slice().sort(function (a, b) { return Store.masteryOf(a.id) - Store.masteryOf(b.id); }).slice(0, 3);
+    var nextTxt = due.length ? ('先清复习队列：有 ' + due.length + ' 张到期')
+      : (Store.wrong().length ? ('错题本还有 ' + Store.wrong().length + ' 道待重做') : '没有到期复习，正好开新卡建立记忆');
+    var picked = null;
+    for (var pi = 0; pi < due.length; pi++) { if (due[pi].id === deckState.pick['due']) picked = due[pi]; }
 
-    var html = modbar();
-    var next = due.length ? { t: '先清复习队列', d: '有 ' + due.length + ' 张卡片到期，先复习再开新卡', a: '<a class="btn primary" href="#/practice">去复习</a>' }
-      : (Store.wrong().length ? { t: '攻克错题', d: '错题本里还有 ' + Store.wrong().length + ' 道待重做', a: '<a class="btn primary" href="#/wrong">去错题本</a>' }
-      : { t: '开一组新题', d: '没有到期复习，正好开新卡建立记忆', a: '<a class="btn primary" href="#/practice/start">开始练习</a>' });
-    html += '<div class="card elev2" style="border-left:5px solid var(--primary)"><div class="phead" style="margin-bottom:6px"><span class="ico">💡</span><div class="grow"><h2>' + next.t + '</h2><p>' + next.d + '</p></div>' + next.a + '</div></div>';
-    html += '<div class="card elev2" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">' +
-      ringHTML(pct, pct + '%', '今日 ' + doneToday + '/' + goal) +
-      '<div class="grow" style="min-width:220px"><h2 style="margin:0">' + esc(mod) + '</h2>' +
-      '<p class="small muted" style="margin:4px 0 12px">' + nodes.length + ' 个知识节点 · 平均掌握度 ' + avg + '% · 累计练习 ' + st.total + ' 题</p>' +
-      '<div class="row"><a class="btn primary" href="#/practice/start">开始练习</a><a class="btn" href="#/map">看图谱</a><a class="btn" href="#/wrong">错题本</a></div></div></div>';
+    var tabToday =
+      '<div class="day-hero">' + ringSm(pct, doneToday + '') +
+        '<div class="grow"><b>今日 ' + doneToday + ' / ' + goal + '</b><p>' + esc(nextTxt) + '</p></div>' +
+        '<a class="btn sm primary" href="#/practice/start">开始练</a></div>' +
+      '<div class="day-mini">' +
+        '<div class="dm"><b>' + due.length + '</b><span>待复习</span></div>' +
+        '<div class="dm"><b>' + nw.length + '</b><span>新卡</span></div>' +
+        '<div class="dm"><b>' + st.wrongCount + '</b><span>错题</span></div>' +
+        '<div class="dm"><b>' + avg + '%</b><span>掌握度</span></div>' +
+      '</div>' +
+      '<div class="set-group" style="padding-top:4px"><div class="set-h">新卡 · ' + nw.length + ' 张</div>' +
+        '<div style="padding:0 14px 14px">' + deckHTML('nw', nw, {
+          max: 5, tag: function () { return '新卡'; },
+          title: function (c) { return cardTitle(c); },
+          meta1: function (c) { return c.refType === 'method' ? '方法卡' : '题目卡'; },
+          meta2: function (c) { return cardMod(c); }
+        }) + '</div></div>';
 
-    html += '<div class="kpi" style="margin-bottom:14px">' +
-      '<div class="stat"><b>' + due.length + '</b><span>待复习</span></div>' +
-      '<div class="stat"><b>' + nw.length + '</b><span>新卡</span></div>' +
-      '<div class="stat"><b>' + st.wrongCount + '</b><span>错题</span></div>' +
-      '<div class="stat"><b>' + avg + '%</b><span>掌握度</span></div></div>';
+    var tabReview =
+      '<div class="set-group"><div class="set-h">到期卡片 · ' + due.length + ' 张</div>' +
+        '<div style="padding:0 14px 16px">' + deckHTML('due', due, {
+          max: 5, tag: function () { return '到期'; },
+          title: function (c) { return cardTitle(c); },
+          meta1: function (c) { return (c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + c.reps + ' 次'; },
+          meta2: function (c) { return cardMod(c); }
+        }) + '<div class="deck-grade-wrap">' + deckGradeBar(picked) + '</div></div></div>' +
+      '<p class="set-note">牌堆叠在一起，点「展开」或直接把鼠标移上去 → 像扇子一样张开；点某张牌即可评分。</p>';
 
-    html += '<div class="card"><div class="phead"><span class="ico">📘</span><div class="grow"><h2>复习队列</h2><p>按遗忘曲线安排 · 共 ' + due.length + ' 张</p></div></div>';
-    if (!due.length) html += '<p class="muted small">当前没有到期卡片，去练习页开新卡吧。</p>';
-    else {
-      html += '<div class="list">';
-      due.slice(0, Store.get().settings.reviewPerDay).forEach(function (c) {
-        var mod2 = cardMod(c);
-        html += '<div class="item elev"><div class="row"><div class="grow"><b>' + esc(cardTitle(c)) + '</b>' +
-          '<div class="small muted" style="margin-top:2px">' + (c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + c.reps + ' 次 · ' + esc(mod2) + '</div></div>' +
-          heatHTML(Store.masteryOf(c.refId)) + '</div>' +
-          '<div class="row" style="margin-top:8px"><button class="btn sm" onclick="App.reviewCard(\'' + c.id + '\',0)">不会</button><button class="btn sm" onclick="App.reviewCard(\'' + c.id + '\',1)">半会</button><button class="btn sm primary" onclick="App.reviewCard(\'' + c.id + '\',2)">会了</button></div></div>';
-      });
-      html += '</div>';
-    }
-    html += '</div>';
-
-    html += '<div class="card"><div class="phead"><span class="ico">✨</span><div class="grow"><h2>新卡</h2><p>先建立记忆，再交给系统安排复习</p></div><a class="btn sm primary" href="#/practice">去练习</a></div>';
-    if (!nw.length) html += '<p class="muted small">本模块的新卡已全部解锁。</p>';
-    else {
-      html += '<div class="rail">' + nw.slice(0, Store.get().settings.newPerDay).map(function (c) {
-        return '<a class="mini" href="' + (c.refType === 'method' ? '#/method/' + c.refId : '#/practice') + '"><b>' + esc(cardTitle(c)) + '</b><span class="small muted">' + (c.refType === 'method' ? '方法卡' : '题目卡') + '</span></a>';
-      }).join('') + '</div>';
-    }
-    html += '</div>';
-
-    if (weak.length) {
-      html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>薄弱知识点</h2><p>掌握度最低的三个，优先补</p></div></div><div class="list">' +
-        weak.map(function (n) {
+    var tabWeak =
+      '<div class="set-group"><div class="set-h">薄弱知识点 · 掌握度最低</div>' +
+        (weak.length ? weak.map(function (n) {
           var m = Store.masteryOf(n.id);
-          return '<div class="item"><div class="row"><div class="grow"><b>' + esc(n.title) + '</b><div class="small muted">' + esc(n.brief) + '</div></div><span class="tag">' + m + '%</span></div>' +
-            '<div class="bar" style="margin-top:8px"><i style="width:' + m + '%"></i></div>' +
-            '<div class="row" style="margin-top:8px"><a class="btn sm" href="#/node/' + n.id + '">看知识点</a></div></div>';
-        }).join('') + '</div></div>';
-    }
-    html += '<div class="card"><div class="phead"><span class="ico">🍅</span><div class="grow"><h2>专注番茄钟</h2><p>25 分钟专注，然后休息 5 分钟</p></div><b id="pomoTime" style="font-size:26px;color:var(--primary)">25:00</b></div><div class="row" style="margin-top:8px"><button class="btn primary" onclick="App.pomoToggle()">开始 / 暂停</button><button class="btn" onclick="App.pomoReset()">重置</button></div></div>';
-    html += heatmapHTML();
-    view.innerHTML = html;
+          return '<div class="set-row"><div class="set-lab"><b>' + esc(n.title) + '</b><span>' + esc(n.brief) + '</span>' +
+            '<div class="bar" style="margin-top:6px"><i style="width:' + m + '%"></i></div></div>' +
+            '<div class="weak-act"><span class="set-val">' + m + '%</span><a class="btn sm" href="#/node/' + n.id + '">看</a></div></div>';
+        }).join('') : '<p class="set-note">暂无数据。</p>') + '</div>' +
+      '<div class="set-group">' + heatmapHTML() + '</div>';
+
+    var tabFocus =
+      '<div class="set-group" style="padding:22px 16px;text-align:center">' +
+        '<div class="set-h" style="padding:0 0 12px">专注番茄钟</div>' +
+        '<b id="pomoTime" style="display:block;font-size:46px;font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:var(--primary)">25:00</b>' +
+        '<p class="set-note" style="padding:8px 0 16px">25 分钟专注 · 5 分钟休息</p>' +
+        '<div class="row" style="justify-content:center"><button class="btn primary" onclick="App.pomoToggle()">开始 / 暂停</button><button class="btn" onclick="App.pomoReset()">重置</button></div>' +
+      '</div>' +
+      '<div class="set-group"><div class="set-h">最近 7 天</div><div style="padding:0 14px 14px">' + heatmapHTML() + '</div></div>';
+
+    view.innerHTML = modbar() +
+      '<div class="set-wrap">' +
+        '<div class="set-seg" id="daySeg">' +
+          '<button class="set-segbtn" onclick="App.setDayTab(\'today\')">今日</button>' +
+          '<button class="set-segbtn" onclick="App.setDayTab(\'review\')">复习</button>' +
+          '<button class="set-segbtn" onclick="App.setDayTab(\'weak\')">薄弱</button>' +
+          '<button class="set-segbtn" onclick="App.setDayTab(\'focus\')">专注</button>' +
+          '<span class="set-segind" id="dayInd"></span>' +
+        '</div>' +
+        '<div class="set-panel" id="dayp-today">' + tabToday + '</div>' +
+        '<div class="set-panel" id="dayp-review">' + tabReview + '</div>' +
+        '<div class="set-panel" id="dayp-weak">' + tabWeak + '</div>' +
+        '<div class="set-panel" id="dayp-focus">' + tabFocus + '</div>' +
+      '</div>';
+    setDayTab(dayKey);
     animateRings();
     pomoRender();
   }
@@ -693,27 +773,120 @@
   }
 
   /* ============ 设置 ============ */
-  function renderSettings() {
+  /* ============ 设置（iOS 式分段 Tab） ============ */
+  var setKey = 'look';
+  function setSetTab(k) {
+    var keys = ['look', 'voice', 'ai', 'data'];
+    var i = keys.indexOf(k); if (i < 0) i = 0;
+    setKey = keys[i];
+    var seg = document.getElementById('setSeg');
+    if (seg) Array.prototype.forEach.call(seg.querySelectorAll('.set-segbtn'), function (b, n) { b.classList.toggle('on', n === i); });
+    var ind = document.getElementById('setInd');
+    if (ind) ind.style.transform = 'translateX(' + (i * 100) + '%)';
+    keys.forEach(function (key, n) {
+      var panel = document.getElementById('setp-' + key);
+      if (panel) panel.classList.toggle('on', n === i);
+    });
+  }
+  function setRow(label, note, control) {
+    return '<div class="set-row"><div class="set-lab"><b>' + label + '</b>' + (note ? '<span>' + note + '</span>' : '') + '</div>' + control + '</div>';
+  }
+  function toggle(id, checked) {
+    return '<label class="set-switch"><input type="checkbox" id="' + id + '" class="set-cb"' + (checked ? ' checked' : '') + '><span class="set-sw"></span></label>';
+  }
+  function select(id, opts, cur) {
+    return '<select class="set-select" id="' + id + '">' + opts.map(function (v) { return '<option' + (String(v) === String(cur) ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select>';
+  }
+  function renderSettings(startKey) {
+    if (startKey && ['look', 'voice', 'ai', 'data'].indexOf(startKey) >= 0) setKey = startKey;
     var s = Store.get().settings, raw = Store.get();
     var size = 0; try { size = (JSON.stringify(raw).length / 1024).toFixed(1); } catch (e) {}
-    var html = '<div class="phead"><span class="ico">⚙️</span><div class="grow"><h2>设置</h2><p>版本 v53 · 数据只存在本机</p></div></div>';
-    html += '<div class="card"><div class="phead"><span class="ico">📦</span><div class="grow"><h2>数据概览</h2><p>复习卡 ' + Object.keys(raw.reviews || {}).length + ' 张 · 作答 ' + (raw.attempts || []).length + ' 次 · 约 ' + size + ' KB</p></div></div>' +
-      '<div class="row"><button class="btn" onclick="App.exportData()">导出 JSON</button><button class="btn" onclick="App.exportWrongMd()">导出错题本 MD</button><button class="btn" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><button class="btn accent" onclick="App.forceUpdate()">强制更新</button><button class="btn" onclick="App.resetData()">清空进度</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div></div>';
-    html += '<div class="card"><div class="phead"><span class="ico">🎯</span><div class="grow"><h2>每日上限</h2><p>控制每天的复习与新卡量</p></div></div>' +
-      '<div class="grid2"><label class="small">新卡<select id="sNew" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [4, 6, 10, 15, 20].map(function (v) { return '<option ' + (v === s.newPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label>' +
-      '<label class="small">复习<select id="sRev" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px">' + [10, 20, 30, 50, 80].map(function (v) { return '<option ' + (v === s.reviewPerDay ? 'selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label></div></div>';
-    html += '<div class="card"><div class="phead"><span class="ico">🤖</span><div class="grow"><h2>AI 讲解</h2><p>需要 Cloudflare Worker 代理，Key 不进前端</p></div></div>' +
-      '<label class="small">代理地址<input type="text" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev"></label>' +
-      '<div class="row" style="margin-top:10px"><label class="small"><input type="checkbox" id="aiEnabled" ' + ((s.ai && s.ai.enabled) ? 'checked' : '') + '> 启用 AI 讲解</label><button class="btn sm" onclick="App.testAI()">测试连接</button></div><p class="small muted" id="aiTest"></p></div>';
-    html += '<div class="card"><div class="phead"><span class="ico">🔊</span><div class="grow"><h2>语音</h2><p>浏览器原生朗读；录音识别需代理</p></div></div>' +
-      '<label class="small">语速 <input type="range" id="voRate" min="0.6" max="1.6" step="0.1" value="' + ((s.voice && s.voice.rate) || 1) + '"></label>' +
-      '<label class="small" style="display:block;margin-top:8px">音色<select id="voVoice" style="width:100%;padding:9px;border:1px solid #e8eaee;border-radius:10px"></select></label>' +
-      '<label class="small" style="display:block;margin-top:8px"><input type="checkbox" id="voAuto" ' + ((s.voice && s.voice.autoSpeak) ? 'checked' : '') + '> AI 讲解后自动朗读</label>' +
-      '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="App.testVoice()">🔊 试听</button><button class="btn sm" onclick="App.voiceDiag()">🩺 语音诊断</button></div><p class="small muted" id="voDiag"></p></div>';
-    html += '<div class="card"><div class="phead"><span class="ico">🎨</span><div class="grow"><h2>外观</h2><p>浅色 / 深色主题</p></div></div><div class="row"><button class="chip' + ((s.theme || 'light') === 'light' ? ' on' : '') + '" onclick="App.setTheme(\'light\')">浅色</button><button class="chip' + (s.theme === 'dark' ? ' on' : '') + '" onclick="App.setTheme(\'dark\')">深色</button></div></div>';
-    html += '<div class="card" style="text-align:center"><button class="btn primary" onclick="App.saveSettings()">保存设置</button></div>';
-    view.innerHTML = html;
+    var cards = Object.keys(raw.reviews || {}).length, tries = (raw.attempts || []).length;
+    var theme = s.theme || 'light';
+
+    var look =
+      '<div class="set-group">' +
+        '<div class="set-h">主题</div>' +
+        setRow('浅色 / 深色', '深色适合夜里刷题', '<div class="row" style="gap:8px"><button class="chip' + (theme === 'light' ? ' on' : '') + '" onclick="App.setTheme(\'light\')">浅色</button><button class="chip' + (theme === 'dark' ? ' on' : '') + '" onclick="App.setTheme(\'dark\')">深色</button></div>') +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">星空彩蛋</div>' +
+        setRow('夜间星空', '23:30 之后门户自动亮起，次日 06:00 恢复', '<a class="btn sm" href="?night=1#/" target="_blank" rel="noopener">预览</a>') +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">关于</div>' +
+        setRow('版本', '函数与导数 · 三角函数 · 数列', '<span class="set-val">v54</span>') +
+        setRow('数据存储', '只存在这台设备，不上传', '<span class="set-val">本机</span>') +
+      '</div>';
+
+    var voice =
+      '<div class="set-group">' +
+        '<div class="set-h">朗读</div>' +
+        setRow('语速', '越大读得越快', '<div class="set-range"><input type="range" id="voRate" min="0.6" max="1.6" step="0.1" value="' + ((s.voice && s.voice.rate) || 1) + '"><span id="voRateVal">' + ((s.voice && s.voice.rate) || 1) + '×</span></div>') +
+        setRow('音色', '来自系统语音库', '<select class="set-select" id="voVoice"></select>') +
+        setRow('自动朗读', 'AI 讲解结束后自动读', toggle('voAuto', !!(s.voice && s.voice.autoSpeak))) +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">自检</div>' +
+        '<div class="set-row set-actions"><button class="btn sm" onclick="App.testVoice()">试听</button><button class="btn sm" onclick="App.voiceDiag()">语音诊断</button></div>' +
+        '<p class="set-note" id="voDiag">点「语音诊断」检查环境是否支持朗读与语音输入</p>' +
+      '</div>';
+
+    var ai =
+      '<div class="set-group">' +
+        '<div class="set-h">AI 讲解</div>' +
+        setRow('启用 AI 讲解', '答题后手动点击才调用', toggle('aiEnabled', !!(s.ai && s.ai.enabled))) +
+        setRow('代理地址', 'Cloudflare Worker，Key 不进前端', '<input type="text" class="set-input" id="aiUrl" value="' + esc((s.ai && s.ai.proxyUrl) || '') + '" placeholder="https://xxx.workers.dev">') +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">连通性</div>' +
+        '<div class="set-row set-actions"><button class="btn sm primary" onclick="App.testAI()">测试连接</button></div>' +
+        '<p class="set-note" id="aiTest">未测试</p>' +
+      '</div>';
+
+    var data =
+      '<div class="set-group">' +
+        '<div class="set-h">本机数据</div>' +
+        setRow('复习卡', '按遗忘曲线排期', '<span class="set-val">' + cards + ' 张</span>') +
+        setRow('作答记录', '含错因与用时', '<span class="set-val">' + tries + ' 次</span>') +
+        setRow('占用体积', '含草稿与设置', '<span class="set-val">约 ' + size + ' KB</span>') +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">学习节奏</div>' +
+        setRow('每日新卡', '每天最多解锁几张', select('sNew', [4, 6, 10, 15, 20], s.newPerDay)) +
+        setRow('每日复习', '每天最多复习几张', select('sRev', [10, 20, 30, 50, 80], s.reviewPerDay)) +
+      '</div>' +
+      '<div class="set-group">' +
+        '<div class="set-h">导出 / 导入</div>' +
+        '<div class="set-row set-actions"><button class="btn sm" onclick="App.exportData()">导出 JSON</button><button class="btn sm" onclick="App.exportWrongMd()">导出错题本 MD</button><button class="btn sm" onclick="document.getElementById(\'impFile\').click()">导入 JSON</button><input type="file" id="impFile" accept="application/json" style="display:none" onchange="App.importData(this)"></div>' +
+        '<p class="set-note">换设备时：先导出 JSON，再到新设备导入即可完整迁移进度。</p>' +
+      '</div>' +
+      '<div class="set-group set-danger">' +
+        '<div class="set-h">危险操作</div>' +
+        '<div class="set-row set-actions"><button class="btn sm" onclick="App.forceUpdate()">强制更新</button><button class="btn sm accent" onclick="App.resetData()">清空全部进度</button></div>' +
+        '<p class="set-note">清空不可恢复，建议先导出备份。</p>' +
+      '</div>';
+
+    view.innerHTML =
+      '<div class="set-wrap">' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v56 · 数据只存在本机</p></div></div>' +
+        '<div class="set-seg" id="setSeg">' +
+          '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
+          '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
+          '<button class="set-segbtn" data-k="ai" onclick="App.setSetTab(\'ai\')">AI</button>' +
+          '<button class="set-segbtn" data-k="data" onclick="App.setSetTab(\'data\')">数据</button>' +
+          '<span class="set-segind" id="setInd"></span>' +
+        '</div>' +
+        '<div class="set-panel" id="setp-look">' + look + '</div>' +
+        '<div class="set-panel" id="setp-voice">' + voice + '</div>' +
+        '<div class="set-panel" id="setp-ai">' + ai + '</div>' +
+        '<div class="set-panel" id="setp-data">' + data + '</div>' +
+        '<div class="set-save"><span class="set-note">改动只保存在这台设备</span><button class="btn primary" onclick="App.saveSettings()">保存设置</button></div>' +
+      '</div>';
+    setSetTab(setKey);
     fillVoices();
+    var r = document.getElementById('voRate'), rv = document.getElementById('voRateVal');
+    if (r && rv) r.addEventListener('input', function () { rv.textContent = r.value + '×'; });
   }
 
   function fillVoices() { setTimeout(function () { var sel = document.getElementById('voVoice'); if (!sel) return; var vs = InputTools.voices(); var cur = (Store.get().settings.voice || {}).voiceUri || ''; sel.innerHTML = '<option value="">系统默认</option>' + vs.map(function (v) { return '<option value="' + v.voiceURI + '"' + (cur === v.voiceURI ? ' selected' : '') + '>' + v.name + '（' + v.lang + '）</option>'; }).join(''); }, 250); }
@@ -765,8 +938,8 @@
     else if (page === 'wrong') renderWrong();
     else if (page === 'stats') renderStats();
     else if (page === 'search') renderSearch();
-    else if (page === 'settings') renderSettings();
-    else if (page === 'today') renderToday();
+    else if (page === 'settings') renderSettings(parts[1]);
+    else if (page === 'today') renderToday(parts[1]);
     else if (page === 'study') { history.replaceState(null, '', '#/today'); renderToday(); }
     else if (page === 'portal') Portal.renderPortal();
     else if (page === 'video') Portal.renderVideo();
@@ -777,7 +950,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckOpen: deckOpen, deckPick: deckPick, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
