@@ -349,9 +349,14 @@
 
   function renderVideo() {
     var v = document.getElementById('view');
-    var isPhy = vidSubject === 'phy';
-    var list = isPhy ? (global.BILI_PHY || []) : (global.BILI || []);
-    var ORDER = isPhy ? ['基础', '一轮', '力学', '电磁', '动量', '实验', '选修', '压轴', '方法', '真题', '资讯'] : ['函数与导数', '圆锥曲线', '数列', '立体几何', '三角与解三角形', '概率统计', '不等式', '直线与圆', '总复习'];
+    var SUBJECTS = {
+      math: { label: '数学', data: 'BILI', order: ['函数与导数', '圆锥曲线', '数列', '立体几何', '三角与解三角形', '概率统计', '不等式', '直线与圆', '总复习'] },
+      phy: { label: '物理', data: 'BILI_PHY', order: ['基础', '一轮', '力学', '电磁', '动量', '实验', '选修', '压轴', '方法', '真题', '资讯'] },
+      bio: { label: '生物', data: 'BILI_BIO', order: ['基础', '一轮', '方法', '细胞', '代谢', '遗传', '稳态', '生态', '基工', '实验', '冲刺', '真题', '动画'] }
+    };
+    var subject = SUBJECTS[vidSubject] || SUBJECTS.math;
+    var list = global[subject.data] || [];
+    var ORDER = subject.order;
     var groups = {};
     list.forEach(function (b) { var k = b.tag || '未分类'; (groups[k] = groups[k] || []).push(b); });
     var keys = ORDER.filter(function (k) { return groups[k] && groups[k].length; });
@@ -375,12 +380,14 @@
           '<span class="vcard__sub"><span>' + fv(b.views) + '播放</span><span>' + fd(b.dur) + '</span></span>' +
           '</div></div></div></article>';
     }
-    var html = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>视频 · ' + (isPhy ? '物理' : '数学') + '</h2><p>共 ' + list.length + ' 条 · 按专题分板块 · 精选优先，备选按需展开</p></div></div>';
+    var html = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>视频 · ' + subject.label + '</h2><p>共 ' + list.length + ' 条 · 按专题分板块 · 精选优先，备选按需展开</p></div></div>';
     html += '<div class="card tight" style="margin-bottom:12px"><div class="row"><input type="text" id="biliQ" placeholder="搜 B站（新标签打开）" style="flex:1">' +
       '<button class="btn sm primary" onclick="Portal.searchBili()">去 B站搜</button></div>' +
       '<div class="row vsubs">' +
-        '<button class="chip vsub' + (!isPhy ? ' on' : '') + '" onclick="Portal.videoSubject(\'math\')">数学 <b>' + (global.BILI || []).length + '</b></button>' +
-        '<button class="chip vsub' + (isPhy ? ' on' : '') + '" onclick="Portal.videoSubject(\'phy\')">物理 <b>' + (global.BILI_PHY || []).length + '</b></button>' +
+        ['math', 'phy', 'bio'].map(function (s) {
+          var sub = SUBJECTS[s];
+          return '<button class="chip vsub' + (vidSubject === s ? ' on' : '') + '" onclick="Portal.videoSubject(\'' + s + '\')">' + sub.label + ' <b>' + (global[sub.data] || []).length + '</b></button>';
+        }).join('') +
       '</div>' +
       '<div class="row" style="margin-top:10px">' + keys.map(function (k, n) {
         return '<button class="chip vtag' + (n === 0 ? ' on' : '') + '" onclick="Portal.videoTag(\'' + k + '\')">' + k + ' <b>' + groups[k].length + '</b></button>';
@@ -410,12 +417,12 @@
     window.scrollTo(0, 0);
   }
   function videoSubject(s) {
-    vidSubject = s === 'phy' ? 'phy' : 'math';
+    vidSubject = ['math', 'phy', 'bio'].indexOf(s) >= 0 ? s : 'math';
     renderVideo();
   }
 
   function partInfo(bvid) {
-    var list = (global.BILI_PHY || []).concat(global.BILI || []);
+    var list = (global.BILI_PHY || []).concat(global.BILI_BIO || []).concat(global.BILI || []);
     for (var i = 0; i < list.length; i++) if (list[i].bvid === bvid) return list[i];
     return null;
   }
@@ -460,6 +467,7 @@
   }
   global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+
 
 
 

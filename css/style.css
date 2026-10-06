@@ -837,7 +837,7 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .vpart.on{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700}
 
 /* ===== 视频区：学科切换与备选卡分级 ===== */
-.vsubs{gap:8px;margin-top:10px}
+.vsubs{gap:8px;margin-top:10px;flex-wrap:wrap}
 .vsec__head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:14px 2px 6px;font-size:13px;font-weight:700}
 .vsec__head .muted{font-size:12px;font-weight:400}
 .vmore{margin-top:2px}
@@ -849,4 +849,5 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .vrail--more .vcard:hover{opacity:1}
 .vrail--more .vcard__name{font-size:.68em}
 @media (max-width:700px){.vrail--more .vcard{--size:166px}}
+
 
