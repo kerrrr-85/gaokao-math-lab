@@ -6,13 +6,27 @@
   var wrap = null, canvas = null, labelBox = null, raf = null, mounted = false;
   var textures = {}, texQueue = 0, texDone = 0;
   var cities = global.CITIES || [];
-  var markers = [], labels = [], labelPool = [];
+  var markers = [], labels = [], labelPool = [], geoLabels = [], geoGroup = null, zoneObj = null;
+  /* 默认极简：首屏只呈现“课本地球仪”的要素 —— 大洲大洋 + 五带 */
+  var GEO = [
+    { n: '亚洲', t: '洲', lat: 34, lon: 90 }, { n: '欧洲', t: '洲', lat: 52, lon: 18 },
+    { n: '非洲', t: '洲', lat: 5, lon: 20 }, { n: '北美洲', t: '洲', lat: 45, lon: -100 },
+    { n: '南美洲', t: '洲', lat: -15, lon: -60 }, { n: '大洋洲', t: '洲', lat: -25, lon: 140 },
+    { n: '南极洲', t: '洲', lat: -78, lon: 0 },
+    { n: '太平洋', t: '洋', lat: 0, lon: -150 }, { n: '大西洋', t: '洋', lat: 10, lon: -30 },
+    { n: '印度洋', t: '洋', lat: -20, lon: 80 }, { n: '北冰洋', t: '洋', lat: 80, lon: 0 }
+  ];
+  var ZONES = [
+    { n: '北极圈 66°34′N', lat: 66.56 }, { n: '北回归线 23°26′N', lat: 23.44 },
+    { n: '赤道 0°', lat: 0 }, { n: '南回归线 23°26′S', lat: -23.44 },
+    { n: '南极圈 66°34′S', lat: -66.56 }
+  ];
   var stars = null;
 
   var st = {
     yaw: 0.9, pitch: 0.32, dist: 3.1, minD: 1.6, maxD: 6.5,
-    hour: null, live: true, auto: true, showLabels: true, showGrid: false,
-    showNight: true, route: null, drag: null, moved: 0, lastT: 0, frame: 0
+    hour: null, live: true, auto: true, showLabels: false, showGrid: true,
+    showNight: true, showZones: true, showGeo: true, route: null, drag: null, moved: 0, lastT: 0, frame: 0
   };
   var LOW = !!(global.PERF && global.PERF.low);
 
@@ -184,7 +198,36 @@
 
     gridObj = buildGraticule(); gridObj.visible = st.showGrid; earth.add(gridObj);
 
-    markerGroup = new THREE.Group(); earth.add(markerGroup);
+    /* 五带纬线（比普通经纬网更醒目） */
+    zoneObj = (function () {
+      var pts = [], r = 1.002;
+      ZONES.forEach(function (z) {
+        var prev = null;
+        for (var a = 0; a <= 360; a += 4) {
+          var v = latLonVec(z.lat, a, r);
+          if (prev) pts.push(prev.clone(), v.clone());
+          prev = v;
+        }
+      });
+      var g = new THREE.BufferGeometry().setFromPoints(pts);
+      return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xffd479, transparent: true, opacity: 0.55 }));
+    })();
+    zoneObj.visible = st.showZones; earth.add(zoneObj);
+
+    /* 大洲大洋 + 五带文字标注（复用城市标签那套 HTML 投影） */
+    geoGroup = new THREE.Group(); earth.add(geoGroup);
+    GEO.concat(ZONES.map(function (z) { return { n: z.n, t: '带', lat: z.lat, lon: -35 }; })).forEach(function (g) {
+      var o = new THREE.Object3D();
+      o.position.copy(latLonVec(g.lat, g.lon, 1.006));
+      geoGroup.add(o);
+      var el = document.createElement('div');
+      el.className = 'e3-lb ' + (g.t === '带' ? 'e3-lb-zone' : 'e3-lb-geo');
+      el.textContent = g.n;
+      if (labelBox) { labelBox.appendChild(el); labelPool.push(el); }
+      geoLabels.push({ el: el, obj: o, grp: g.t === '带' ? 'zone' : 'geo' });
+    });
+
+    markerGroup = new THREE.Group(); markerGroup.visible = st.showLabels; earth.add(markerGroup);
     var mg = new THREE.SphereGeometry(0.009, 8, 8);
     var mm = new THREE.MeshBasicMaterial({ color: 0xffd166 });
     cities.forEach(function (c) {
@@ -194,7 +237,7 @@
       markerGroup.add(m); markers.push(m);
       var el = document.createElement('div');
       el.className = 'e3-lb'; el.textContent = c.name;
-      if (labelBox) { labelBox.appendChild(el); labelPool.push(el); labels.push({ el: el, obj: m }); }
+      if (labelBox) { labelBox.appendChild(el); labelPool.push(el); labels.push({ el: el, obj: m, grp: 'city' }); }
     });
 
     bindInput();
@@ -204,7 +247,6 @@
     var sel = document.getElementById('e3From'), sel2 = document.getElementById('e3To');
     if (sel) sel.value = '北京';
     if (sel2) sel2.value = '纽约';
-    applyRoute();
   }
 
   function setTime(force) {
@@ -278,7 +320,7 @@
     }
     if (st.live && st.frame % 30 === 0) setTime();
     placeCamera();
-    if (st.showLabels) updateLabels();
+    if (st.showLabels || st.showGeo || st.showZones) updateLabels();
     renderer.render(scene, camera);
   }
   function placeCamera() {
@@ -291,8 +333,11 @@
     if (LOW && st.frame % 3 !== 0) return;
     var W = wrap.clientWidth, H = wrap.clientHeight;
     var v = new THREE.Vector3(), camDir = camera.position.clone().normalize();
-    for (var i = 0; i < labels.length; i++) {
-      var L = labels[i];
+    var all = labels.concat(geoLabels);
+    for (var i = 0; i < all.length; i++) {
+      var L = all[i];
+      var vis = L.grp === 'city' ? st.showLabels : (L.grp === 'geo' ? st.showGeo : st.showZones);
+      if (!vis) { if (L.el.style.display !== 'none') L.el.style.display = 'none'; continue; }
       v.copy(L.obj.position).applyMatrix4(earth.matrixWorld);
       var nrm = v.clone().normalize();
       var facing = nrm.dot(camDir);
@@ -306,12 +351,31 @@
 
   function bindInput() {
     if (!wrap) return;
+    var ptrs = {}, pinch = null;
+    function ptrDist() {
+      var ks = Object.keys(ptrs); if (ks.length < 2) return 0;
+      var a = ptrs[ks[0]], b = ptrs[ks[1]];
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
     wrap.addEventListener('pointerdown', function (e) {
       wrap.setPointerCapture && wrap.setPointerCapture(e.pointerId);
-      st.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
-      st.moved = 0;
+      ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (Object.keys(ptrs).length >= 2) {
+        pinch = { d: ptrDist(), dist: st.dist };   /* 双指：进入捏合模式 */
+        st.drag = null;
+      } else {
+        st.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+        st.moved = 0;
+      }
     });
     wrap.addEventListener('pointermove', function (e) {
+      if (ptrs[e.pointerId]) { ptrs[e.pointerId].x = e.clientX; ptrs[e.pointerId].y = e.clientY; }
+      if (pinch && Object.keys(ptrs).length >= 2) {
+        var d = ptrDist();
+        if (d > 8 && pinch.d > 8) st.dist = Math.max(st.minD, Math.min(st.maxD, pinch.dist * (pinch.d / d)));
+        st.moved = 99;
+        return;
+      }
       if (!st.drag || st.drag.id !== e.pointerId) return;
       var dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
       st.moved += Math.abs(dx) + Math.abs(dy);
@@ -320,6 +384,8 @@
       st.drag.x = e.clientX; st.drag.y = e.clientY;
     });
     function up(e) {
+      delete ptrs[e.pointerId];
+      if (Object.keys(ptrs).length < 2) pinch = null;
       if (!st.drag) return;
       var wasClick = st.moved < 6;
       st.drag = null;
@@ -382,7 +448,9 @@
     textures = {};
   }
   function toggleAuto() { st.auto = !st.auto; var b = document.getElementById('e3Auto'); if (b) b.textContent = st.auto ? '暂停自转' : '开始自转'; }
-  function toggleLabels() { st.showLabels = !st.showLabels; var b = document.getElementById('e3Lbl'); if (b) b.textContent = st.showLabels ? '城市名开' : '城市名关'; if (!st.showLabels) { labels.forEach(function (L) { L.el.style.display = 'none'; }); } }
+  function toggleGeo() { st.showGeo = !st.showGeo; var b = document.getElementById('e3Geo'); if (b) b.textContent = st.showGeo ? '大洲大洋开' : '大洲大洋关'; updateLabels(); }
+  function toggleLabels() { st.showLabels = !st.showLabels; if (markerGroup) markerGroup.visible = st.showLabels; var b = document.getElementById('e3Lbl'); if (b) b.textContent = st.showLabels ? '城市名开' : '城市名关'; if (!st.showLabels) { labels.forEach(function (L) { L.el.style.display = 'none'; }); } }
+  function toggleZones() { st.showZones = !st.showZones; if (zoneObj) zoneObj.visible = st.showZones; updateLabels(); var b = document.getElementById('e3Zone'); if (b) b.textContent = st.showZones ? '五带开' : '五带关'; }
   function toggleGrid() { st.showGrid = !st.showGrid; if (gridObj) gridObj.visible = st.showGrid; var b = document.getElementById('e3Grid'); if (b) b.textContent = st.showGrid ? '经纬网开' : '经纬网关'; }
   function toggleNight() { st.showNight = !st.showNight; if (earth) earth.userData.uni.nightOn.value = st.showNight ? 1 : 0; var b = document.getElementById('e3Night'); if (b) b.textContent = st.showNight ? '夜景开' : '夜景关'; }
   function setHour(v) { st.live = false; st.hour = parseFloat(v); setTime(); var b = document.getElementById('e3Live'); if (b) b.className = 'btn sm'; }
@@ -393,7 +461,7 @@
   global.addEventListener('resize', resizeEv);
   global.Earth3D = {
     mount: mount, unmount: unmount, resize: resize, pause: pause, resume: resume,
-    toggleAuto: toggleAuto, toggleLabels: toggleLabels, toggleGrid: toggleGrid, toggleNight: toggleNight,
+    toggleAuto: toggleAuto, toggleLabels: toggleLabels, toggleGrid: toggleGrid, toggleZones: toggleZones, toggleGeo: toggleGeo, toggleNight: toggleNight,
     setHour: setHour, setLive: setLive, reset: reset, applyRoute: applyRoute, clearRoute: clearRoute
   };
 })(window);

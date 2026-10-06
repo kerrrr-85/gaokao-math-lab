@@ -378,7 +378,14 @@
       '<div id="gs-real" class="gsec">' +
       '<div class="card elev2" style="margin-top:12px;padding:12px">' +
       '<div class="e3-wrap" id="e3Wrap"><div class="e3-labels" id="e3Labels"></div><div class="e3-hud" id="e3Info">拖动=转视角 · 滚轮/双指=缩放 · 点击球面读经纬度</div></div>' +
-      '<div class="row" style="margin-top:10px"><button class="btn sm" id="e3Auto" onclick="Earth3D.toggleAuto()">暂停自转</button><button class="btn sm" id="e3Lbl" onclick="Earth3D.toggleLabels()">城市名开</button><button class="btn sm" id="e3Grid" onclick="Earth3D.toggleGrid()">经纬网关</button><button class="btn sm" id="e3Night" onclick="Earth3D.toggleNight()">夜景开</button><button class="btn sm" onclick="Earth3D.reset()">复位视角</button></div>' +
+      '<div class="row" style="margin-top:10px">' +
+      '<button class="btn sm" id="e3Auto" onclick="Earth3D.toggleAuto()">暂停自转</button>' +
+      '<button class="btn sm" id="e3Geo" onclick="Earth3D.toggleGeo()">大洲大洋开</button>' +
+      '<button class="btn sm" id="e3Zone" onclick="Earth3D.toggleZones()">五带开</button>' +
+      '<button class="btn sm" id="e3Grid" onclick="Earth3D.toggleGrid()">经纬网开</button>' +
+      '<button class="btn sm" id="e3Lbl" onclick="Earth3D.toggleLabels()">城市名关</button>' +
+      '<button class="btn sm" id="e3Night" onclick="Earth3D.toggleNight()">夜景开</button>' +
+      '<button class="btn sm" onclick="Earth3D.reset()">复位视角</button></div>' +
       '<div class="row" style="margin-top:10px"><b class="small">时间轴</b><input type="range" id="e3Hour" min="0" max="24" step="0.25" value="12" oninput="Earth3D.setHour(this.value)" style="flex:1;min-width:150px"><span class="small muted" id="e3Time"></span><button class="btn sm primary" id="e3Live" onclick="Earth3D.setLive()">实时</button></div>' +
       '<div class="row" style="margin-top:10px"><b class="small">最短航线</b><select id="e3From" onchange="Earth3D.applyRoute()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><select id="e3To" onchange="Earth3D.applyRoute()" style="padding:7px;border:1px solid var(--line);border-radius:10px">' + opts + '</select><button class="btn sm primary" onclick="Earth3D.applyRoute()">画大圆航线</button><button class="btn sm" onclick="Earth3D.clearRoute()">清除</button></div>' +
       '<div class="small muted" id="e3Route" style="margin-top:8px"></div></div>' +
