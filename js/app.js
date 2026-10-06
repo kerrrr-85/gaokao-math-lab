@@ -410,65 +410,210 @@
     for (var k = 0; k < 6; k++) MAP.forEach(function (n) { (n.prereq || []).forEach(function (p) { if (depth[p] != null && depth[p] + 1 > depth[n.id]) depth[n.id] = depth[p] + 1; }); });
     var layers = {}; MAP.forEach(function (n) { (layers[depth[n.id]] = layers[depth[n.id]] || []).push(n); });
     var keys = Object.keys(layers).sort(function (x, y) { return x - y; });
-    var W = 940, padY = 70, rowGap = 132, padX = 110;
-    var H = Math.max(300, padY * 2 + rowGap * Math.max(1, keys.length - 1));
-    var pos = {}, rad = {};
+    var W = 940, padY = 80, rowGap = 150, padX = 120;
+    var H = Math.max(320, padY * 2 + rowGap * Math.max(1, keys.length - 1));
+    var pos = {}, rad = {}, qcount = {};
     MAP.forEach(function (n) {
-      var qn = D.questions.filter(function (q) { return q.node === n.id; }).length;
-      rad[n.id] = 22 + Math.min(10, qn * 0.5);
+      qcount[n.id] = D.questions.filter(function (q) { return q.node === n.id; }).length;
+      rad[n.id] = 24 + Math.min(12, qcount[n.id] * 0.6);
     });
     keys.forEach(function (d, di) {
       var arr = layers[d];
-      var y = keys.length === 1 ? H / 2 : padY + (H - 2 * padY) * di / (keys.length - 1);
       var usable = W - padX * 2;
+      var y = keys.length === 1 ? H / 2 : padY + (H - 2 * padY) * di / (keys.length - 1);
       arr.forEach(function (n, i) {
         var x = arr.length === 1 ? W / 2 : padX + usable * i / (arr.length - 1);
         pos[n.id] = { x: x, y: y };
       });
     });
+    /* 推荐顺序：按层级从浅到深，同层按掌握度低优先 */
+    var order = MAP.slice().sort(function (a, b) {
+      if (depth[a.id] !== depth[b.id]) return depth[a.id] - depth[b.id];
+      return Store.masteryOf(a.id) - Store.masteryOf(b.id);
+    });
+
     var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
     MAP.forEach(function (n) {
       (n.prereq || []).forEach(function (pr) {
         if (!pos[pr] || !pos[n.id]) return;
         var A = pos[pr], B = pos[n.id];
         var y1 = A.y + rad[pr] + 4, y2 = B.y - rad[n.id] - 4;
-        svg += '<path class="edge" data-from="' + pr + '" data-to="' + n.id + '" d="M' + A.x + ' ' + y1 + ' C' + A.x + ' ' + (y1 + 48) + ', ' + B.x + ' ' + (y2 - 48) + ', ' + B.x + ' ' + y2 + '"/>';
+        svg += '<path class="edge" data-from="' + pr + '" data-to="' + n.id + '" d="M' + A.x + ' ' + y1 + ' C' + A.x + ' ' + (y1 + 52) + ', ' + B.x + ' ' + (y2 - 52) + ', ' + B.x + ' ' + y2 + '"/>';
       });
     });
     MAP.forEach(function (n) {
       var p = pos[n.id], m = Store.masteryOf(n.id), r = rad[n.id];
       var fill = m >= 75 ? '#0f766e' : m >= 50 ? '#2dd4bf' : m >= 25 ? '#fbbf24' : '#e2e8f0';
       var tcol = m >= 50 ? '#ffffff' : '#0f172a';
-      svg += '<g class="gnode" data-id="' + n.id + '" transform="translate(' + p.x + ',' + p.y + ')" onmouseenter="App.graphHover(\'' + n.id + '\',true)" onmouseleave="App.graphHover(\'' + n.id + '\',false)" onclick="App.go(\'#/node/' + n.id + '\')">' +
+      svg += '<g class="gnode" data-id="' + n.id + '" transform="translate(' + p.x + ',' + p.y + ')">' +
         '<circle r="' + r.toFixed(0) + '" fill="' + fill + '" stroke="rgba(15,23,42,.16)" stroke-width="1.5"/>' +
         '<text y="4" style="font-size:12px;fill:' + tcol + ';font-weight:700">' + m + '%</text>' +
         '<text class="gnode-label" y="' + (r + 20) + '">' + esc(n.title) + '</text></g>';
     });
     svg += '</svg>';
+
+    var rail = '<div class="map-rail">' + order.map(function (n, i) {
+      var m = Store.masteryOf(n.id);
+      return '<button class="map-step' + (m >= 75 ? ' done' : '') + '" data-id="' + n.id + '" onclick="App.graphStep(\'' + n.id + '\')">' +
+        '<span class="ms-no">' + (i + 1) + '</span><i></i><b>' + esc(n.title) + '</b><span class="ms-m">' + m + '%</span></button>';
+    }).join('') + '</div>';
+
     view.innerHTML = modbar() +
-      '<div class="phead"><span class="ico">🧭</span><div class="grow"><h2>' + esc(curModule()) + ' · 知识图谱</h2><p>圆越大题量越多 · 颜色越深掌握越好 · 点击进入节点</p></div></div>' +
-      '<div class="graphbar"><button class="btn sm" onclick="App.graphReset()">↺ 重置视图</button><span class="small muted" style="align-self:center">滚轮缩放 · 拖拽平移</span></div>' + '<div class="graph graphbox elev2" id="graphBox">' + svg + '</div>' +
-      '<div class="legend" style="margin-top:12px"><span><i style="background:#e2e8f0"></i>未掌握</span><span><i style="background:#fbbf24"></i>25% 以上</span><span><i style="background:#2dd4bf"></i>50% 以上</span><span><i style="background:#0f766e"></i>75% 以上</span></div>';
+      '<div class="phead"><span class="ico">🧭</span><div class="grow"><h2>' + esc(curModule()) + ' · 知识图谱</h2><p>圆越大题量越多 · 颜色越深掌握越好 · 悬停看详情</p></div></div>' +
+      '<div class="card tight" style="margin-bottom:12px"><div class="small muted" style="margin-bottom:8px">推荐顺序（点一下定位到该节点）</div>' + rail + '</div>' +
+      '<div class="graphbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">' +
+        '<button class="btn sm" onclick="App.graphZoom(-1)">－</button>' +
+        '<span class="zi" id="gvPct">100%</span>' +
+        '<button class="btn sm" onclick="App.graphZoom(1)">＋</button>' +
+        '<button class="btn sm" onclick="App.graphReset()">↺ 重置</button>' +
+        '<button class="btn sm" id="gvFull" onclick="App.graphFull()">⛶ 全屏</button>' +
+        '<span class="small muted">滚轮/双指缩放 · 拖拽平移</span>' +
+      '</div>' +
+      '<div class="graph graphbox elev2" id="graphBox">' + svg +
+        '<div class="gnode-card" id="gnodeCard"></div>' +
+      '</div>';
     graphInit();
-    if (window.Anim && Anim.ok()) Anim.animate('.gnode', { opacity: [0, 1], duration: 520, delay: Anim.stagger(35), ease: 'outQuad' });
   }
-  /* ============ 节点 / 方法 ============ */
   function masteryBar(id) { var m = Store.masteryOf(id); return '<div class="mastery"><div class="bar"><i style="width:' + m + '%"></i></div><span class="small">' + m + '%</span></div>'; }
-  var gv = { s: 1, tx: 0, ty: 0 };
-  function graphApply() { var svgEl = document.querySelector('#graphBox svg'); if (svgEl) svgEl.style.transform = 'translate(' + gv.tx + 'px,' + gv.ty + 'px) scale(' + gv.s + ')'; }
+  var gv = { s: 1, tx: 0, ty: 0 }, gvTimer = null, gvPtrs = {};
+  function gvTouch() { try { return matchMedia('(hover:none)').matches; } catch (e) { return false; } }
+  function graphApply() {
+    var svgEl = document.querySelector('#graphBox svg');
+    if (svgEl) svgEl.style.transform = 'translate(' + gv.tx + 'px,' + gv.ty + 'px) scale(' + gv.s + ')';
+    var pc = document.getElementById('gvPct');
+    if (pc) pc.textContent = Math.round(gv.s * 100) + '%';
+  }
   function graphReset() { gv = { s: 1, tx: 0, ty: 0 }; graphApply(); }
+  function graphZoom(dir) {
+    gv.s = Math.max(0.5, Math.min(3.2, gv.s * (dir > 0 ? 1.18 : 0.85)));
+    graphApply();
+  }
+  function graphFull() {
+    var box = document.getElementById('graphBox');
+    if (!box) return;
+    var on = !box.classList.contains('full');
+    box.classList.toggle('full', on);
+    var b = document.getElementById('gvFull');
+    if (b) b.textContent = on ? '⤡ 退出全屏' : '⛶ 全屏';
+    document.body.classList.toggle('map-full', on);
+  }
   function graphHover(id, on) {
     Array.prototype.forEach.call(document.querySelectorAll('.gnode'), function (g) { g.classList.toggle('dim', on && g.getAttribute('data-id') !== id); g.classList.toggle('hot', on && g.getAttribute('data-id') === id); });
     Array.prototype.forEach.call(document.querySelectorAll('.edge'), function (e) { var rel = on && (e.getAttribute('data-from') === id || e.getAttribute('data-to') === id); e.classList.toggle('hot', rel); e.classList.toggle('dim', on && !rel); });
+    Array.prototype.forEach.call(document.querySelectorAll('.map-step'), function (s) { s.classList.toggle('hot', on && s.getAttribute('data-id') === id); });
+  }
+  function graphCard(id) {
+    var box = document.getElementById('graphBox'), card = document.getElementById('gnodeCard');
+    if (!box || !card) return;
+    if (gvTimer) { clearTimeout(gvTimer); gvTimer = null; }
+    if (!id) {
+      gvTimer = setTimeout(function () { card.classList.remove('on'); graphHover(null, false); }, 180);
+      return;
+    }
+    var n = nodeById[id]; if (!n) return;
+    var m = Store.masteryOf(id);
+    var qn = D.questions.filter(function (q) { return q.node === id; }).length;
+    var ms = (D.methods || []).filter(function (x) { return (x.nodeIds || []).indexOf(id) >= 0; });
+    var pre = (n.prereq || []).map(function (p) { return nodeById[p]; }).filter(Boolean);
+    card.innerHTML =
+      '<div class="gnc-title">' + esc(n.title) + '</div>' +
+      '<div class="gnc-brief">' + esc(n.brief || '') + '</div>' +
+      '<div class="gnc-row"><span>掌握度</span><b>' + m + '%</b></div>' +
+      '<div class="bar"><i style="width:' + m + '%"></i></div>' +
+      '<div class="gnc-row"><span>题量</span><b>' + qn + ' 题</b></div>' +
+      (pre.length ? '<div class="gnc-row" style="align-items:flex-start"><span>前置</span><span class="gnc-chips">' + pre.map(function (x) { return '<a class="gnc-chip" href="#/node/' + x.id + '">' + esc(x.title) + '</a>'; }).join('') + '</span></div>' : '') +
+      (ms.length ? '<div class="gnc-row" style="align-items:flex-start"><span>方法卡</span><span class="gnc-chips">' + ms.slice(0, 3).map(function (x) { return '<a class="gnc-chip" href="#/method/' + x.id + '">' + esc(x.title) + '</a>'; }).join('') + '</span></div>' : '') +
+      '<div class="row" style="margin-top:10px"><a class="btn sm primary" href="#/node/' + id + '">进入节点</a><button class="btn sm" onclick="App.startNode(\'' + id + '\')">练这个</button></div>';
+    card.classList.add('on');
+    graphHover(id, true);
+    var g = box.querySelector('.gnode[data-id="' + id + '"]');
+    if (!g) return;
+    var br = box.getBoundingClientRect(), gr = g.getBoundingClientRect();
+    var cw = card.offsetWidth || 250, ch = card.offsetHeight || 180;
+    var left = gr.left - br.left + gr.width / 2 + 14;
+    var top = gr.top - br.top + gr.height / 2 - 20;
+    if (left + cw > br.width - 8) left = gr.left - br.left - gr.width / 2 - cw - 14;
+    card.style.left = Math.max(8, Math.min(Math.max(8, br.width - cw - 8), left)) + 'px';
+    card.style.top = Math.max(8, Math.min(Math.max(8, br.height - ch - 8), top)) + 'px';
+  }
+  function graphStep(id) {
+    var box = document.getElementById('graphBox');
+    if (!box) return;
+    if (!box.classList.contains('full')) { /* 保持当前视图模式 */ }
+    graphCard(id);
+    var g = box.querySelector('.gnode[data-id="' + id + '"]');
+    if (!g) return;
+    var br = box.getBoundingClientRect(), gr = g.getBoundingClientRect();
+    gv.tx -= (gr.left + gr.width / 2) - (br.left + br.width / 2);
+    gv.ty -= (gr.top + gr.height / 2) - (br.top + br.height / 2);
+    graphApply();
+    graphCard(id);
   }
   function graphInit() {
-    gv = { s: 1, tx: 0, ty: 0 };
+    gv = { s: 1, tx: 0, ty: 0 }; gvPtrs = {};
     var box = document.getElementById('graphBox'); if (!box) return;
     var drag = null;
-    box.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, tx: gv.tx, ty: gv.ty }; if (box.setPointerCapture) box.setPointerCapture(e.pointerId); });
-    box.addEventListener('pointermove', function (e) { if (!drag) return; gv.tx = drag.tx + (e.clientX - drag.x); gv.ty = drag.ty + (e.clientY - drag.y); graphApply(); });
-    box.addEventListener('pointerup', function () { drag = null; });
-    box.addEventListener('wheel', function (e) { e.preventDefault(); gv.s = Math.max(0.55, Math.min(2.4, gv.s * (e.deltaY > 0 ? 0.92 : 1.08))); graphApply(); }, { passive: false });
+    function mid() {
+      var ks = Object.keys(gvPtrs); if (ks.length < 2) return null;
+      var a = gvPtrs[ks[0]], b = gvPtrs[ks[1]];
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
+    }
+    box.addEventListener('pointerdown', function (e) {
+      gvPtrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      try { box.setPointerCapture(e.pointerId); } catch (err) {}
+      if (Object.keys(gvPtrs).length === 1) drag = { x: e.clientX, y: e.clientY, tx: gv.tx, ty: gv.ty };
+      else drag = null;
+    });
+    box.addEventListener('pointermove', function (e) {
+      if (!gvPtrs[e.pointerId]) return;
+      gvPtrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var n = Object.keys(gvPtrs).length;
+      if (n >= 2) {
+        var mm = mid(); if (!mm) return;
+        if (!box._pd) { box._pd = mm; return; }
+        var ratio = mm.d / (box._pd.d || mm.d);
+        gv.s = Math.max(0.5, Math.min(3.2, gv.s * ratio));
+        gv.tx += mm.x - box._pd.x; gv.ty += mm.y - box._pd.y;
+        box._pd = mm; graphApply(); return;
+      }
+      if (!drag) return;
+      if (Math.abs(e.clientX - drag.x) > 6 || Math.abs(e.clientY - drag.y) > 6) box._moved = 1;
+      gv.tx = drag.tx + (e.clientX - drag.x); gv.ty = drag.ty + (e.clientY - drag.y); graphApply();
+    });
+    function up(e) {
+      delete gvPtrs[e.pointerId];
+      if (Object.keys(gvPtrs).length < 2) box._pd = null;
+      if (!Object.keys(gvPtrs).length) drag = null;
+    }
+    box.addEventListener('pointerup', up);
+    box.addEventListener('pointercancel', up);
+    box.addEventListener('wheel', function (e) { e.preventDefault(); gv.s = Math.max(0.5, Math.min(3.2, gv.s * (e.deltaY > 0 ? 0.92 : 1.08))); graphApply(); }, { passive: false });
+    /* 节点：桌面悬停出卡片，触屏点按出卡片；双击/进入按钮才跳转 */
+    box.addEventListener('mouseover', function (e) {
+      var g = e.target.closest ? e.target.closest('.gnode') : null;
+      if (g && !gvTouch()) graphCard(g.getAttribute('data-id'));
+    });
+    box.addEventListener('mouseout', function (e) {
+      var g = e.target.closest ? e.target.closest('.gnode') : null;
+      if (g && !gvTouch()) graphCard(null);
+    });
+    box.addEventListener('click', function (e) {
+      if (box._moved) { box._moved = 0; return; }
+      var g = e.target.closest ? e.target.closest('.gnode') : null;
+      if (!g) return;
+      var id = g.getAttribute('data-id');
+      if (gvTouch()) { e.preventDefault(); graphCard(id); } else { go('#/node/' + id); }
+    });
+    var cardEl = document.getElementById('gnodeCard');
+    if (cardEl) {
+      cardEl.addEventListener('mouseenter', function () { if (gvTimer) { clearTimeout(gvTimer); gvTimer = null; } });
+      cardEl.addEventListener('mouseleave', function () { graphCard(null); });
+    }
+  }
+  function startNode(id) {
+    var ids = D.questions.filter(function (q) { return q.node === id; }).map(function (q) { return q.id; });
+    if (!ids.length) { toast('该节点还没有题目'); return; }
+    startPractice(ids.join(','));
   }
   function renderNode(id) {
     var n = nodeById[id]; if (!n) { view.innerHTML = '<div class="card">未找到该知识节点。</div>'; return; }
@@ -946,7 +1091,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v62 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v63 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -1027,7 +1172,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, graphZoom: graphZoom, graphFull: graphFull, graphCard: graphCard, graphStep: graphStep, startNode: startNode, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
