@@ -150,7 +150,7 @@
   var ROOM = {
     mark: '在',                 // 方块里的标记字
     word: '我在呢',              // 展开后的主字
-    line: '函 数 · 三 角 · 数 列', // 展开后的小字
+    line: '宝 宝 发 现 彩 蛋 了', // 展开后的小字
     sub: 'STUDY DESK',          // 常驻小注
     foot: 'GAOKAO MATH LAB'     // 展开后底部铭文
   };
@@ -261,7 +261,8 @@
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
-          '<span class="pt-more">更多模块 · 陆续开放</span>' +
+          '<span class="pt-foot-actions"><span class="pt-more">更多模块 · 陆续开放</span>' +
+          '<button class="pt-update" type="button" onclick="App.forceUpdate()">强制更新</button></span>' +
           '<span class="pt-hint" id="ptHint">' + (night ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空') + '</span>' +
         '</footer>' +
       '</div>';
@@ -551,6 +552,8 @@
   }
   global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+
+
 
 
 
