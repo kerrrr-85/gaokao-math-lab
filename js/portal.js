@@ -388,6 +388,7 @@
           var sub = SUBJECTS[s];
           return '<button class="chip vsub' + (vidSubject === s ? ' on' : '') + '" onclick="Portal.videoSubject(\'' + s + '\')">' + sub.label + ' <b>' + (global[sub.data] || []).length + '</b></button>';
         }).join('') +
+        '<button class="chip vsub' + (html5On() ? ' on' : '') + '" onclick="Portal.toggleHtml5()">HTML5 2× ' + (html5On() ? '开' : '关') + '</button>' +
       '</div>' +
       '<div class="row" style="margin-top:10px">' + keys.map(function (k, n) {
         return '<button class="chip vtag' + (n === 0 ? ' on' : '') + '" onclick="Portal.videoTag(\'' + k + '\')">' + k + ' <b>' + groups[k].length + '</b></button>';
@@ -420,6 +421,56 @@
     vidSubject = ['math', 'phy', 'bio'].indexOf(s) >= 0 ? s : 'math';
     renderVideo();
   }
+  var BILI_RESOLVER = 'https://api.injahow.cn/bparse/';
+  function html5On() { try { return localStorage.getItem('gml_html5_mode') !== '0'; } catch (e) { return true; } }
+  function setHtml5Mode(on) { try { localStorage.setItem('gml_html5_mode', on ? '1' : '0'); } catch (e) {} }
+  function html5Rate() { try { var r = parseFloat(localStorage.getItem('gml_html5_rate') || '1'); return r >= 0.25 && r <= 4 ? r : 1; } catch (e) { return 1; } }
+  function setHtml5Rate(r) { try { localStorage.setItem('gml_html5_rate', String(r)); } catch (e) {} }
+  function speedText(r) { r = Number(r || 1); return (r % 1 ? r.toFixed(2) : r.toFixed(1)) + '×'; }
+  function cycleSpeed() { var rates = [1, 1.25, 1.5, 2]; var i = rates.indexOf(html5Rate()); var r = rates[(i + 1) % rates.length]; setHtml5Rate(r); var v = document.getElementById('biliVideo'); if (v) v.playbackRate = r; var b = document.getElementById('speedBtn'); if (b) b.textContent = speedText(r); }
+  function resolverUrl(bvid, p) { return BILI_RESOLVER + '?bv=' + encodeURIComponent(bvid) + '&p=' + p + '&q=32&format=mp4&otype=json'; }
+  function fallbackIframe(bvid, p, msg) {
+    var box = document.getElementById('biliPlayerBox'); if (!box) return;
+    p = Math.max(1, parseInt(p || 1, 10) || 1);
+    box.innerHTML = '<iframe id="vidFrame" data-bv="' + bvid + '" data-p="' + p + '" class="bili-frame" style="margin-top:10px" src="https://player.bilibili.com/player.html?bvid=' + bvid + '&p=' + p + '&page=' + p + '&autoplay=1" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>';
+    var s = document.getElementById('html5Status'); if (s) s.textContent = msg || '已切换 B站原版播放器';
+  }
+  function bindHtml5Speed(v) {
+    var shell = document.getElementById('html5Shell'); if (!shell || !v) return;
+    var timer = null, active = false, prev = html5Rate();
+    function clear() { if (timer) clearTimeout(timer); timer = null; }
+    function down(e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      clear(); active = false; prev = v.playbackRate || html5Rate();
+      timer = setTimeout(function () { active = true; v.playbackRate = 2; shell.classList.add('speedup'); }, 420);
+    }
+    function up() { clear(); if (active) { v.playbackRate = prev; shell.classList.remove('speedup'); active = false; } }
+    shell.addEventListener('pointerdown', down);
+    shell.addEventListener('pointerup', up);
+    shell.addEventListener('pointercancel', up);
+    shell.addEventListener('pointerleave', up);
+  }
+  function loadHtml5(bvid, p) {
+    var box = document.getElementById('biliPlayerBox'); if (!box) return;
+    var status = document.getElementById('html5Status'); if (status) status.textContent = '正在解析 HTML5 播放地址…';
+    p = Math.max(1, parseInt(p || 1, 10) || 1);
+    fetch(resolverUrl(bvid, p)).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (d) {
+      if (!d || d.code !== 0 || !d.url) throw new Error(d && d.message || 'no url');
+      box.innerHTML = '<div class="html5-shell" id="html5Shell"><video id="biliVideo" controls playsinline preload="metadata" title="长按视频临时 2× 倍速"></video><div class="html5-speed-tip" id="html5SpeedTip">2× 倍速</div></div>';
+      var v = document.getElementById('biliVideo'); if (!v) return;
+      v.playbackRate = html5Rate(); v.src = d.url; v.play().catch(function () {});
+      bindHtml5Speed(v);
+      if (status) status.textContent = 'HTML5 模式 · 清晰度 ' + (d.quality || '自动') + ' · 长按视频 2×';
+      var m = document.getElementById('vidModal'); if (m) m.setAttribute('data-p', p);
+    }).catch(function () { fallbackIframe(bvid, p, 'HTML5 解析失败，已自动切换 B站原版'); });
+  }
+  function toggleHtml5() {
+    var on = !html5On(); setHtml5Mode(on);
+    var btn = document.getElementById('html5ModeBtn'); if (btn) btn.textContent = 'HTML5 ' + (on ? '开' : '关');
+    var m = document.getElementById('vidModal'); if (!m) { renderVideo(); return; }
+    var bv = m.getAttribute('data-bv') || ''; var p = parseInt(m.getAttribute('data-p') || '1', 10) || 1;
+    if (on) loadHtml5(bv, p); else fallbackIframe(bv, p, 'B站原版播放器');
+  }
 
   function partInfo(bvid) {
     var list = (global.BILI_PHY || []).concat(global.BILI_BIO || []).concat(global.BILI || []);
@@ -434,29 +485,40 @@
     }).join('') + '</div>';
   }
   function pickPart(n) {
-    var f = document.getElementById('vidFrame'); if (!f) return;
-    var bv = f.getAttribute('data-bv') || ((f.src.match(/bvid=([^&]+)/) || [])[1] || '');
-    f.src = 'https://player.bilibili.com/player.html?bvid=' + bv + '&p=' + n + '&page=' + n + '&autoplay=1';
+    var m = document.getElementById('vidModal');
+    var f = document.getElementById('vidFrame');
+    var bv = (m && m.getAttribute('data-bv')) || (f && f.getAttribute('data-bv')) || '';
+    if (!bv) return;
+    n = Math.max(1, parseInt(n || 1, 10) || 1);
+    if (m) m.setAttribute('data-p', n);
     Array.prototype.forEach.call(document.querySelectorAll('.vpart'), function (b) {
       b.classList.toggle('on', b.getAttribute('data-p') === String(n));
     });
     var box = document.getElementById('vpartNow'); if (box) box.textContent = '正在播放 第 ' + n + ' 集';
+    if (html5On()) loadHtml5(bv, n); else if (f) fallbackIframe(bv, n, 'B站原版播放器');
   }
   function play(bvid, title) {
     var oldm = document.getElementById('vidModal'); if (oldm && oldm.parentNode) oldm.parentNode.removeChild(oldm);
     var m = document.createElement('div'); m.id = 'vidModal'; m.className = 'modal';
+    m.setAttribute('data-bv', bvid); m.setAttribute('data-p', '1');
     var b = partInfo(bvid) || {};
     var n = (b.partNames && b.partNames.length) || 1;
+    var on = html5On();
     m.innerHTML = '<div class="modalbox" style="max-width:940px">' +
       '<div class="row"><b class="grow">' + (title || bvid) + '</b>' +
+      '<button class="btn sm" id="html5ModeBtn" onclick="Portal.toggleHtml5()">HTML5 ' + (on ? '开' : '关') + '</button>' +
+      '<button class="btn sm" id="speedBtn" onclick="Portal.cycleSpeed()">' + speedText(html5Rate()) + '</button>' +
       '<button class="btn sm" id="vidWatchBtn" onclick="Portal.toggleWatched(\'' + bvid + '\')">' + (isWatched(bvid) ? '取消已看' : '标记看完') + '</button>' +
       '<a class="btn sm" target="_blank" rel="noopener" href="https://www.bilibili.com/video/' + bvid + '">去B站看 ↗</a>' +
       '<button class="btn sm" onclick="Portal.closeVideo()">关闭</button></div>' +
       (n > 1 ? '<div class="row" style="margin-top:8px"><span class="small muted" id="vpartNow">共 ' + n + ' 集 · 点下面的集数切换</span></div>' + partsRow(bvid) : '') +
-      '<iframe id="vidFrame" data-bv="' + bvid + '" class="bili-frame" style="margin-top:10px" src="https://player.bilibili.com/player.html?bvid=' + bvid + '&p=1&page=1&autoplay=1" scrolling="no" frameborder="0" allowfullscreen="true"></iframe></div>';
+      '<div id="biliPlayerBox"></div>' +
+      '<div class="small muted" id="html5Status" style="margin-top:8px">' + (on ? 'HTML5 模式 · 长按视频临时 2× · 点倍速可切换' : 'B站原版播放器') + '</div>' +
+      '<div class="small muted" style="margin-top:4px">HTML5 模式不显示弹幕；需要弹幕可点“去B站看”。</div></div>';
     m.addEventListener('click', function (e) { if (e.target === m) closeVideo(); });
     document.body.appendChild(m);
     try { localStorage.setItem('gml_last_bili', bvid); } catch (e) {}
+    if (on) loadHtml5(bvid, 1); else fallbackIframe(bvid, 1, 'B站原版播放器');
   }
 
   function closeVideo() { var m = document.getElementById('vidModal'); if (m && m.parentNode) m.parentNode.removeChild(m); }
@@ -465,8 +527,11 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+
+
+
 
 
 
