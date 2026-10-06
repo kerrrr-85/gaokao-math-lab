@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=59") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=60") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -629,7 +629,8 @@ body.dark .set-save{background:rgba(15,23,42,.92)}
 .dm span{font-size:11px;color:var(--muted)}
 .weak-act{display:flex;align-items:center;gap:8px;flex:none}
 /* —— 拉杆式牌堆 —— */
-.deck{position:relative;height:238px;margin:4px 0 2px;--step:92px}
+.deck{position:relative;height:238px;margin:4px 0 2px;--step:92px;touch-action:pan-y;user-select:none}
+.deck.dragging,.deck.dragging .deck-card{transition:none!important;cursor:grabbing}
 .deck-card{position:absolute;left:50%;top:10px;width:168px;height:206px;margin-left:-84px;padding:14px 13px;
   text-align:left;font:inherit;color:inherit;cursor:pointer;
   background:var(--card);border:1px solid var(--line);border-radius:18px;

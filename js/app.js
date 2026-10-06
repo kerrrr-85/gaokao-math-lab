@@ -222,7 +222,7 @@
     var more = (cards || []).length > max ? '<span class="deck-more">+' + (cards.length - max) + '</span>' : '';
     if (!show.length) return '<div class="deck-empty">这里暂时是空的。</div>' + '<div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
     return '<div class="deck' + (open ? ' open' : '') + '" id="deck-' + kind + '"' +
-      ' onpointerdown="App.deckDown(event,\'' + kind + '\')" onpointerup="App.deckUp(event,\'' + kind + '\')">' +
+      ' onpointerdown="App.deckDown(event,\'' + kind + '\')" onpointermove="App.deckMove(event,\'' + kind + '\')" onpointerup="App.deckUp(event,\'' + kind + '\')" onpointercancel="App.deckCancel(event,\'' + kind + '\')">' +
       body + more +
       '<button class="deck-lift" onclick="App.deckOpen(\'' + kind + '\')">' + (open ? '收起' : '展开 ' + cards.length + ' 张') + '</button></div>' +
       '<div class="deck-panel" id="deckpanel-' + kind + '">' + deckPanel(kind) + '</div>';
@@ -256,16 +256,36 @@
     deckState.open[kind] = true;
     deckUpdate(kind);
   }
-  function deckDown(ev, kind) { deckState.down = { x: ev.clientX, y: ev.clientY, kind: kind }; }
-  function deckUp(ev, kind) {
-    var d = deckState.down; deckState.down = null;
+  function deckDown(ev, kind) {
+    deckState.down = { x: ev.clientX, y: ev.clientY, kind: kind, t: Date.now(), drag: false };
+    deckState.dragging = false;
+    try { if (ev.currentTarget && ev.currentTarget.setPointerCapture) ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+  }
+  function deckMove(ev, kind) {
+    var d = deckState.down;
     if (!d || d.kind !== kind) return;
     var dx = ev.clientX - d.x, dy = ev.clientY - d.y;
-    if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy)) {
+    if (!d.drag && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) d.drag = true;
+    if (!d.drag) return;
+    deckState.dragging = true;
+    var el = document.getElementById('deck-' + kind);
+    if (el) { el.classList.add('dragging'); el.style.transform = 'translateX(' + (dx * 0.3).toFixed(1) + 'px)'; }
+  }
+  function deckEnd(ev, kind) {
+    var d = deckState.down; deckState.down = null;
+    var el = document.getElementById('deck-' + kind);
+    if (el) { el.classList.remove('dragging'); el.style.transform = ''; }
+    try { if (ev.currentTarget && ev.currentTarget.releasePointerCapture) ev.currentTarget.releasePointerCapture(ev.pointerId); } catch (e) {}
+    if (!d || d.kind !== kind) return;
+    var dx = ev.clientX - d.x, dy = ev.clientY - d.y, dt = Date.now() - d.t;
+    var far = Math.abs(dx) > 28, flick = Math.abs(dx) > 16 && dt < 260;
+    if ((far || flick) && Math.abs(dx) > Math.abs(dy)) {
       deckState.swiped = Date.now();
       deckStep(kind, dx < 0 ? 1 : -1);
     }
   }
+  function deckUp(ev, kind) { deckEnd(ev, kind); }
+  function deckCancel(ev, kind) { deckEnd(ev, kind); }
 
   function renderToday(startKey) {
     if (startKey && ['today', 'review', 'weak', 'focus'].indexOf(startKey) >= 0) dayKey = startKey;
@@ -921,7 +941,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v59 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v60 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -1002,7 +1022,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckOpen: deckOpen, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckUp: deckUp, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, setTheme: setTheme, setSetTab: setSetTab, setDayTab: setDayTab, deckOpen: deckOpen, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
