@@ -184,8 +184,12 @@
     var off = deckOff(kind), step = deckStepPx(el), center = Math.round(off);
     for (var i = 0; i < cards.length; i++) {
       var c = cards[i], pos = i - off, ap = Math.abs(pos);
-      c.classList.toggle('picked', i === center);
-      if (ap > 4.2) { c.style.opacity = '0'; c.style.pointerEvents = 'none'; continue; }
+      if (i === center) c.classList.add('picked'); else c.classList.remove('picked');
+      if (ap > 4.2) {
+        if (c._far !== 1) { c._far = 1; c.style.opacity = '0'; c.style.pointerEvents = 'none'; }
+        continue;
+      }
+      c._far = 0;
       c.style.opacity = ap > 3.4 ? '0' : '1';
       c.style.pointerEvents = '';
       c.style.transform = 'translateX(' + (pos * step).toFixed(1) + 'px) rotate(' + (pos * 5.5).toFixed(2) +
@@ -223,7 +227,7 @@
     opts = opts || {};
     deckState.list[kind] = cards || [];
     if (deckState.off[kind] == null) deckState.off[kind] = 0;
-    var max = opts.max || 24;
+    var max = opts.max || 400;
     var show = (cards || []).slice(0, max);
     var body = show.map(function (c, i) {
       return '<button class="deck-card" data-id="' + c.id + '" data-i="' + i + '"' +
@@ -315,7 +319,7 @@
       '</div>' +
       '<div class="set-group" style="padding-top:4px"><div class="set-h">新卡 · ' + nw.length + ' 张</div>' +
         '<div style="padding:0 14px 14px">' + deckHTML('nw', nw, {
-          max: 5, tag: function () { return '新卡'; },
+          max: 400, tag: function () { return '新卡'; },
           title: function (c) { return cardTitle(c); },
           meta1: function (c) { return c.refType === 'method' ? '方法卡' : '题目卡'; },
           meta2: function (c) { return cardMod(c); }
@@ -324,7 +328,7 @@
     var tabReview =
       '<div class="set-group"><div class="set-h">到期卡片 · ' + due.length + ' 张</div>' +
         '<div style="padding:0 14px 16px">' + deckHTML('due', due, {
-          max: 5, tag: function () { return '到期'; },
+          max: 400, tag: function () { return '到期'; },
           title: function (c) { return cardTitle(c); },
           meta1: function (c) { return (c.refType === 'method' ? '方法卡' : '题目卡') + ' · 已复习 ' + c.reps + ' 次'; },
           meta2: function (c) { return cardMod(c); }
@@ -942,7 +946,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v61 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v62 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
