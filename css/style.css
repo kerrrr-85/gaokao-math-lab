@@ -804,6 +804,10 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .vrail{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .vcard{--rounded:20px;--size:250px;position:relative;flex:0 0 auto;width:var(--size);height:calc(var(--size) - 10px);border-radius:var(--rounded);background:#fff;overflow:hidden;cursor:pointer;scroll-snap-align:start;transition:transform .3s cubic-bezier(.22,.61,.36,1)}
 .vcard:active{transform:scale(.98)}
+.vcard.watched{opacity:.5;filter:saturate(.32) contrast(.92)}
+.vcard.watched::after{background:rgba(15,23,42,.22)}
+.vcard.watched:hover,.vcard.watched:focus-within{opacity:.82;filter:saturate(.75)}
+.vcard__done{background:rgba(15,118,110,.92);color:#fff;font-size:10px;font-weight:700;padding:4px 6px;border-radius:6px}
 .vcard::before{content:"";position:absolute;width:100%;height:100%;filter:blur(20px);background-color:#faff99;background-image:radial-gradient(at 33% 82%,hsla(254,71%,69%,1) 0px,transparent 50%),radial-gradient(at 28% 4%,hsla(289,96%,63%,1) 0px,transparent 50%),radial-gradient(at 69% 49%,hsla(309,91%,71%,1) 0px,transparent 50%),radial-gradient(at 94% 14%,hsla(232,66%,62%,1) 0px,transparent 50%),radial-gradient(at 19% 93%,hsla(51,98%,74%,1) 0px,transparent 50%),radial-gradient(at 15% 80%,hsla(194,87%,63%,1) 0px,transparent 50%),radial-gradient(at 56% 52%,hsla(109,71%,61%,1) 0px,transparent 50%)}
 .vcard::after{content:"";position:absolute;width:100%;height:100%;background:rgba(255,255,255,.5)}
 .vcard__view{position:absolute;left:0;right:0;top:0;height:55%;z-index:1;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#e2e8f0}
@@ -840,8 +844,9 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .vmore summary{cursor:pointer;color:#64748b;font-size:12px;padding:9px 2px;list-style:none;user-select:none}
 .vmore summary::-webkit-details-marker{display:none}
 .vmore summary span{color:#94a3b8;margin-left:6px}
-.vrail--more{opacity:.74;padding-top:0}
-.vrail--more .vcard{--size:180px;opacity:.68;filter:saturate(.55)}
-.vrail--more .vcard:hover{opacity:1;filter:none}
+.vrail--more{padding-top:0}
+.vrail--more .vcard{--size:180px}
+.vrail--more .vcard:hover{opacity:1}
 .vrail--more .vcard__name{font-size:.68em}
 @media (max-width:700px){.vrail--more .vcard{--size:166px}}
+
