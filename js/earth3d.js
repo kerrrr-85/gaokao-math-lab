@@ -10,6 +10,7 @@
   var pressureGroup = null, currentsGroup = null, platesGroup = null;
   var solarRoot = null, solarEarth = null, solarAxis = null, solarLabels = [], solarSunDir = null;
   var D_ORBIT = 10, EPS = 23.44 * Math.PI / 180;
+  var ECC = 0.0167, PERI_DOY = 4, NU0 = null;
   /* 默认极简：首屏只呈现“课本地球仪”的要素 —— 大洲大洋 + 五带 */
   var GEO = [
     { n: '亚洲', t: '洲', lat: 34, lon: 90 }, { n: '欧洲', t: '洲', lat: 52, lon: 18 },
@@ -173,6 +174,13 @@
   /* ---------- 太阳系：季节原理 ---------- */
   var AXIS = null;
   function doyOf(d) { var s = new Date(d.getFullYear(), 0, 0); return Math.floor((d - s) / 86400000); }
+  function kepler(doy) {
+    var M = ((doy - PERI_DOY) / 365.25) * Math.PI * 2;
+    var E = M;
+    for (var i = 0; i < 5; i++) E = E - (E - ECC * Math.sin(E) - M) / (1 - ECC * Math.cos(E));
+    var nu = 2 * Math.atan2(Math.sqrt(1 + ECC) * Math.sin(E / 2), Math.sqrt(1 - ECC) * Math.cos(E / 2));
+    return { M: M, E: E, nu: nu, r: 1 - ECC * Math.cos(E) };
+  }
   function axisVec() { if (!AXIS) AXIS = new THREE.Vector3(0, Math.cos(EPS), -Math.sin(EPS)).normalize(); return AXIS; }
   function buildSolar() {
     solarRoot = new THREE.Group(); solarRoot.visible = false; scene.add(solarRoot);
@@ -180,8 +188,13 @@
     solarRoot.add(sun);
     solarRoot.add(new THREE.Mesh(new THREE.SphereGeometry(1.85, 32, 24),
       new THREE.MeshBasicMaterial({ color: 0xffa726, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending })));
+    if (NU0 == null) NU0 = kepler(80).nu;
     var pts = [];
-    for (var a = 0; a <= 360; a += 3) pts.push(new THREE.Vector3(Math.cos(a * Math.PI / 180) * D_ORBIT, 0, Math.sin(a * Math.PI / 180) * D_ORBIT));
+    for (var a = 0; a <= 360; a += 2) {
+      var ph0 = a * Math.PI / 180, nu0 = ph0 + NU0;
+      var rr0 = D_ORBIT * (1 - ECC * ECC) / (1 + ECC * Math.cos(nu0));
+      pts.push(new THREE.Vector3(Math.cos(ph0) * rr0, 0, Math.sin(ph0) * rr0));
+    }
     solarRoot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
       new THREE.LineBasicMaterial({ color: 0x7f8ea3, transparent: true, opacity: 0.55 })));
     /* 地球（复用同一材质与贴图，零额外体积） */
@@ -201,6 +214,16 @@
       if (labelBox) { labelBox.appendChild(el); labelPool.push(el); }
       solarLabels.push({ el: el, obj: o, grp: 'solar' });
     });
+    [[4, '近日点 1月初 · 公转最快'], [186, '远日点 7月初 · 公转最慢']].forEach(function (mm) {
+      var kk = kepler(mm[0]), p2 = kk.nu - NU0, r2 = D_ORBIT * kk.r;
+      var o2 = new THREE.Object3D();
+      o2.position.set(Math.cos(p2) * r2, 0, Math.sin(p2) * r2);
+      solarRoot.add(o2);
+      var e2 = document.createElement('div');
+      e2.className = 'e3-lb e3-lb-zone'; e2.textContent = mm[1];
+      if (labelBox) { labelBox.appendChild(e2); labelPool.push(e2); }
+      solarLabels.push({ el: e2, obj: o2, grp: 'solar' });
+    });
     var so = new THREE.Object3D(); solarRoot.add(so);
     var sel = document.createElement('div'); sel.className = 'e3-lb e3-lb-zone'; sel.textContent = '☀ 太阳';
     if (labelBox) { labelBox.appendChild(sel); labelPool.push(sel); }
@@ -209,8 +232,9 @@
   function updateSolar() {
     if (!solarRoot) return;
     var doy = (st.doy == null) ? doyOf(new Date()) : st.doy;
-    var th = (doy - 80) / 365.25 * Math.PI * 2;
-    var pos = new THREE.Vector3(Math.cos(th) * D_ORBIT, 0, Math.sin(th) * D_ORBIT);
+    if (NU0 == null) NU0 = kepler(80).nu;
+    var kp = kepler(doy), ph = kp.nu - NU0, rr = D_ORBIT * kp.r;
+    var pos = new THREE.Vector3(Math.cos(ph) * rr, 0, Math.sin(ph) * rr);
     var q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), axisVec());
     solarEarth.position.copy(pos); solarEarth.quaternion.copy(q);
     solarAxis.position.copy(pos); solarAxis.quaternion.copy(q);
@@ -218,9 +242,11 @@
     if (earth.userData.uni) earth.userData.uni.sunDir.value.copy(sd);
     if (sunLight) sunLight.position.copy(sd).multiplyScalar(10);
     var decl = Math.asin(Math.max(-1, Math.min(1, axisVec().dot(sd)))) * 180 / Math.PI;
+    var vrel = 29.78 * Math.sqrt(Math.max(0.0001, 2 / kp.r - 1));
     var info = document.getElementById('e3SolarInfo');
-    if (info) info.textContent = '直射点 ' + decl.toFixed(1) + '°' + (decl >= 0 ? 'N' : 'S') + '　' +
-      (Math.abs(decl) < 1.2 ? '春/秋分：全球昼夜等长' : (decl > 0 ? '北半球昼长夜短，北极圈内出现极昼' : '北半球昼短夜长，北极圈内出现极夜'));
+    if (info) info.textContent = '直射点 ' + decl.toFixed(1) + '°' + (decl >= 0 ? 'N' : 'S') +
+      '　公转速度 ' + vrel.toFixed(2) + ' km/s（' + (kp.r < 1 ? '近日点附近最快' : '远日点附近最慢') + '）　' +
+      (Math.abs(decl) < 1.2 ? '分日：昼夜等长' : (decl > 0 ? '北半球昼长夜短，北极圈内极昼' : '北半球昼短夜长，北极圈内极夜'));
   }
   function toggleSolar() {
     st.solar = !st.solar;
