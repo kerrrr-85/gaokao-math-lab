@@ -380,3 +380,141 @@ body.draft-full .topbar,body.draft-full .tabbar,body.draft-full .dot-canvas{disp
 .e3-hud{position:absolute;left:10px;bottom:10px;right:10px;font-size:12px;color:#cbd5e1;background:rgba(4,7,15,.62);padding:5px 9px;border-radius:9px}
 .e3-fail{padding:22px;color:#fca5a5;font-size:13px}
 @media (max-width:700px){.e3-wrap{height:min(52vh,420px)}}
+
+
+/* ===== v52 门户落地页：浅蓝 · 安静 · 高级 ===== */
+:root{
+  --pt-paper:#EDEFF2; --pt-paper-2:#E3E7ED; --pt-ink:#1B2440; --pt-ink-2:#5A6784;
+  --pt-line:rgba(27,36,64,.14); --pt-line-2:rgba(27,36,64,.28);
+  --pt-blue:#2C6E8F; --pt-teal:#1D8FA3; --pt-gold:#BFA06A;
+}
+body.pt-full .view{padding:0;max-width:none}
+body.pt-full .topbar{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom-color:transparent}
+body.pt-full .today-mini{display:none}
+.pt-landing{position:relative;overflow:hidden;min-height:100vh;color:var(--pt-ink);
+  background:
+    radial-gradient(1100px 620px at 78% 10%, rgba(44,110,143,.10), transparent 62%),
+    radial-gradient(900px 560px at 10% 90%, rgba(29,143,163,.09), transparent 60%),
+    linear-gradient(180deg,#F1F3F6 0%, var(--pt-paper) 44%, var(--pt-paper-2) 100%)}
+.pt-fx{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.pt-grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.42;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.26'/%3E%3C/svg%3E")}
+.pt-landing>.pt-hero,.pt-landing>.pt-menu,.pt-landing>.pt-foot{position:relative;z-index:5}
+.pt-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr);gap:clamp(20px,3.4vw,52px);align-items:center;
+  max-width:1180px;margin:0 auto;padding:clamp(58px,8vh,104px) clamp(18px,4vw,40px) clamp(14px,2.4vh,28px)}
+.pt-eyebrow{margin:0 0 clamp(14px,3vh,26px);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--pt-ink-2)}
+.pt-title{margin:0;font-size:clamp(58px,12.5vw,128px);line-height:.94;letter-spacing:.015em;font-weight:800}
+.pt-title span{display:inline-block;opacity:0;transform:translateY(.3em);
+  animation:ptRise .74s cubic-bezier(.2,.72,.24,1) forwards;animation-delay:calc(var(--i)*95ms + 130ms)}
+@keyframes ptRise{to{opacity:1;transform:none}}
+.pt-lede{margin:clamp(16px,3vh,26px) 0 0;font-size:clamp(15px,1.6vw,18px);font-weight:300;color:var(--pt-ink-2);letter-spacing:.02em}
+.pt-weather{display:inline-flex;align-items:center;gap:14px;margin-top:clamp(20px,4vh,34px);padding:11px 18px;font:inherit;color:inherit;cursor:pointer;
+  border:1px solid var(--pt-line);border-radius:999px;background:rgba(255,255,255,.55);
+  transition:border-color .4s cubic-bezier(.2,.7,.3,1),background .4s,transform .4s cubic-bezier(.2,.7,.3,1)}
+.pt-weather:hover{border-color:var(--pt-line-2);background:rgba(255,255,255,.82);transform:translateY(-1px)}
+.pt-temp{font-size:27px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.pt-wxmeta{display:flex;flex-direction:column;line-height:1.3;text-align:left}
+.pt-wxmeta b{font-size:13px;font-weight:600}
+.pt-wxmeta i{font-style:normal;font-size:12px;color:var(--pt-ink-2)}
+.pt-wxrange{font-size:12px;color:var(--pt-ink-2);padding-left:14px;border-left:1px solid var(--pt-line)}
+.pt-hero-art{margin:0;position:relative;aspect-ratio:3/4;max-height:min(56vh,540px);align-self:center}
+.pt-hero-art img{width:100%;height:100%;object-fit:cover;object-position:62% 38%;border-radius:3px;
+  filter:saturate(.94) contrast(.97);box-shadow:0 36px 90px -46px rgba(27,36,64,.55)}
+.pt-menu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,3vw,46px);
+  max-width:1180px;margin:clamp(8px,3vh,30px) auto 0;padding:0 clamp(18px,4vw,40px)}
+.pt-group h2{margin:0 0 10px;padding-bottom:10px;font-size:11.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--pt-ink-2);border-bottom:1px solid var(--pt-line-2)}
+.pt-item{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:13px 2px;color:inherit;text-decoration:none;
+  border-bottom:1px solid var(--pt-line);
+  transition:border-color .38s cubic-bezier(.2,.7,.3,1),transform .38s cubic-bezier(.2,.7,.3,1),color .38s}
+.pt-item:hover{border-bottom-color:var(--pt-ink);transform:translateX(5px)}
+.pt-idx{font-size:11px;color:var(--pt-ink-2);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.pt-name{font-size:16px;font-weight:600;letter-spacing:.01em}
+.pt-en{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--pt-ink-2);opacity:0;transform:translateX(-5px);
+  transition:opacity .38s,transform .38s}
+.pt-item:hover .pt-en{opacity:1;transform:none}
+.pt-go{color:var(--pt-ink-2);opacity:0;transform:translateX(-6px);transition:opacity .38s,transform .38s,color .38s}
+.pt-item:hover .pt-go{opacity:1;transform:none;color:var(--pt-blue)}
+.pt-foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:1180px;margin:clamp(30px,6vh,64px) auto 0;
+  padding:0 clamp(18px,4vw,40px) 10px;font-size:12px;letter-spacing:.06em;color:var(--pt-ink-2)}
+.pt-more{padding:8px 15px;border:1px dashed var(--pt-line-2);border-radius:999px}
+.pt-hint{opacity:.72;align-self:center}
+.pt-reveal{opacity:0;transform:translateY(15px);transition:opacity .72s cubic-bezier(.2,.72,.24,1),transform .72s cubic-bezier(.2,.72,.24,1)}
+.pt-reveal.in{opacity:1;transform:none}
+.pt-landing.is-night{background:transparent;color:#E9EFF9}
+.pt-landing.is-night .pt-hero-art img{opacity:.42;filter:saturate(.75) contrast(1.06) brightness(.72)}
+.pt-landing.is-night .pt-grain{opacity:.2;mix-blend-mode:screen}
+.pt-landing.is-night .pt-eyebrow,.pt-landing.is-night .pt-lede,.pt-landing.is-night .pt-idx,
+.pt-landing.is-night .pt-en,.pt-landing.is-night .pt-foot{color:rgba(226,235,247,.72)}
+.pt-landing.is-night .pt-group h2{color:rgba(226,235,247,.7);border-bottom-color:rgba(226,235,247,.26)}
+.pt-landing.is-night .pt-item{color:#EAF1FA;border-bottom-color:rgba(226,235,247,.16)}
+.pt-landing.is-night .pt-item:hover{border-bottom-color:rgba(226,235,247,.72)}
+.pt-landing.is-night .pt-weather{background:rgba(12,18,32,.55);border-color:rgba(226,235,247,.22)}
+.pt-landing.is-night .pt-wxrange{border-left-color:rgba(226,235,247,.22)}
+.pt-landing.is-night .pt-more{border-color:rgba(226,235,247,.3)}
+@media (max-width:820px){
+  .pt-hero{grid-template-columns:1fr;gap:24px;padding-top:clamp(30px,7vh,60px);align-items:start}
+  .pt-hero-art{order:-1;aspect-ratio:16/10;max-height:32vh;width:100%}
+  .pt-hero-art img{object-position:54% 32%}
+  .pt-title{font-size:clamp(50px,17vw,84px)}
+  .pt-menu{grid-template-columns:1fr;gap:24px}
+  .pt-en{display:none}
+  .pt-item{padding:15px 2px}
+  .pt-weather{gap:11px;padding:10px 14px}
+  .pt-temp{font-size:23px}
+}
+@media (prefers-reduced-motion: reduce){
+  .pt-title span{animation:none;opacity:1;transform:none}
+  .pt-reveal{opacity:1;transform:none;transition:none}
+  .pt-item,.pt-weather{transition:none}
+}
+
+
+/* ===== v52 iOS 手感：丝滑缓动 · 按压缩放 · 圆角 ===== */
+:root{
+  --ease-ios:cubic-bezier(.22,.61,.36,1);
+  --ease-ios-out:cubic-bezier(.23,1,.32,1);
+  --ease-ios-sheet:cubic-bezier(.32,.72,0,1);
+  --ease-ios-spring:cubic-bezier(.34,1.28,.52,1);
+  --dur-fast:.18s; --dur:.32s; --dur-slow:.48s;
+  --radius:16px;
+}
+.btn,.chip,.opt,.tabbar a,.pt-item,.pt-weather,.penbtn,.symbtn,.homebtn,.globe-x{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn,.chip,.opt{transition:transform var(--dur-fast) var(--ease-ios),background var(--dur) var(--ease-ios),border-color var(--dur) var(--ease-ios),color var(--dur) var(--ease-ios),box-shadow var(--dur) var(--ease-ios)}
+.btn:active,.chip:active,.opt:active,.tabbar a:active,.penbtn:active,.symbtn:active{transform:scale(.965)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active:hover{transform:scale(.965)}
+.item,.stat,.mini,.card{transition:border-color var(--dur) var(--ease-ios),background var(--dur) var(--ease-ios),box-shadow var(--dur) var(--ease-ios),transform var(--dur) var(--ease-ios)}
+.item:hover,.mini:hover{transform:translateY(-2px);box-shadow:0 10px 28px -18px rgba(27,36,64,.42)}
+.tabbar{padding-top:8px}
+.tabbar a{border-radius:14px;transition:background var(--dur) var(--ease-ios),color var(--dur) var(--ease-ios),transform var(--dur-fast) var(--ease-ios)}
+.tabbar a.active{background:var(--primary-soft)}
+.rail{-webkit-overflow-scrolling:touch;scroll-behavior:smooth;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+.rail>*{scroll-snap-align:start}
+.modal{animation:iosFadeIn .26s var(--ease-ios) both}
+.modalbox{animation:iosSheet .42s var(--ease-ios-sheet) both;border-radius:20px}
+@keyframes iosFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes iosSheet{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+.toast{transition:opacity .26s var(--ease-ios),transform .34s var(--ease-ios-spring)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast:not(.show){transform:translateX(-50%) translateY(16px) scale(.96)}
+.view>*{animation:iosPage .42s var(--ease-ios-out) both}
+@keyframes iosPage{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  .view>*,.modal,.modalbox{animation:none}
+  .btn,.chip,.opt,.item,.mini,.card,.tabbar a,.rail{transition:none}
+  .btn:active,.chip:active,.opt:active,.tabbar a:active{transform:none}
+}
+
+
+/* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
+body.pt-full .homebtn{display:none}
+.pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
+  background:url("./assets/map-paper.jpg?v=52") center/cover no-repeat}
+.pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
+
+
+/* 覆盖旧门户遗留的居中对齐（旧 .pt-group 规则会影响新菜单） */
+.pt-menu .pt-group{margin:0;font-size:inherit;letter-spacing:normal;color:inherit;text-align:left}
+.pt-menu .pt-group h2{text-align:left}
+.pt-menu .pt-item,.pt-menu .pt-name{text-align:left}

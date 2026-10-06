@@ -38,7 +38,10 @@
     document.getElementById('todayMini').textContent = '待复习 ' + dueReview().length + ' · 新卡 ' + newCards().length + ' · 已练 ' + Store.stats().total + ' 题';
   }
   function setTab(page) {
-    document.body.classList.toggle('portal-dark', page === 'portal' || !page);
+    if (page !== 'portal' && page) document.body.classList.remove('pt-full');
+    if (page !== 'portal' && window.Portal && Portal.stopFx) Portal.stopFx();
+    var _night = (page === 'portal' || !page) && window.Portal && Portal.isNight && Portal.isNight();
+    document.body.classList.toggle('portal-dark', !!_night);
     if (page !== 'portal' && window.Galaxy) Galaxy.stop();
     if (page !== 'globe' && window.Globe && Globe.stop) Globe.stop();
     var studyPages = { today: 1, map: 1, node: 1, method: 1, practice: 1, wrong: 1, stats: 1, settings: 1, search: 1 };

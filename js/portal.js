@@ -66,20 +66,182 @@
       .then(function (w) { var d = { city: city, at: Date.now(), temp: w.current.temperature_2m, code: w.current.weather_code, max: w.daily.temperature_2m_max[0], min: w.daily.temperature_2m_min[0] }; try { localStorage.setItem('gml_weather', JSON.stringify(d)); } catch (e) {} applyWeather(d); })
       .catch(function () { var t = document.getElementById('ptDesc'); if (t) t.textContent = '天气获取失败'; });
   }
+  /* ---------- 门户落地页：浅蓝 · 安静 · 可扩展 ---------- */
+  var MENU = [
+    ['学习', [
+      ['学习台', 'Study', '#/today', 0],
+      ['练习', 'Practice', '#/practice', 0],
+      ['知识图谱', 'Map', '#/map', 0],
+      ['错题本', 'Wrong', '#/wrong', 0],
+      ['统计', 'Stats', '#/stats', 0]
+    ]],
+    ['工具', [
+      ['搜索', 'Search', '#/search', 0],
+      ['地球', 'Globe', '#/globe', 0]
+    ]],
+    ['娱乐', [
+      ['B站视频', 'Bilibili', '#/video', 0],
+      ['豆包', 'Doubao', 'https://www.doubao.com/chat/', 1]
+    ]]
+  ];
+  var fxRaf = null, fxCanvas = null, fxCtx = null, fxDots = [], fxW = 0, fxH = 0, fxLast = 0;
+  var fxIo = null, fxTimer = null;
+
+  function isNight() {
+    var q = String(location.search || '');
+    if (q.indexOf('night=1') >= 0) return true;
+    if (q.indexOf('night=0') >= 0) return false;
+    var d = new Date(), h = d.getHours() + d.getMinutes() / 60;
+    return h >= 23.5 || h < 6;
+  }
+  function isLow() { return !!(global.PERF && global.PERF.low); }
+  function reduceMotion() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+
+  function menuHTML() {
+    var n = 0;
+    return MENU.map(function (g) {
+      var rows = g[1].map(function (it) {
+        n++;
+        var ext = it[3] ? ' target="_blank" rel="noopener"' : '';
+        return '<a class="pt-item" href="' + it[2] + '"' + ext + '>' +
+          '<span class="pt-idx">' + ('0' + n).slice(-2) + '</span>' +
+          '<span class="pt-name">' + it[0] + '</span>' +
+          '<span class="pt-en">' + it[1] + '</span>' +
+          '<span class="pt-go">→</span></a>';
+      }).join('');
+      return '<section class="pt-group pt-reveal"><h2>' + g[0] + '</h2>' + rows + '</section>';
+    }).join('');
+  }
+
   function renderPortal() {
     var v = document.getElementById('view');
-    v.innerHTML = '<canvas class="galaxy-canvas" id="galaxyCanvas"></canvas><div class="pt-wrap">' +
-      '<div class="pt-wx" onclick="Portal.loadWeather(true)"><div><div class="small" id="ptCity">青树坪</div><div class="small" id="ptRange">今日 --~--°</div></div><div class="t" id="ptTemp">--°</div><div id="ptDesc">加载中…</div></div>' +
-      '<div class="pt-grid" style="margin-top:18px">' +
-      tile('study','学习台','#/today') + tile('practice','练习','#/practice') + tile('map','知识图谱','#/map') +
-      tile('wrong','错题本','#/wrong') + tile('stats','统计','#/stats') + tile('search','搜索','#/search') +
-      tile('globe','地球','#/globe') + tile('video','B站视频','#/video') + tile('doubao','豆包','https://www.doubao.com/chat/', true) +
-      '</div>' +
+    var night = isNight();
+    document.body.classList.add('pt-full');
+    v.innerHTML =
+      '<div class="pt-landing' + (night ? ' is-night' : '') + '" id="ptLanding">' +
+        '<canvas class="pt-fx" id="ptFx" aria-hidden="true"></canvas>' +
+        '<div class="pt-grain" aria-hidden="true"></div>' +
+        '<canvas class="galaxy-canvas" id="galaxyCanvas" style="display:none" aria-hidden="true"></canvas>' +
+        '<header class="pt-hero">' +
+          '<div class="pt-hero-copy">' +
+            '<p class="pt-eyebrow pt-reveal">' + dateStr() + ' · 青树坪</p>' +
+            '<h1 class="pt-title" aria-label="我在呢"><span style="--i:0">我</span><span style="--i:1">在</span><span style="--i:2">呢</span></h1>' +
+            '<p class="pt-lede pt-reveal">今天想从哪儿开始？</p>' +
+            '<button class="pt-weather pt-reveal" onclick="Portal.loadWeather(true)" title="点一下刷新天气">' +
+              '<span class="pt-temp" id="ptTemp">--°</span>' +
+              '<span class="pt-wxmeta"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
+              '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
+            '</button>' +
+          '</div>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=52" alt="" decoding="async"></figure>' +
+        '</header>' +
+        '<nav class="pt-menu">' + menuHTML() + '</nav>' +
+        '<footer class="pt-foot pt-reveal">' +
+          '<span class="pt-more">更多模块 · 陆续开放</span>' +
+          '<span class="pt-hint" id="ptHint">' + (night ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空') + '</span>' +
+        '</footer>' +
       '</div>';
     loadWeather(false);
-    if (global.Galaxy) { var gc = document.getElementById('galaxyCanvas'); if (gc) global.Galaxy.mount(gc); }
-    if (global.Anim && Anim.ok()) { Anim.fadeIn('.pt-wx', 60); Anim.enter('.pt-tile', 55); }
+    applyNight(night);
+    startFx();
   }
+
+  function applyNight(night) {
+    var land = document.getElementById('ptLanding');
+    if (land) land.classList.toggle('is-night', night);
+    document.body.classList.toggle('portal-dark', night);
+    var gc = document.getElementById('galaxyCanvas');
+    if (global.Galaxy && gc) {
+      if (night) { gc.style.display = ''; global.Galaxy.mount(gc); }
+      else { global.Galaxy.stop(); gc.style.display = 'none'; }
+    }
+  }
+  function applyNightNow() {
+    var n = isNight();
+    applyNight(n);
+    var h = document.getElementById('ptHint');
+    if (h) h.textContent = n ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空';
+  }
+
+  function fxBuild() {
+    var n = isLow() ? 26 : 58;
+    fxDots = [];
+    for (var i = 0; i < n; i++) {
+      var k = i % 9 === 0 ? 2 : (i % 4 === 0 ? 1 : 0);
+      fxDots.push({
+        x: Math.random() * fxW, y: Math.random() * fxH,
+        r: k === 2 ? 9 + Math.random() * 13 : (k === 1 ? 1.2 + Math.random() * 1.1 : 1.6 + Math.random() * 1.9),
+        vx: (Math.random() - 0.5) * 0.16, vy: -(0.05 + Math.random() * 0.20),
+        a: k === 2 ? 0.05 + Math.random() * 0.05 : (k === 1 ? 0.24 + Math.random() * 0.22 : 0.10 + Math.random() * 0.14),
+        k: k, ph: Math.random() * 6.283
+      });
+    }
+  }
+  function fxResize() {
+    if (!fxCanvas) return;
+    var dpr = Math.min(global.devicePixelRatio || 1, 1.6);
+    fxW = fxCanvas.width = Math.round(fxCanvas.clientWidth * dpr);
+    fxH = fxCanvas.height = Math.round(fxCanvas.clientHeight * dpr);
+    fxBuild();
+  }
+  function fxDraw(t) {
+    if (!fxCtx) return;
+    fxCtx.clearRect(0, 0, fxW, fxH);
+    for (var i = 0; i < fxDots.length; i++) {
+      var d = fxDots[i];
+      d.x += d.vx; d.y += d.vy;
+      if (d.y < -30) { d.y = fxH + 20; d.x = Math.random() * fxW; }
+      if (d.x < -30) d.x = fxW + 20; else if (d.x > fxW + 30) d.x = -20;
+      var tw = d.k === 2 ? 1 : 0.72 + 0.28 * Math.sin(t * 0.0009 + d.ph);
+      fxCtx.beginPath();
+      fxCtx.arc(d.x, d.y, d.r, 0, 6.2832);
+      fxCtx.fillStyle = d.k === 2 ? 'rgba(44,110,143,' + d.a + ')'
+        : d.k === 1 ? 'rgba(191,160,106,' + (d.a * tw).toFixed(3) + ')'
+        : 'rgba(27,36,64,' + (d.a * tw).toFixed(3) + ')';
+      fxCtx.fill();
+    }
+  }
+  function fxLoop(ts) {
+    fxRaf = requestAnimationFrame(fxLoop);
+    var gap = isLow() ? 33 : 22;
+    if (ts && fxLast && ts - fxLast < gap) return;
+    fxLast = ts || 0;
+    fxDraw(ts || 0);
+  }
+  function startFx() {
+    if (global.Portal && Portal.stopFx) Portal.stopFx();
+    fxCanvas = document.getElementById('ptFx');
+    if (!fxCanvas) return;
+    fxCtx = fxCanvas.getContext('2d');
+    fxResize();
+    fxIo = null;
+    var els = document.querySelectorAll('.pt-reveal');
+    if (reduceMotion() || !('IntersectionObserver' in global)) {
+      Array.prototype.forEach.call(els, function (e) { e.classList.add('in'); });
+    } else {
+      fxIo = new IntersectionObserver(function (ents) {
+        ents.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); fxIo.unobserve(en.target); } });
+      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.06 });
+      Array.prototype.forEach.call(els, function (e) { fxIo.observe(e); });
+    }
+    global.addEventListener('resize', fxResize);
+    setTimeout(function () {
+      var vh = global.innerHeight || 800;
+      Array.prototype.forEach.call(document.querySelectorAll('.pt-reveal:not(.in)'), function (e) {
+        if (e.getBoundingClientRect().top < vh) e.classList.add('in');
+      });
+    }, 900);
+    if (!reduceMotion()) fxRaf = requestAnimationFrame(fxLoop); else fxDraw(0);
+    fxTimer = setInterval(applyNightNow, 60000);
+  }
+  function fxStop() {
+    if (fxRaf) { cancelAnimationFrame(fxRaf); fxRaf = null; }
+    if (fxTimer) { clearInterval(fxTimer); fxTimer = null; }
+    if (fxIo) { fxIo.disconnect(); fxIo = null; }
+    global.removeEventListener('resize', fxResize);
+    fxCtx = null; fxCanvas = null; fxDots = [];
+  }
+
   function renderVideo() {
     var v = document.getElementById('view');
     var list = global.BILI || [];
@@ -120,5 +282,5 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);

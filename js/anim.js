@@ -31,15 +31,18 @@
   }
   function enter(selector, gap) {
     if (PERF.low) return null;
-    return animate(selector, { opacity: [0, 1], y: [18, 0], scale: [0.92, 1], duration: 620, delay: stagger(gap || 55), ease: 'outExpo' });
+    var lo = PERF.low;
+    return animate(selector, { opacity: [0, 1], y: [lo ? 10 : 18, 0], scale: lo ? [1, 1] : [0.92, 1], duration: lo ? 340 : 620, delay: stagger(lo ? 18 : (gap || 55)), ease: lo ? 'outQuart' : 'outExpo' });
   }
   function fadeIn(selector, delay) {
     if (PERF.low) return null;
-    return animate(selector, { opacity: [0, 1], y: [10, 0], duration: 460, delay: delay || 0, ease: 'outQuad' });
+    var lo = PERF.low;
+    return animate(selector, { opacity: [0, 1], y: [lo ? 6 : 10, 0], duration: lo ? 260 : 460, delay: delay || 0, ease: 'outQuart' });
   }
   function pageIn() {
     if (PERF.low) return null;
-    return animate('#view > *', { opacity: [0, 1], y: [14, 0], duration: 440, delay: stagger(45), ease: 'outQuad' });
+    var lo = PERF.low;
+    return animate('#view > *', { opacity: [0, 1], y: [lo ? 8 : 14, 0], duration: lo ? 300 : 440, delay: stagger(lo ? 22 : 45), ease: 'outQuart' });
   }
-  global.Anim = { ok: function () { return !!A() && !PERF.low; }, animate: animate, stagger: stagger, enter: enter, fadeIn: fadeIn, pageIn: pageIn };
+  global.Anim = { ok: function () { return !!A(); }, animate: animate, stagger: stagger, enter: enter, fadeIn: fadeIn, pageIn: pageIn };
 })(window);
