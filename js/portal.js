@@ -111,10 +111,6 @@
     roomEl.className = 'ink-room';
     roomEl.innerHTML = '<div class="ink-room-body" id="roomBody"></div>';
     document.body.appendChild(roomEl);
-    inkEl.addEventListener('pointerenter', inkHoldStart);
-    inkEl.addEventListener('pointerleave', inkHoldStop);
-    inkEl.addEventListener('touchstart', inkHoldStart, { passive: true });
-    inkEl.addEventListener('touchend', inkHoldStop);
     var lastTap = 0;
     roomEl.addEventListener('pointerup', function () {
       var now = Date.now();
@@ -132,12 +128,11 @@
     inkEl.classList.remove('room-open');
     inkEl.classList.add('on');
     roomOn = false; inkReady = false;
-    setTimeout(function () { if (inkEl && inkEl.classList.contains('on')) { inkEl.classList.add('lit'); inkReady = true; } }, 720);
-  }
-  function inkHoldStart() {
-    if (!inkReady || roomOn) return;
-    inkHoldStop();
-    inkHold = setTimeout(function () { inkHold = null; roomOpen(); }, 1000);
+    setTimeout(function () {
+      if (!inkEl || !inkEl.classList.contains('on')) return;
+      inkEl.classList.add('lit'); inkReady = true;
+      inkHold = setTimeout(function () { inkHold = null; roomOpen(); }, 1000);
+    }, 700);
   }
   function inkHoldStop() { if (inkHold) { clearTimeout(inkHold); inkHold = null; } }
   function roomOpen() {
@@ -196,7 +191,7 @@
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=56" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=58" alt="" decoding="async"></figure>' +
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
