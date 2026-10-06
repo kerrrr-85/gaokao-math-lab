@@ -1,0 +1,48 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>我们的云空间 · 挂绳卡</title>
+<style>
+  html,body{width:100%;height:100%;margin:0;overflow:hidden;background:
+    radial-gradient(760px 540px at 50% 22%,rgba(65,120,160,.22),transparent 68%),
+    radial-gradient(520px 420px at 8% 90%,rgba(201,169,106,.10),transparent 62%),
+    linear-gradient(180deg,#0c1728 0%,#08111f 56%,#050a12 100%);color:#f5f0e6;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  body::before{content:"";position:fixed;left:calc(50% - min(42vw,280px));top:clamp(74px,16vh,150px);width:min(84vw,560px);height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,106,.82),transparent);opacity:.72;pointer-events:none}
+  #lanyardRoot{position:fixed;inset:0;touch-action:none;cursor:grab}
+  #lanyardRoot:active{cursor:grabbing}
+  #lanyardRoot canvas{display:block;width:100%;height:100%}
+  .lan-head{position:fixed;left:50%;top:max(18px,env(safe-area-inset-top));transform:translateX(-50%);z-index:3;text-align:center;pointer-events:none}
+  .lan-head small{display:block;font-size:9px;letter-spacing:.34em;color:rgba(224,235,246,.5);margin-bottom:8px}
+  .lan-head b{display:block;font-size:15px;font-weight:400;letter-spacing:.18em;color:rgba(247,242,232,.9)}
+  .lan-hint{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;font-size:11px;letter-spacing:.16em;color:rgba(224,235,246,.46);white-space:nowrap;pointer-events:none}
+  .lan-card{--x:0px;--y:0px;--rz:0deg;--ry:0deg;position:fixed;left:50%;top:50%;z-index:2;width:min(62vw,252px);aspect-ratio:2.02/2.82;transform:translate(-50%,-50%) translate3d(var(--x),var(--y),0) rotateZ(var(--rz)) rotateY(var(--ry));transform-style:preserve-3d;border-radius:18px;overflow:hidden;background:#101f34;border:1px solid rgba(201,169,106,.72);box-shadow:0 34px 76px -28px rgba(0,0,0,.9),0 0 0 1px rgba(201,169,106,.12) inset;cursor:grab;touch-action:none;will-change:transform}
+  .lan-card:active{cursor:grabbing}
+  .lan-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.78) contrast(1.08)}
+  .lan-card__shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,16,29,.06),rgba(7,16,29,.28) 58%,rgba(7,16,29,.96))}
+  .lan-card__copy{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 18px 24px;text-align:center}
+  .lan-card__copy b{font-size:18px;font-weight:500;letter-spacing:.14em;color:#f7f2e8}
+  .lan-card__copy i{font-size:11px;font-style:normal;color:rgba(231,240,249,.72);letter-spacing:.12em}
+  .lan-card__copy em{margin-top:8px;font-size:10px;font-style:normal;color:rgba(201,169,106,.88);letter-spacing:.14em}
+  .lan-card__border{position:absolute;inset:12px;border:1px solid rgba(201,169,106,.5);border-radius:12px;pointer-events:none}
+  .lan-fallback{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(62vw,240px);aspect-ratio:2.05/2.85;border:1px solid rgba(201,169,106,.66);border-radius:18px;background:linear-gradient(160deg,#13253d,#08111f);color:#f7f2e8;font:inherit;cursor:pointer;box-shadow:0 30px 70px -32px rgba(0,0,0,.9)}
+  .lan-fallback b{display:block;font-size:18px;letter-spacing:.16em;margin-bottom:8px}
+  .lan-fallback span{font-size:11px;color:rgba(224,235,246,.6)}
+</style>
+</head>
+<body>
+<div class="lan-head"><small>OUR CLOUD SPACE</small><b>我们的云空间</b></div>
+<div id="lanyardRoot"></div>
+<div class="lan-card" id="lanCard" role="button" tabindex="0" aria-label="点击卡片进入相册">
+  <img src="./assets/egg/photo-08.jpg" alt="刺绣相框">
+  <span class="lan-card__shade"></span>
+  <span class="lan-card__copy"><b>我们的云空间</b><i>宝宝发现彩蛋了</i><em>点击卡片进入相册</em></span>
+  <span class="lan-card__border"></span>
+</div>
+<div class="lan-hint">拖动挂绳卡 · 点击卡片进入相册</div>
+<script src="./vendor/three.min.js"></script>
+<script src="./js/lanyard.js"></script>
+</body>
+</html>
+

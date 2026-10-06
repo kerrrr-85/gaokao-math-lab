@@ -125,6 +125,7 @@
       lastTap = now;
     });
     if (!global.__inkKey) { global.__inkKey = 1; document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && (roomOn || inkReady)) inkClose(); }); }
+    if (!global.__lanyardMsg) { global.__lanyardMsg = 1; global.addEventListener('message', function (e) { if (!e.data) return; if (e.data.type === 'egg-lanyard-open') { var b = document.getElementById('roomBody'); if (b && global.EggGallery) global.EggGallery.open(b); } else if (e.data.type === 'egg-lanyard-close') { closeLanyard(); } }); }
   }
   function inkOpen(e) {
     inkBuild();
@@ -183,12 +184,12 @@
             e.stopPropagation();
             if (!card.classList.contains('open')) {
               card.classList.add('open');
-              var hint = document.querySelector('.irm-hint'); if (hint) hint.textContent = '再点一下 · 进入相册';
+              var hint = document.querySelector('.irm-hint'); if (hint) hint.textContent = '再点一下 · 进入挂绳空间';
               card.setAttribute('data-ready-at', String(Date.now() + 1000));
               return;
             }
             if (Date.now() < Number(card.getAttribute('data-ready-at') || 0)) return;
-            if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody'));
+            openLanyard();
           });
         } else {
           card.addEventListener('mouseenter', function () { card.classList.add('open'); });
@@ -197,19 +198,32 @@
             e.stopPropagation();
             if (!card.classList.contains('open')) {
               card.classList.add('open');
-              var hint = document.querySelector('.irm-hint'); if (hint) hint.textContent = '再点一下 · 进入相册';
+              var hint = document.querySelector('.irm-hint'); if (hint) hint.textContent = '再点一下 · 进入挂绳空间';
               card.setAttribute('data-ready-at', String(Date.now() + 1000));
               return;
             }
             if (Date.now() < Number(card.getAttribute('data-ready-at') || 0)) return;
-            if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody'));
+            openLanyard();
           });
         }
       }
     }
   }
+  function openLanyard() {
+    var body = document.getElementById('roomBody'); if (!body) return;
+    var old = document.getElementById('irmLanyard'); if (old) { old.classList.add('on'); return; }
+    var box = document.createElement('div'); box.id = 'irmLanyard'; box.className = 'irm-lanyard';
+    box.innerHTML = '<iframe src="./lanyard.html" title="我们的云空间挂绳卡" loading="lazy" allow="fullscreen"></iframe><button type="button" class="irm-lanyard__close" onclick="Portal.closeLanyard()">返回</button>';
+    body.appendChild(box); requestAnimationFrame(function () { box.classList.add('on'); });
+  }
+  function closeLanyard() {
+    var box = document.getElementById('irmLanyard'); if (!box) return;
+    box.classList.remove('on');
+    setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 420);
+  }
   function inkClose() {
     if (global.EggGallery) global.EggGallery.close();
+    closeLanyard();
     inkHoldStop();
     roomOn = false; inkReady = false;
     if (roomEl) roomEl.classList.remove('on');
@@ -550,8 +564,9 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, closeLanyard: closeLanyard, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+
 
 
 
