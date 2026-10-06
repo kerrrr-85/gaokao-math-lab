@@ -509,7 +509,7 @@ body.pt-full .today-mini{display:none}
 /* 门户收尾：隐藏多余首页按钮 + 第二张图作极淡地图底纹 */
 body.pt-full .homebtn{display:none}
 .pt-landing::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background:url("./assets/map-paper.jpg?v=74") center/cover no-repeat}
+  background:url("./assets/map-paper.jpg?v=75") center/cover no-repeat}
 .pt-landing.is-night::before{opacity:.14;mix-blend-mode:screen}
 
 
@@ -799,3 +799,28 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 
 .e3-solarbox{margin-top:10px;padding:11px 13px;border:1px solid rgba(255,212,121,.35);border-radius:14px;background:rgba(30,22,8,.32)}
 .e3-solarbox .small{color:#e6d3a8}
+
+/* ===== 数学视频区：专题板块 + 横向滑动链条 + Uiverse 原版视频卡 ===== */
+.vrail{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.vcard{--rounded:20px;--size:250px;position:relative;flex:0 0 auto;width:var(--size);height:calc(var(--size) - 10px);border-radius:var(--rounded);background:#fff;overflow:hidden;cursor:pointer;scroll-snap-align:start;transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+.vcard:active{transform:scale(.98)}
+.vcard::before{content:"";position:absolute;width:100%;height:100%;filter:blur(20px);background-color:#faff99;background-image:radial-gradient(at 33% 82%,hsla(254,71%,69%,1) 0px,transparent 50%),radial-gradient(at 28% 4%,hsla(289,96%,63%,1) 0px,transparent 50%),radial-gradient(at 69% 49%,hsla(309,91%,71%,1) 0px,transparent 50%),radial-gradient(at 94% 14%,hsla(232,66%,62%,1) 0px,transparent 50%),radial-gradient(at 19% 93%,hsla(51,98%,74%,1) 0px,transparent 50%),radial-gradient(at 15% 80%,hsla(194,87%,63%,1) 0px,transparent 50%),radial-gradient(at 56% 52%,hsla(109,71%,61%,1) 0px,transparent 50%)}
+.vcard::after{content:"";position:absolute;width:100%;height:100%;background:rgba(255,255,255,.5)}
+.vcard__view{position:absolute;left:0;right:0;top:0;height:55%;z-index:1;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#e2e8f0}
+.vcard__badges{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:flex-end;gap:8px;padding:8px;pointer-events:none}
+.vcard__len,.vcard__play,.vcard__prev{background:rgba(0,0,0,.55);color:rgba(255,255,255,.85);font-size:10px;font-weight:700;padding:4px 6px;border-radius:6px}
+.vcard__play{display:flex;align-items:center;justify-content:center;min-width:26px}
+.vcard__prev{opacity:0;transform:translateY(-8px);transition:opacity .6s,transform .6s}
+.vcard:hover .vcard__prev{opacity:1;transform:none}
+.vcard__content{position:absolute;left:0;right:0;bottom:0;height:40%;z-index:2;padding:0 9px;display:flex;flex-direction:column;justify-content:space-between;color:#000}
+.vcard__name{font-size:.78em;font-weight:700;line-height:1.35;margin:8px 0 0;max-height:52%;overflow:hidden}
+.vcard__data{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.vcard__img{min-width:32px;min-height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,#6366f1,#ec4899)}
+.vcard__text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vcard__up{font-size:.72em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vcard__sub{display:flex;gap:8px;font-size:.6em;color:#555}
+.vcard:nth-child(2n)::before{background-color:#ffd399;background-image:radial-gradient(at 15% 65%,hsla(249,84%,60%,1) 0px,transparent 50%),radial-gradient(at 38% 24%,hsla(197,80%,66%,1) 0px,transparent 50%),radial-gradient(at 65% 93%,hsla(228,83%,60%,1) 0px,transparent 50%),radial-gradient(at 16% 58%,hsla(314,83%,72%,1) 0px,transparent 50%),radial-gradient(at 77% 57%,hsla(298,90%,78%,1) 0px,transparent 50%),radial-gradient(at 76% 95%,hsla(178,64%,76%,1) 0px,transparent 50%),radial-gradient(at 15% 61%,hsla(248,75%,64%,1) 0px,transparent 50%)}
+.vcard:nth-child(3n)::before{background-color:#99b3ff;background-image:radial-gradient(at 93% 72%,hsla(293,71%,70%,1) 0px,transparent 50%),radial-gradient(at 28% 37%,hsla(252,81%,71%,1) 0px,transparent 50%),radial-gradient(at 25% 59%,hsla(158,67%,62%,1) 0px,transparent 50%),radial-gradient(at 48% 16%,hsla(197,69%,63%,1) 0px,transparent 50%),radial-gradient(at 70% 56%,hsla(171,69%,70%,1) 0px,transparent 50%),radial-gradient(at 7% 33%,hsla(65,65%,79%,1) 0px,transparent 50%),radial-gradient(at 89% 22%,hsla(286,64%,72%,1) 0px,transparent 50%)}
+.vcard:nth-child(4n)::before{background-color:#e2ff99;background-image:radial-gradient(at 22% 80%,hsla(265,77%,67%,1) 0px,transparent 50%),radial-gradient(at 91% 77%,hsla(292,60%,78%,1) 0px,transparent 50%),radial-gradient(at 66% 7%,hsla(46,95%,76%,1) 0px,transparent 50%),radial-gradient(at 16% 32%,hsla(275,90%,75%,1) 0px,transparent 50%),radial-gradient(at 26% 23%,hsla(283,60%,69%,1) 0px,transparent 50%),radial-gradient(at 2% 64%,hsla(208,62%,62%,1) 0px,transparent 50%),radial-gradient(at 62% 77%,hsla(112,88%,75%,1) 0px,transparent 50%)}
+.vcard:nth-child(5n)::before{background-color:#99d1ff;background-image:radial-gradient(at 21% 94%,hsla(270,95%,76%,1) 0px,transparent 50%),radial-gradient(at 56% 5%,hsla(252,65%,79%,1) 0px,transparent 50%),radial-gradient(at 67% 94%,hsla(194,81%,67%,1) 0px,transparent 50%),radial-gradient(at 15% 72%,hsla(304,97%,77%,1) 0px,transparent 50%),radial-gradient(at 63% 56%,hsla(38,98%,63%,1) 0px,transparent 50%),radial-gradient(at 41% 67%,hsla(321,61%,77%,1) 0px,transparent 50%),radial-gradient(at 68% 68%,hsla(263,67%,69%,1) 0px,transparent 50%)}
+@media (max-width:700px){.vcard{--size:210px}.vrail{gap:10px}}

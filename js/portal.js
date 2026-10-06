@@ -228,7 +228,7 @@
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=74" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=75" alt="" decoding="async"></figure>' +
         '</header>' +
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
@@ -343,28 +343,48 @@
   function renderVideo() {
     var v = document.getElementById('view');
     var list = global.BILI || [];
-    var cards = list.map(function (b) {
-      return '<div class="card" style="padding:0;overflow:hidden;box-shadow:var(--sh1)">' +
-        '<div class="bili-cover" id="cv_' + b.bvid + '"><span>加载封面…</span></div>' +
-        '<div style="padding:12px 14px"><b>' + b.title + '</b><div class="small muted" style="margin-top:2px">' + b.bvid + '</div>' +
-        '<div class="row" style="margin-top:8px"><button class="btn sm primary" onclick="Portal.play(\'' + b.bvid + '\')">▶ 站内播放</button><a class="btn sm" href="https://www.bilibili.com/video/' + b.bvid + '" target="_blank" rel="noopener">去B站</a></div>' +
-        '<div id="pl_' + b.bvid + '"></div></div></div>';
-    }).join('');
-    v.innerHTML = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>B站视频区</h2><p>收藏 ' + list.length + ' 个 · 点「站内播放」直接看</p></div></div>' +
-      '<div class="card elev2"><div class="row"><input type="text" id="biliQ" placeholder="搜 B站，如：导数 压轴 技巧" style="flex:1"><button class="btn primary" onclick="Portal.searchBili()">搜索</button></div></div>' +
-      (cards ? '<div class="grid2">' + cards + '</div>' : '<div class="card muted">还没有收藏视频，把 BV 号发我就能加。</div>');
-    list.forEach(function (b) {
-      fetch('https://api.bilibili.com/x/web-interface/view?bvid=' + b.bvid)
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-          var box = document.getElementById('cv_' + b.bvid); if (!box) return;
-          if (j && j.code === 0 && j.data && j.data.pic) { box.style.backgroundImage = 'url(' + j.data.pic + ')'; box.innerHTML = ''; }
-          else { box.innerHTML = '<span style="opacity:.6">B站封面不可用</span>'; }
-        })
-        .catch(function () { var box2 = document.getElementById('cv_' + b.bvid); if (box2) box2.innerHTML = '<span style="opacity:.6">封面需联网</span>'; });
+    var ORDER = ['函数与导数', '圆锥曲线', '数列', '立体几何', '三角与解三角形', '概率统计', '不等式', '直线与圆', '总复习'];
+    var groups = {};
+    list.forEach(function (b) { var k = b.tag || '未分类'; (groups[k] = groups[k] || []).push(b); });
+    var keys = ORDER.filter(function (k) { return groups[k] && groups[k].length; });
+    Object.keys(groups).forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
+    function fv(n) { n = n || 0; return n >= 10000 ? (n / 10000).toFixed(1) + '万' : String(n); }
+    function fd(s) { s = s || 0; return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+    function card(b) {
+      var ttl = String(b.title || '').replace(/'/g, '');
+      return '<article class="vcard" onclick="Portal.play(\'' + b.bvid + '\',\'' + ttl + '\')">' +
+        '<div class="vcard__view" style="background-image:url(\'' + (b.cover || '') + '\')">' +
+          '<div class="vcard__badges"><span class="vcard__len">' + fd(b.dur) + '</span>' +
+          '<span class="vcard__play">▶</span><span class="vcard__prev">点击播放</span></div></div>' +
+        '<div class="vcard__content"><div class="vcard__name">' + (b.title || '') + '</div>' +
+          '<div class="vcard__data"><div class="vcard__img">' + String(b.up || '?').slice(0, 1) + '</div>' +
+          '<div class="vcard__text"><span class="vcard__up">' + (b.up || '') + '</span>' +
+          '<span class="vcard__sub"><span>' + fv(b.views) + '播放</span><span>' + fd(b.dur) + '</span></span>' +
+          '</div></div></div></article>';
+    }
+    var html = '<div class="phead"><span class="ico">📺</span><div class="grow"><h2>视频 · 数学</h2><p>共 ' + list.length + ' 条，按专题分板块 · 左右滑动看更多</p></div></div>';
+    html += '<div class="card tight" style="margin-bottom:12px"><div class="row"><input type="text" id="biliQ" placeholder="搜 B站（新标签打开）" style="flex:1">' +
+      '<button class="btn sm primary" onclick="Portal.searchBili()">去 B站搜</button></div>' +
+      '<div class="row" style="margin-top:10px">' + keys.map(function (k, n) {
+        return '<button class="chip' + (n === 0 ? ' on' : '') + '" onclick="Portal.videoTag(\'' + k + '\')">' + k + ' <b>' + groups[k].length + '</b></button>';
+      }).join('') + '</div></div>';
+    keys.forEach(function (k, n) {
+      html += '<section class="vsec" data-tag="' + k + '" style="display:' + (n === 0 ? 'block' : 'none') + '">' +
+        '<div class="small muted" style="margin:12px 2px 6px">' + k + ' · ' + groups[k].length + ' 条</div>' +
+        '<div class="vrail">' + groups[k].map(card).join('') + '</div></section>';
     });
-    if (window.Anim && Anim.ok()) Anim.enter('.card', 45);
+    v.innerHTML = html;
   }
+  function videoTag(k) {
+    Array.prototype.forEach.call(document.querySelectorAll('.vsec'), function (s) {
+      s.style.display = s.getAttribute('data-tag') === k ? 'block' : 'none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (b) {
+      b.classList.toggle('on', b.textContent.indexOf(k) === 0);
+    });
+    window.scrollTo(0, 0);
+  }
+
   function play(bvid, title) {
     var oldm = document.getElementById('vidModal'); if (oldm && oldm.parentNode) oldm.parentNode.removeChild(oldm);
     var m = document.createElement('div'); m.id = 'vidModal'; m.className = 'modal';
