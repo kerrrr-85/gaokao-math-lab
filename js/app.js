@@ -1178,14 +1178,17 @@
         '<p class="set-note" id="syncCodeMsg">同步码就是密钥，服务端只存密文、我们也解不开，丢了只能重新生成。</p>' +
       '</div>' +
       '<div class="set-group">' +
-        '<div class="set-h">通道二 · 账号（邮箱登录）</div>' +
-        '<p class="set-note" id="syncAcct">下一步：GitHub 账号授权（设备码，不用密码）。需要一个 OAuth App 的 Client ID —— 待你注册后填入。</p>' +
+        '<div class="set-h">账号登录 · 暂缓</div>' +
+        '<p class="set-note" id="syncAcct">真账号需要一台中间服务器：GitHub 的登录接口不允许网页直连（没有跨域头），而 Cloudflare 的免费域名在国内又不通。<br><br>' +
+        '现在用下面这两套兜底就够：<br>' +
+        '① <b>同步码</b>（上面的通道一）：换设备搬数据<br>' +
+        '② <b>导出 / 导入 JSON</b>（「数据」页）：最后一道保险，永远可用</p>' +
       '</div>' +
-      '<p class="set-note" style="padding:0 4px 14px">只同步 <b>复习卡 / 作答记录 / 掌握度 / 设置</b>；手写草稿纸、天气缓存、B站记录<b>不同步</b>。导出 / 导入本地文件始终可用。</p>';
+      '<p class="set-note" style="padding:0 4px 14px">只同步 <b>复习卡 / 作答记录 / 掌握度 / 设置</b>；手写草稿纸、天气缓存、B站记录<b>不同步</b>。<br>换设备前建议先到「数据」页<b>导出 JSON</b> 备份一次 —— 那是永远可用的最后一道保险。</p>';
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v65 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v66 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg five" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +

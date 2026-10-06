@@ -7,6 +7,15 @@
   var DIR = 'sync';
   var SESSION_KEY = 'gml_sync_session';
 
+  var MAX_BYTES = 262144;   /* 256KB：与云端校验一致 */
+  function needEnv() {
+    if (!global.Store || !global.Merge) throw new Error('同步模块未加载，请刷新页面');
+    if (!global.SyncCrypto) throw new Error('加密模块未加载，请刷新页面');
+    if (typeof crypto === 'undefined' || !crypto.subtle) {
+      throw new Error('当前环境不支持加密（用 file:// 双击打开时可能如此），请用线上 https 网址打开再同步');
+    }
+    return true;
+  }
   function store() { return global.Store; }
   function settings() { return store().get().settings || {}; }
   function conf() { return settings().sync || {}; }
@@ -101,7 +110,11 @@
 
   /* ---------- 通道一：同步码 ---------- */
   function createCode() {
-    if (!global.SyncCrypto) return Promise.reject(new Error('加密模块未加载'));
+    try { needEnv(); } catch (e) { return Promise.reject(e); }
+    var raw = JSON.stringify(scope());
+    if (raw.length > MAX_BYTES) {
+      return Promise.reject(new Error('本地数据 ' + Math.round(raw.length / 1024) + 'KB，超过 256KB 上限（草稿纸不参与同步）；请先到「数据」页导出 JSON 备份'));
+    }
     var code = global.SyncCrypto.newCode();
     return global.SyncCrypto.encrypt(scope(), code).then(function (env) {
       return global.SyncCrypto.hashCode(code).then(function (h) {
@@ -115,6 +128,7 @@
     });
   }
   function restore(code) {
+    try { needEnv(); } catch (e) { return Promise.reject(e); }
     var up = String(code || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
     if (up.length !== 20) return Promise.reject(new Error('同步码是 20 位，请检查是否输全'));
     return global.SyncCrypto.hashCode(up).then(function (h) {
@@ -150,7 +164,7 @@
   }
 
   global.Sync = {
-    status: status, normRepo: normRepo, test: test,
+    status: status, needEnv: needEnv, MAX_BYTES: MAX_BYTES, normRepo: normRepo, test: test,
     createCode: createCode, restore: restore, rotate: rotate,
     scope: scope, localSide: localSide, session: session, setSession: setSession, saveCfg: saveCfg, gh: gh, readFile: readFile, writeFile: writeFile, deleteFile: deleteFile
   };
