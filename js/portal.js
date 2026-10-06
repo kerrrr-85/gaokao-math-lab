@@ -121,7 +121,7 @@
     var lastTap = 0;
     roomEl.addEventListener('pointerup', function () {
       var now = Date.now();
-      if (now - lastTap < 380) inkClose();
+      if (now - lastTap < 380 && !(global.EggGallery && global.EggGallery.isOpen())) inkClose();
       lastTap = now;
     });
     if (!global.__inkKey) { global.__inkKey = 1; document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && (roomOn || inkReady)) inkClose(); }); }
@@ -173,21 +173,22 @@
     roomEl.classList.add('on');
     var b = document.getElementById('roomBody');
     if (b) {
-      b.innerHTML = roomHTML();
+      b.innerHTML = roomHTML() + '<div class="irm-hint">轻触中心 · 打开相册</div>';
       var card = document.getElementById('irmCard');
       if (card) {
         var isTouch = false; try { isTouch = matchMedia('(hover:none)').matches; } catch (e) {}
         if (isTouch) {
-          card.addEventListener('click', function () { card.classList.toggle('open'); });
+          card.addEventListener('click', function (e) { e.stopPropagation(); card.classList.add('open'); setTimeout(function () { if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody')); }, 260); });
         } else {
           card.addEventListener('mouseenter', function () { card.classList.add('open'); });
           card.addEventListener('mouseleave', function () { card.classList.remove('open'); });
-          card.addEventListener('click', function () { card.classList.toggle('open'); });
+          card.addEventListener('click', function (e) { e.stopPropagation(); card.classList.add('open'); setTimeout(function () { if (global.EggGallery) global.EggGallery.open(document.getElementById('roomBody')); }, 260); });
         }
       }
     }
   }
   function inkClose() {
+    if (global.EggGallery) global.EggGallery.close();
     inkHoldStop();
     roomOn = false; inkReady = false;
     if (roomEl) roomEl.classList.remove('on');
@@ -529,6 +530,7 @@
   }
   global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
+
 
 
 
