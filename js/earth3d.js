@@ -7,6 +7,7 @@
   var textures = {}, texQueue = 0, texDone = 0;
   var cities = global.CITIES || [];
   var markers = [], labels = [], labelPool = [], geoLabels = [], geoGroup = null, zoneObj = null;
+  var pressureGroup = null, currentsGroup = null, platesGroup = null;
   /* 默认极简：首屏只呈现“课本地球仪”的要素 —— 大洲大洋 + 五带 */
   var GEO = [
     { n: '亚洲', t: '洲', lat: 34, lon: 90 }, { n: '欧洲', t: '洲', lat: 52, lon: 18 },
@@ -26,7 +27,8 @@
   var st = {
     yaw: 0.9, pitch: 0.32, dist: 3.1, minD: 1.6, maxD: 6.5,
     hour: null, live: true, auto: false, showLabels: false, showGrid: true,
-    showNight: true, showZones: true, showGeo: true, doy: null, route: null, drag: null, moved: 0, lastT: 0, frame: 0
+    showNight: true, showZones: true, showGeo: true, doy: null,
+    showPressure: false, showCurrents: false, showPlates: false, route: null, drag: null, moved: 0, lastT: 0, frame: 0
   };
   var LOW = !!(global.PERF && global.PERF.low);
 
@@ -128,6 +130,44 @@
     '  gl_FragColor=vec4(vec3(0.30,0.58,1.0)*rim*s*1.1, rim*s*0.9); }'
   ].join('\n');
 
+  function rgba3(c) {
+    var m = /rgba?\(([^)]+)\)/.exec(String(c));
+    if (!m) return { color: 0xffffff, opacity: 1 };
+    var p = m[1].split(',').map(function (x) { return parseFloat(x); });
+    return { color: (Math.round(p[0]) << 16) + (Math.round(p[1]) << 8) + Math.round(p[2]), opacity: p.length > 3 ? p[3] : 1 };
+  }
+  function ringTube(lat, hex, radius, opacity) {
+    var pts = [];
+    for (var a = 0; a <= 360; a += 5) pts.push(latLonVec(lat, a, 1.004));
+    var geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 96, radius, 6, true);
+    return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: opacity }));
+  }
+  function pathTube(path, hex, radius, opacity) {
+    if (!path || path.length < 2) return null;
+    var pts = path.map(function (q) { return latLonVec(q[0], q[1], 1.007); });
+    var geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false), Math.max(24, pts.length * 10), radius, 6, false);
+    return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: opacity }));
+  }
+  function buildOverlays() {
+    /* 气压带：赤道低压 / 副热带高压 / 副极地低压 / 极地高压 */
+    pressureGroup = new THREE.Group(); pressureGroup.visible = st.showPressure; earth.add(pressureGroup);
+    [[0, 0x38bdf8, .55], [30, 0xf87171, .5], [-30, 0xf87171, .5], [60, 0x38bdf8, .5], [-60, 0x38bdf8, .5], [84, 0xf87171, .45], [-84, 0xf87171, .45]]
+      .forEach(function (b) { var m = ringTube(b[0], b[1], 0.0055, b[2]); if (m) pressureGroup.add(m); });
+    /* 洋流：暖流红、寒流蓝 */
+    currentsGroup = new THREE.Group(); currentsGroup.visible = st.showCurrents; earth.add(currentsGroup);
+    (((global.GEO_DATA || {}).currents) || []).forEach(function (c) {
+      var m = pathTube(c.p, c.w ? 0xef4444 : 0x3b82f6, 0.0036, 0.95);
+      if (m) currentsGroup.add(m);
+    });
+    /* 板块与地震带 */
+    platesGroup = new THREE.Group(); platesGroup.visible = st.showPlates; earth.add(platesGroup);
+    (((global.GEO_DATA || {}).plates) || []).forEach(function (pl) {
+      var cc = rgba3(pl.c);
+      var m = pathTube(pl.p, cc.color, 0.0042 * (pl.w || 2.5) / 2.5, Math.min(1, cc.opacity));
+      if (m) platesGroup.add(m);
+    });
+  }
+
   function buildGraticule() {
     var pts = [], r = 1.001, i, j, a;
     for (i = -60; i <= 60; i += 30) {
@@ -198,6 +238,7 @@
     scene.add(atmo);
 
     gridObj = buildGraticule(); gridObj.visible = st.showGrid; earth.add(gridObj);
+    buildOverlays();
 
     /* 五带纬线（比普通经纬网更醒目） */
     zoneObj = (function () {
@@ -449,6 +490,9 @@
     textures = {};
   }
   function toggleAuto() { st.auto = !st.auto; var b = document.getElementById('e3Auto'); if (b) b.textContent = st.auto ? '暂停自转' : '开始自转'; }
+  function togglePressure() { st.showPressure = !st.showPressure; if (pressureGroup) pressureGroup.visible = st.showPressure; var b = document.getElementById('e3Pres'); if (b) b.textContent = st.showPressure ? '气压带开' : '气压带关'; }
+  function toggleCurrents() { st.showCurrents = !st.showCurrents; if (currentsGroup) currentsGroup.visible = st.showCurrents; var b = document.getElementById('e3Cur'); if (b) b.textContent = st.showCurrents ? '洋流开' : '洋流关'; }
+  function togglePlates() { st.showPlates = !st.showPlates; if (platesGroup) platesGroup.visible = st.showPlates; var b = document.getElementById('e3Plate'); if (b) b.textContent = st.showPlates ? '板块开' : '板块关'; }
   function toggleGeo() { st.showGeo = !st.showGeo; var b = document.getElementById('e3Geo'); if (b) b.textContent = st.showGeo ? '大洲大洋开' : '大洲大洋关'; updateLabels(); }
   function toggleLabels() { st.showLabels = !st.showLabels; if (markerGroup) markerGroup.visible = st.showLabels; var b = document.getElementById('e3Lbl'); if (b) b.textContent = st.showLabels ? '城市名开' : '城市名关'; if (!st.showLabels) { labels.forEach(function (L) { L.el.style.display = 'none'; }); } }
   function toggleZones() { st.showZones = !st.showZones; if (zoneObj) zoneObj.visible = st.showZones; updateLabels(); var b = document.getElementById('e3Zone'); if (b) b.textContent = st.showZones ? '五带开' : '五带关'; }
@@ -471,7 +515,7 @@
   global.addEventListener('resize', resizeEv);
   global.Earth3D = {
     mount: mount, unmount: unmount, resize: resize, pause: pause, resume: resume,
-    toggleAuto: toggleAuto, toggleLabels: toggleLabels, toggleGrid: toggleGrid, toggleZones: toggleZones, toggleGeo: toggleGeo, toggleNight: toggleNight,
+    toggleAuto: toggleAuto, toggleLabels: toggleLabels, toggleGrid: toggleGrid, toggleZones: toggleZones, toggleGeo: toggleGeo, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, toggleNight: toggleNight,
     setHour: setHour, setLive: setLive, setSeason: setSeason, reset: reset, applyRoute: applyRoute, clearRoute: clearRoute
   };
 })(window);

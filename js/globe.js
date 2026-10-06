@@ -436,7 +436,7 @@
       var ch = document.getElementById('tab-' + k); if (ch) ch.className = 'chip' + (k === id ? ' on' : '');
     });
     var gw = document.getElementById('globeWrap'), gt = document.getElementById('globeTools');
-    var is3d = (id === 'real' || id === 'map');   /* 专题页仍需要 2D 示意图球 */   /* 真实地球与卫星地图都不需要 2D 球 */
+    var is3d = true;   /* 2D 示意图球已退休：气压带/洋流/板块 全部迁到 3D 真地球 */   /* 真实地球与卫星地图都不需要 2D 球 */
     if (gw) gw.style.display = is3d ? 'none' : 'block';
     if (gt) gt.style.display = is3d ? 'none' : 'block';
     if (id === 'map') mapInit();
@@ -482,6 +482,9 @@
       '<button class="btn sm" id="e3Grid" onclick="Earth3D.toggleGrid()">经纬网开</button>' +
       '<button class="btn sm" id="e3Lbl" onclick="Earth3D.toggleLabels()">城市名关</button>' +
       '<button class="btn sm" id="e3Night" onclick="Earth3D.toggleNight()">夜景开</button>' +
+      '<button class="btn sm" id="e3Pres" onclick="Earth3D.togglePressure()">气压带关</button>' +
+      '<button class="btn sm" id="e3Cur" onclick="Earth3D.toggleCurrents()">洋流关</button>' +
+      '<button class="btn sm" id="e3Plate" onclick="Earth3D.togglePlates()">板块关</button>' +
       '<button class="btn sm" onclick="Earth3D.reset()">复位视角</button></div>' +
       '<div class="row" style="margin-top:10px"><b class="small">季节</b>' +
       '<button class="btn sm" id="e3Chun" onclick="Earth3D.setSeason(80)">春分</button>' +
@@ -497,7 +500,7 @@
       '<p class="small muted" style="margin:0">球面上两点间最短路径 = 过球心的<b>大圆</b>劣弧。所以北半球中高纬之间的飞行/航海，多选择<b>偏向极地</b>的路线；赤道附近两点才接近沿纬线。橙色弧线即大圆航线，距离按地球半径 6371km 计算。</p></div>' +
       '</div>' +
       '<div id="gs-motion" class="gsec" style="display:none">' +
-      '<div class="card" style="margin-top:12px"><div class="phead"><div class="grow"><h2>专题示意图</h2><p>气压带风带 / 洋流 / 板块画在这个球面示意图上；球面几何请看「地球（3D）」</p></div></div></div>' +
+      '<div class="card" style="margin-top:12px"><div class="phead"><div class="grow"><h2>专题讲解</h2><p>气压带风带 / 洋流 / 板块已在「地球（3D）」上做成可开关的图层；这里保留文字讲解与判读示意图</p></div></div></div>' +
       '<div class="card" style="margin-top:12px"><div class="phead"><span class="ico">☀️</span><div class="grow"><h2>太阳直射点 · 正午太阳高度</h2><p>H = 90° − |当地纬度 − 直射点纬度|</p></div></div>' +
       '<div class="row"><select id="sunLat" onchange="Globe.updateSun()" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px"><option value="">选择地点…</option>' +
       CITIES.map(function (c) { return '<option value="' + c.lat + '">' + c.name + '（' + c.lat + '°）</option>'; }).join('') +
@@ -586,5 +589,8 @@
     if (resizeFn) { removeEventListener('resize', resizeFn); resizeFn = null; }
     last = 0;
   }
+  /* 把图层数据交给 3D 地球复用（气压带/洋流/板块已迁到 3D） */
+  global.GEO_DATA = { plates: PLATES, currents: CURRENTS };
+
   global.Globe = { render: render, stop: stop, setAuto: setAuto, isAuto: function () { return auto; }, toggleNight: toggleNight, reset: reset, focus: focus, setRoute: setRoute, clearRoute: clearRoute, applyRoute: applyRoute, updateTZ: updateTZ, tab: tab, fullscreen: fullscreen, togglePressure: togglePressure, toggleCurrents: toggleCurrents, togglePlates: togglePlates, climate: climate, updateSun: updateSun, localTime: localTimeSwap };
 })(window);
