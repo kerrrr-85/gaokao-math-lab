@@ -97,20 +97,19 @@
   function isLow() { return !!(global.PERF && global.PERF.low); }
   function reduceMotion() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
 
-  function menuHTML() {
-    var n = 0;
-    return MENU.map(function (g) {
-      var rows = g[1].map(function (it) {
-        n++;
-        var ext = it[3] ? ' target="_blank" rel="noopener"' : '';
-        return '<a class="pt-item" href="' + it[2] + '"' + ext + '>' +
-          '<span class="pt-idx">' + ('0' + n).slice(-2) + '</span>' +
-          '<span class="pt-name">' + it[0] + '</span>' +
-          '<span class="pt-en">' + it[1] + '</span>' +
-          '<span class="pt-go">→</span></a>';
-      }).join('');
-      return '<section class="pt-group pt-reveal"><h2>' + g[0] + '</h2>' + rows + '</section>';
-    }).join('');
+  function gridHTML() {
+    var cells = [
+      ['study', '学习台', '#/today', 0],
+      ['practice', '练习', '#/practice', 0],
+      ['map', '知识图谱', '#/map', 0],
+      ['wrong', '错题本', '#/wrong', 0],
+      ['stats', '统计', '#/stats', 0],
+      ['search', '搜索', '#/search', 0],
+      ['globe', '地球', '#/globe', 0],
+      ['video', 'B站视频', '#/video', 0],
+      ['doubao', '豆包', 'https://www.doubao.com/chat/', 1]
+    ];
+    return cells.map(function (c) { return tile(c[0], c[1], c[2], c[3]); }).join('');
   }
 
   function renderPortal() {
@@ -133,9 +132,9 @@
               '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
             '</button>' +
           '</div>' +
-          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=52" alt="" decoding="async"></figure>' +
+          '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=53" alt="" decoding="async"></figure>' +
         '</header>' +
-        '<nav class="pt-menu">' + menuHTML() + '</nav>' +
+        '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
           '<span class="pt-more">更多模块 · 陆续开放</span>' +
           '<span class="pt-hint" id="ptHint">' + (night ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空') + '</span>' +
