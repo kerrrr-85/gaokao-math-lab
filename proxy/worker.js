@@ -44,6 +44,7 @@ function safeParse(text) {
   try { return JSON.parse(t); } catch (e) { return { verdict: '', whereWrong: [], correctSteps: t, reminder: '', similarPractice: '' }; }
 }
 const hits = new Map();
+const biliCache = new Map();
 function rateLimited(ip, limit) {
   const now = Date.now(), win = 3600000;
   const arr = (hits.get(ip) || []).filter(t => now - t < win);
@@ -80,6 +81,31 @@ export default {
       let aj = {}; try { aj = JSON.parse(at); } catch (e) {}
       const txt = aj && aj.choices && aj.choices[0] && aj.choices[0].message ? aj.choices[0].message.content : '';
       return json({ text: String(txt || '').trim() }, h);
+    }
+    if (url.pathname === '/bili/playurl') {
+      if (request.method !== 'GET') return json({ error: 'method not allowed' }, h, 405);
+      const bvid = String(url.searchParams.get('bvid') || '');
+      const p = Math.max(1, parseInt(url.searchParams.get('p') || '1', 10) || 1);
+      if (!/^BV[0-9A-Za-z]+$/.test(bvid)) return json({ error: 'bad bvid' }, h, 400);
+      const key = bvid + ':' + p;
+      const hit = biliCache.get(key);
+      if (hit && hit.exp > Date.now()) return json(hit.data, h);
+      const bh = { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.bilibili.com/' };
+      try {
+        const vr = await fetch('https://api.bilibili.com/x/web-interface/view?bvid=' + encodeURIComponent(bvid), { headers: bh });
+        const vj = await vr.json();
+        if (!vj || vj.code !== 0 || !vj.data || !Array.isArray(vj.data.pages)) return json({ error: 'view failed', detail: (vj && vj.message) || 'bad response' }, h, 502);
+        const page = vj.data.pages[p - 1];
+        if (!page) return json({ error: 'page not found' }, h, 404);
+        const pr = await fetch('https://api.bilibili.com/x/player/playurl?bvid=' + encodeURIComponent(bvid) + '&cid=' + page.cid + '&qn=32&fnval=0&fourk=1&platform=html5&high_quality=1', { headers: bh });
+        const pj = await pr.json();
+        if (!pj || pj.code !== 0 || !pj.data || !pj.data.durl || !pj.data.durl[0]) return json({ error: 'playurl failed', detail: (pj && pj.message) || 'bad response' }, h, 502);
+        const data = { ok: true, bvid: bvid, p: p, cid: page.cid, title: vj.data.title || '', part: page.part || '', duration: page.duration || vj.data.duration || 0, url: pj.data.durl[0].url, quality: pj.data.quality, format: pj.data.format, expireAt: Date.now() + 45 * 60 * 1000 };
+        biliCache.set(key, { exp: Date.now() + 10 * 60 * 1000, data: data });
+        return json(data, h);
+      } catch (e) {
+        return json({ error: 'bili upstream failed', detail: String(e && e.message || e) }, h, 502);
+      }
     }
     if (url.pathname === '/analyze') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, h, 405);
@@ -130,3 +156,4 @@ export default {
     return json({ error: 'not found' }, h, 404);
   }
 };
+

@@ -1116,3 +1116,6 @@ body.portal-dark .dp-check{background:rgba(255,255,255,.08);border-color:rgba(25
   .radio-tile{height:24px;padding:0 9px;gap:4px;font-size:11px}
   .radio-icon svg{width:12px;height:12px}
 }
+
+/* 3 列网格：最后一行只剩 1 个时居中 */
+.pt-landing .pt-grid>.pt-tile:last-child:nth-child(3n+1){grid-column:2}
