@@ -287,7 +287,7 @@
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
           '<span class="pt-foot-actions"><span class="pt-more">更多模块 · 陆续开放</span>' +
-          '<button class="pt-update pt-starry" id="ptStarryToggle" type="button" onclick="Portal.cycleNightMode()">星空：自动</button><button class="pt-update" type="button" onclick="App.forceUpdate()">强制更新</button></span>' +
+          nightSegHTML() + '<button class="pt-update" type="button" onclick="App.forceUpdate()">强制更新</button></span>' +
           '<span class="pt-hint" id="ptHint">' + (night ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空') + '</span>' +
         '</footer>' +
       '</div>';
@@ -308,26 +308,39 @@
       else { global.Galaxy.stop(); gc.style.display = 'none'; }
     }
   }
-  function starryLabel(n) {
+  function nightSegHTML() {
     var m = starryMode();
-    if (m === 'on') return { btn: '星空：常亮', hint: '星空：常亮 · 手动设置' };
-    if (m === 'off') return { btn: '星空：关闭', hint: '星空：关闭 · 手动设置' };
-    return { btn: n ? '星空：自动 · 已亮' : '星空：自动', hint: n ? '星空：自动 · 已亮，点按钮可切换' : '23:30 后自动亮起 · 点「星空」可手动切换' };
+    var ic = {
+      auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 14.7A8.7 8.7 0 0 1 9.3 3.4a6.7 6.7 0 1 0 11.3 11.3Z"/></svg>',
+      on: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.1l1.9 6.1 6.1 1.9-6.1 1.9L12 19.1l-1.9-6.1L4 11.1l6.1-1.9z"/></svg>',
+      off: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.3"/><path d="M6.3 17.7 17.7 6.3"/></svg>'
+    };
+    var opts = [['auto', '自动', '23:30 后自动亮起'], ['on', '常亮', '一直显示星空'], ['off', '关闭', '完全不显示星空']];
+    var html = '<span class="pt-seg" role="radiogroup" aria-label="星空显示方式">';
+    for (var i = 0; i < opts.length; i++) {
+      var k = opts[i][0];
+      html += '<label class="pt-seg-tile" data-k="' + k + '" title="' + opts[i][2] + '">' +
+        '<input class="pt-seg-in" type="radio" name="ptNight" value="' + k + '"' + (k === m ? ' checked' : '') + ' onchange="Portal.setNightMode(&#39;' + k + '&#39;)">' +
+        '<span class="pt-seg-face">' + ic[k] + '<b>' + opts[i][1] + '</b></span></label>';
+    }
+    return html + '</span>';
+  }
+  function starryHint(n) {
+    var m = starryMode();
+    if (m === 'on') return '星空：常亮 · 手动设置';
+    if (m === 'off') return '星空：关闭 · 手动设置';
+    return n ? '星空：自动 · 已亮（23:30-06:00）' : '23:30 后自动亮起 · 也可手动常亮';
   }
   function syncStarryUI() {
     var n = isNight();
-    var b = document.getElementById('ptStarryToggle');
-    if (b) {
-      var l = starryLabel(n);
-      b.textContent = l.btn;
-      b.classList.toggle('on', n);
-      b.setAttribute('aria-pressed', n ? 'true' : 'false');
-      b.setAttribute('data-mode', starryMode());
-    }
+    var m = starryMode();
+    var ins = document.querySelectorAll('.pt-seg-in');
+    for (var i = 0; i < ins.length; i++) ins[i].checked = (ins[i].value === m);
+    var seg = document.querySelector('.pt-seg');
+    if (seg) seg.setAttribute('data-live', n ? '1' : '0');
     var h = document.getElementById('ptHint');
-    if (h) h.textContent = starryLabel(n).hint;
-  }
-  function applyNightNow() {
+    if (h) h.textContent = starryHint(n);
+  }  function applyNightNow() {
     applyNight(isNight());
     syncStarryUI();
   }

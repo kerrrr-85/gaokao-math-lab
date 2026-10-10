@@ -1117,7 +1117,7 @@
       '</div>' +
       '<div class="set-group">' +
         '<div class="set-h">关于</div>' +
-        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v91</span>') +
+        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v92</span>') +
         setRow('数据存储', '只存在这台设备，不上传', '<span class="set-val">本机</span>') +
       '</div>';
 
@@ -1196,7 +1196,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v91 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v92 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg five" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
