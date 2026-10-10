@@ -63,6 +63,20 @@
     return 20;
   }
 
+  function tip(d) {
+    var raw = d || readWeather() || {};
+    var temp = tempOf(raw), b = band(temp), pool = readWardrobe(), w = wx(raw.code);
+    var outer = items(b.outer, pool, 0)[0], mid = items(b.mid, pool, 0)[0], inner = items(b.inner, pool, 0)[0], bottom = items(b.bottom, pool, 0)[0];
+    var main = outer ? outer.name : (mid ? mid.name : (inner ? inner.name : ''));
+    var parts = [];
+    if (main) parts.push(main);
+    if (bottom) parts.push(bottom.name);
+    var line = parts.join(' + ');
+    if (w.rain || (raw.rain != null && raw.rain >= 40)) line += ' · 带伞';
+    else if (w.snow) line += ' · 防滑';
+    return line || '正在读取穿衣建议…';
+  }
+
   function short(d) {
     var raw = d || readWeather() || {};
     var temp = tempOf(raw), b = band(temp), w = wx(raw.code), pool = readWardrobe();
@@ -215,5 +229,5 @@
     setTimeout(function () { if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} } }, 260);
   }
 
-  global.Outfit = { open: open, close: close, short: short, alerts: alerts, model: model };
+  global.Outfit = { open: open, close: close, short: short, tip: tip, alerts: alerts, model: model };
 })(window);

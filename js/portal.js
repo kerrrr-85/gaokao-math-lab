@@ -52,7 +52,7 @@
   function wmoText(c) { var m = {0:'晴',1:'基本晴朗',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'小雨',55:'中雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',95:'雷阵雨',96:'雷暴',99:'强雷暴'}; return m[c] || '--'; }
   function applyWeather(d) {
     var q = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-    q('ptCity', d.city); q('ptDesc', wmoText(d.code)); q('ptTemp', Math.round(d.temp) + '°'); q('ptRange', '今日 ' + Math.round(d.min) + '~' + Math.round(d.max) + '°'); q('ptWFeels', d.feels != null ? '体感 ' + Math.round(d.feels) + '°' : ''); q('ptWOutfit', (global.Outfit && Outfit.short) ? Outfit.short(d) : '');
+    q('ptCity', d.city); q('ptDesc', wmoText(d.code)); q('ptTemp', Math.round(d.temp) + '°'); q('ptRange', '今日 ' + Math.round(d.min) + '~' + Math.round(d.max) + '°' + (d.feels != null ? ' · 体感 ' + Math.round(d.feels) + '°' : '')); q('ptWOutfit', (global.Outfit && Outfit.tip) ? Outfit.tip(d) : ((global.Outfit && Outfit.short) ? Outfit.short(d) : ''));
     if (d.code >= 0 && global.PortalPlan && PortalPlan.onWeather) PortalPlan.onWeather(d);
   }
   function loadWeather(force) {
@@ -285,11 +285,12 @@
             '<h1 class="pt-title" aria-label="我在呢"><span style="--i:0">我</span><span style="--i:1">在</span><span style="--i:2">呢</span></h1>' +
             '<p class="pt-lede pt-reveal" id="ptTrigger" title="">今天想从哪儿开始？</p>' +
             '<div class="pt-quickrow pt-reveal">' +
-              '<button class="pt-wcard" id="ptWCard" type="button" onclick="Outfit.open()" title="点一下看详细穿衣建议">' +
-                '<svg class="pt-wsprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="6" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
-                '<span class="pt-wtop"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
-                '<span class="pt-wcore"><b class="pt-wtemp" id="ptTemp">--°</b><span class="pt-wside"><i id="ptRange">今日 --~--°</i><i id="ptWFeels"></i></span></span>' +
-                '<span class="pt-wfoot"><i id="ptWOutfit">正在读取穿衣建议…</i><em>穿衣建议 →</em></span>' +
+              '<button class="pt-pcard" id="ptWCard" type="button" onclick="Outfit.open()" title="点一下看详细穿衣建议">' +
+                '<svg class="pt-psprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="30" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
+                '<span class="pt-pblob" aria-hidden="true"></span>' +
+                '<span class="pt-ptitle" id="ptTemp">--°</span>' +
+                '<span class="pt-pmeta"><span class="pt-prow"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span><span class="pt-prow"><i id="ptRange">今日 --~--°</i></span></span>' +
+                '<span class="pt-pdesc"><b id="ptWOutfit">正在读取穿衣建议…</b><em>点开看详细穿衣建议</em></span>' +
               '</button>' +
               '<button class="pt-plan-open" type="button" onclick="PortalPlan.open()" title="打开今日计划"><b id="ptPlanDays">--</b><small>天后高考 · 今日计划</small></button>' +
             '</div>' +
@@ -306,6 +307,7 @@
     loadWeather(false);
     applyNight(night);
     syncStarryUI();
+    tuneWeatherCard();
     startFx();
     if (global.PortalPlan && PortalPlan.mount) PortalPlan.mount();
   }
@@ -337,7 +339,14 @@
     }
     return html + '</span>';
   }
-  function starryHint(n) {
+  function tuneWeatherCard() {
+    var c = document.getElementById('ptWCard');
+    if (!c) return;
+    var cores = navigator.hardwareConcurrency || 4;
+    var reduced = false;
+    try { reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduced || cores <= 4) c.classList.add('pt-pflat');
+  }  function starryHint(n) {
     var m = starryMode();
     if (m === 'on') return '星空：常亮 · 手动设置';
     if (m === 'off') return '星空：关闭 · 手动设置';
