@@ -1,4 +1,4 @@
-/* 门户首页（Portal）：天气小部件 + 图标墙 */
+﻿/* 门户首页（Portal）：天气小部件 + 图标墙 */
 (function (global) {
   var ICONS = {
     study: '<svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zm0 7.8L4.6 7 12 3.4 19.4 7 12 10.8zM4 11.2V16l8 4 8-4v-4.8l-8 4-8-4z"/></svg>',
@@ -10,14 +10,14 @@
     practice: '<svg viewBox="0 0 24 24"><path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2zM20.7 7.3a1 1 0 000-1.4l-2.6-2.6a1 1 0 00-1.4 0l-1.8 1.8L18.9 9l1.8-1.7z"/></svg>',
     map: '<svg viewBox="0 0 24 24"><path d="M6 2a4 4 0 100 8 4 4 0 000-8zm12 12a4 4 0 100 8 4 4 0 000-8zM8 8l7.2 6.5-1.4 1.5L6.6 9.5 8 8z"/></svg>',
     wrong: '<svg viewBox="0 0 24 24"><path d="M4 3h13a3 3 0 013 3v15l-5-3-5 3-5-3-1 0V3zm3 5h7v2H7V8zm0 4h7v2H7v-2z"/></svg>',
-    stats: '<svg viewBox="0 0 24 24"><path d="M4 20h3V10H4v10zm6 0h3V4h-3v16zm6 0h3v-7h-3v7z"/></svg>',
+    board: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20h1.6a1.9 1.9 0 001.5-3.1c-.5-.6-.1-1.6.7-1.6H18A4 4 0 0022 13c0-6.1-4.5-11-10-11zM6.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3-4a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3 4a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>',
     settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4c0-.4 0-.9-.1-1.3l2-1.5-2-3.4-2.3 1a9 9 0 00-2.2-1.3L15.9 3h-4l-.4 2.5a9 9 0 00-2.2 1.3l-2.3-1-2 3.4 2 1.5A9 9 0 006.9 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a9 9 0 002.2 1.3l.4 2.5h4l.4-2.5a9 9 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></svg>'
   };
   var TILE_STYLE = {
     practice: 'linear-gradient(135deg,#0d9488,#5eead4)',
     map: 'linear-gradient(135deg,#4f46e5,#818cf8)',
     wrong: 'linear-gradient(135deg,#dc2626,#f87171)',
-    stats: 'linear-gradient(135deg,#0891b2,#67e8f9)',
+    board: 'linear-gradient(135deg,#6366f1,#22d3ee)',
     study: 'linear-gradient(135deg,#0f766e,#2dd4bf)',
     video: 'linear-gradient(135deg,#ec4899,#f472b6)',
     globe: 'linear-gradient(135deg,#2563eb,#38bdf8)',
@@ -85,7 +85,7 @@
       ['练习', 'Practice', '#/practice', 0],
       ['知识图谱', 'Map', '#/map', 0],
       ['错题本', 'Wrong', '#/wrong', 0],
-      ['统计', 'Stats', '#/stats', 0]
+      ['白板', 'Board', 'https://drawnix.com', 1]
     ]],
     ['工具', [
       ['搜索', 'Search', '#/search', 0],
@@ -261,7 +261,7 @@
       ['practice', '练习', '#/practice', 0],
       ['map', '知识图谱', '#/map', 0],
       ['wrong', '错题本', '#/wrong', 0],
-      ['stats', '统计', '#/stats', 0],
+      ['board', '白板', 'https://drawnix.com', 1],
       ['search', '搜索', '#/search', 0],
       ['globe', '地球', '#/globe', 0],
       ['video', 'B站视频', '#/video', 0],
@@ -286,7 +286,7 @@
             '<p class="pt-lede pt-reveal" id="ptTrigger" title="">今天想从哪儿开始？</p>' +
             '<div class="pt-quickrow pt-reveal">' +
               '<button class="pt-pcard" id="ptWCard" type="button" onclick="Outfit.open()" title="点一下看详细穿衣建议">' +
-                '<svg class="pt-psprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="1.2" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="14" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
+                '<svg class="pt-psprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="1.2" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="0" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
                 '<span class="pt-pblob" aria-hidden="true"></span>' +
                 '<span class="pt-ptitle" id="ptTemp">--°</span>' +
                 '<span class="pt-pmeta"><span class="pt-prow"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span><span class="pt-prow"><i id="ptRange">今日 --~--°</i></span></span>' +
@@ -325,27 +325,18 @@
   function nightSegHTML() {
     var m = starryMode();
     var ic = {
-      auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 14.7A8.7 8.7 0 0 1 9.3 3.4a6.7 6.7 0 1 0 11.3 11.3Z"/></svg>',
-      on: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.1l1.9 6.1 6.1 1.9-6.1 1.9L12 19.1l-1.9-6.1L4 11.1l6.1-1.9z"/></svg>',
-      off: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.3"/><path d="M6.3 17.7 17.7 6.3"/></svg>'
+      auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+      on: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2l2.3 6.6 6.6 2.3-6.6 2.3L12 20l-2.3-6.6L3.1 11l6.6-2.3z"/></svg>',
+      off: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2.4a9.6 9.6 0 1 0 0 19.2 9.6 9.6 0 0 0 0-19.2zm0 2.6a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"/><rect x="4.4" y="10.9" width="15.2" height="2.2" rx="1.1" transform="rotate(45 12 12)"/></svg>'
     };
-    var opts = [['auto', '自动', '23:30 后自动亮起'], ['on', '常亮', '一直显示星空'], ['off', '关闭', '完全不显示星空']];
-    var html = '<span class="pt-seg" role="radiogroup" aria-label="星空显示方式">';
+    var opts = [['auto', '自动'], ['on', '常亮'], ['off', '关闭']];
+    var html = '<div class="radio-inputs" role="radiogroup" aria-label="星空显示方式">';
     for (var i = 0; i < opts.length; i++) {
       var k = opts[i][0];
-      html += '<label class="pt-seg-tile" data-k="' + k + '" title="' + opts[i][2] + '">' +
-        '<input class="pt-seg-in" type="radio" name="ptNight" value="' + k + '"' + (k === m ? ' checked' : '') + ' onchange="Portal.setNightMode(&#39;' + k + '&#39;)">' +
-        '<span class="pt-seg-face">' + ic[k] + '<b>' + opts[i][1] + '</b></span></label>';
+      html += '<label><input class="radio-input" type="radio" name="ptNight" value="' + k + '"' + (k === m ? ' checked' : '') + ' onchange="Portal.setNightMode(\'' + k + '\')">' +
+        '<span class="radio-tile"><span class="radio-icon">' + ic[k] + '</span><span class="radio-label">' + opts[i][1] + '</span></span></label>';
     }
-    return html + '</span>';
-  }
-  function tuneWeatherCard() {
-    var c = document.getElementById('ptWCard');
-    if (!c) return;
-    var cores = navigator.hardwareConcurrency || 4;
-    var reduced = false;
-    try { reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    if (reduced || cores <= 4) c.classList.add('pt-pflat');
+    return html + '</div>';
   }  function starryHint(n) {
     var m = starryMode();
     if (m === 'on') return '星空：常亮 · 手动设置';
@@ -355,10 +346,8 @@
   function syncStarryUI() {
     var n = isNight();
     var m = starryMode();
-    var ins = document.querySelectorAll('.pt-seg-in');
+    var ins = document.querySelectorAll('.radio-inputs .radio-input');
     for (var i = 0; i < ins.length; i++) ins[i].checked = (ins[i].value === m);
-    var seg = document.querySelector('.pt-seg');
-    if (seg) seg.setAttribute('data-live', n ? '1' : '0');
     var h = document.getElementById('ptHint');
     if (h) h.textContent = starryHint(n);
   }  function applyNightNow() {

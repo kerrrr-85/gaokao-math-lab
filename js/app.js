@@ -1,4 +1,4 @@
-/* 应用主体：路由 + 各页面视图 */
+﻿/* 应用主体：路由 + 各页面视图 */
 (function () {
   var D = window.DATA, Store = window.Store, SRS = window.SRS;
   var view = document.getElementById('view'), toastEl = document.getElementById('toast');
@@ -84,7 +84,6 @@
       hubTile('practice', '刷题练习', '#/practice') +
       hubTile('map', '知识图谱', '#/map') +
       hubTile('wrong', '错题本', '#/wrong') +
-      hubTile('stats', '学习统计', '#/stats') +
       hubTile('search', '搜索', '#/search') +
       
       hubTile('settings', '设置', '#/settings') +
@@ -820,7 +819,7 @@
       '<p class="muted small" style="margin:6px 0 12px">共 ' + done + ' 题 · 正确 ' + got + ' 题 · 已计入掌握度与复习计划</p>' +
       '<div class="row"><button class="btn primary" onclick="App.resetPractice()">再来一组</button>' +
       (wrongIds.length ? '<button class="btn accent" onclick="App.startPractice(\'' + wrongIds.join(',') + '\')">只重做错题（' + wrongIds.length + '）</button>' : '') +
-      '<a class="btn" href="#/stats">查看统计</a></div></div></div>' +
+      '</div></div></div>' +
       (res.length ? '<div class="card"><div class="phead"><span class="ico">📋</span><div class="grow"><h2>本组逐题回顾</h2><p>对错与用时</p></div></div><div class="list">' + listHtml + '</div></div>' : '');
     animateRings();
   }
@@ -1117,7 +1116,7 @@
       '</div>' +
       '<div class="set-group">' +
         '<div class="set-h">关于</div>' +
-        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v96</span>') +
+        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v98</span>') +
         setRow('数据存储', '只存在这台设备，不上传', '<span class="set-val">本机</span>') +
       '</div>';
 
@@ -1196,7 +1195,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v96 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v98 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg five" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -1266,7 +1265,6 @@
     else if (page === 'map') renderMap();
     else if (page === 'practice') { renderPractice(); if (parts[1] === 'start' && !session.list.length) { setTimeout(function () { beginPractice(false); }, 0); } }
     else if (page === 'wrong') renderWrong();
-    else if (page === 'stats') renderStats();
     else if (page === 'search') renderSearch();
     else if (page === 'settings') renderSettings(parts[1]);
     else if (page === 'today') renderToday(parts[1]);
