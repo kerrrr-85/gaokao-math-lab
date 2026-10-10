@@ -286,7 +286,7 @@
             '<p class="pt-lede pt-reveal" id="ptTrigger" title="">今天想从哪儿开始？</p>' +
             '<div class="pt-quickrow pt-reveal">' +
               '<button class="pt-pcard" id="ptWCard" type="button" onclick="Outfit.open()" title="点一下看详细穿衣建议">' +
-                '<svg class="pt-psprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="30" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
+                '<svg class="pt-psprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="1.2" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="14" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
                 '<span class="pt-pblob" aria-hidden="true"></span>' +
                 '<span class="pt-ptitle" id="ptTemp">--°</span>' +
                 '<span class="pt-pmeta"><span class="pt-prow"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span><span class="pt-prow"><i id="ptRange">今日 --~--°</i></span></span>' +
