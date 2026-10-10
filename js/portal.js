@@ -52,7 +52,7 @@
   function wmoText(c) { var m = {0:'晴',1:'基本晴朗',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'小雨',55:'中雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',95:'雷阵雨',96:'雷暴',99:'强雷暴'}; return m[c] || '--'; }
   function applyWeather(d) {
     var q = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-    q('ptCity', d.city); q('ptDesc', wmoText(d.code)); q('ptTemp', Math.round(d.temp) + '°'); q('ptRange', '今日 ' + Math.round(d.min) + '~' + Math.round(d.max) + '°');
+    q('ptCity', d.city); q('ptDesc', wmoText(d.code)); q('ptTemp', Math.round(d.temp) + '°'); q('ptRange', '今日 ' + Math.round(d.min) + '~' + Math.round(d.max) + '°'); q('ptWFeels', d.feels != null ? '体感 ' + Math.round(d.feels) + '°' : ''); q('ptWOutfit', (global.Outfit && Outfit.short) ? Outfit.short(d) : '');
     if (d.code >= 0 && global.PortalPlan && PortalPlan.onWeather) PortalPlan.onWeather(d);
   }
   function loadWeather(force) {
@@ -62,11 +62,22 @@
     var c = null; try { c = JSON.parse(localStorage.getItem('gml_weather')); } catch (e) {}
     if (!force && c && c.city === city && Date.now() - c.at < 600000) { applyWeather(c); return; }
     if (lat == null || lon == null) { var t = document.getElementById('ptDesc'); if (t) t.textContent = '未配置坐标'; return; }
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1')
+        fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max&timezone=auto&forecast_days=1')
       .then(function (r) { return r.json(); })
-      .then(function (w) { var d = { city: city, at: Date.now(), temp: w.current.temperature_2m, code: w.current.weather_code, max: w.daily.temperature_2m_max[0], min: w.daily.temperature_2m_min[0] }; try { localStorage.setItem('gml_weather', JSON.stringify(d)); } catch (e) {} applyWeather(d); })
-      .catch(function () { var t = document.getElementById('ptDesc'); if (t) t.textContent = '天气获取失败'; });
-  }
+      .then(function (w) {
+        var cur = w.current || {}, day = w.daily || {};
+        var first = function (a) { return (a && a.length) ? a[0] : null; };
+        var d = {
+          city: city, at: Date.now(),
+          temp: cur.temperature_2m, code: cur.weather_code,
+          feels: cur.apparent_temperature, hum: cur.relative_humidity_2m, wind: cur.wind_speed_10m,
+          max: first(day.temperature_2m_max), min: first(day.temperature_2m_min),
+          rain: first(day.precipitation_probability_max), uv: first(day.uv_index_max)
+        };
+        try { localStorage.setItem('gml_weather', JSON.stringify(d)); } catch (e) {}
+        applyWeather(d);
+      })
+      .catch(function () { var t = document.getElementById('ptDesc'); if (t) t.textContent = '天气获取失败'; });  }
   /* ---------- 门户落地页：浅蓝 · 安静 · 可扩展 ---------- */
   var MENU = [
     ['学习', [
@@ -274,10 +285,11 @@
             '<h1 class="pt-title" aria-label="我在呢"><span style="--i:0">我</span><span style="--i:1">在</span><span style="--i:2">呢</span></h1>' +
             '<p class="pt-lede pt-reveal" id="ptTrigger" title="">今天想从哪儿开始？</p>' +
             '<div class="pt-quickrow pt-reveal">' +
-              '<button class="pt-weather" onclick="Portal.loadWeather(true)" title="点一下刷新天气">' +
-                '<span class="pt-temp" id="ptTemp">--°</span>' +
-                '<span class="pt-wxmeta"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
-                '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
+              '<button class="pt-wcard" id="ptWCard" type="button" onclick="Outfit.open()" title="点一下看详细穿衣建议">' +
+                '<svg class="pt-wsprite" aria-hidden="true" focusable="false"><defs><filter id="ptWNoise" x="-25%" y="-25%" width="150%" height="150%"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="ptTurb"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="ptTurb" scale="6" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>' +
+                '<span class="pt-wtop"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
+                '<span class="pt-wcore"><b class="pt-wtemp" id="ptTemp">--°</b><span class="pt-wside"><i id="ptRange">今日 --~--°</i><i id="ptWFeels"></i></span></span>' +
+                '<span class="pt-wfoot"><i id="ptWOutfit">正在读取穿衣建议…</i><em>穿衣建议 →</em></span>' +
               '</button>' +
               '<button class="pt-plan-open" type="button" onclick="PortalPlan.open()" title="打开今日计划"><b id="ptPlanDays">--</b><small>天后高考 · 今日计划</small></button>' +
             '</div>' +
