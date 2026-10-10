@@ -1,98 +1,211 @@
-﻿/* 原生 Canvas 星系背景 v2：更浓、明显旋转、星云+尘埃+脉冲（零依赖） */
+/* 原生 Canvas 星空 v3：远近星层 · 银河薄雾 · 缓慢视差 · 少量流星 */
 (function (global) {
-  var raf = null, cv = null, ctx = null, stars = [], dust = [], nebs = [], sprite = null, visCb = null, drawNeb = true;
-  var w = 0, h = 0, mx = 0, my = 0, DPR = 1;
+  'use strict';
 
-  function onMove(e) { mx = (e.clientX / innerWidth - 0.5); my = (e.clientY / innerHeight - 0.5); }
-  function resize() { if (!cv) return; DPR = Math.min(devicePixelRatio || 1, (global.PERF && global.PERF.low) ? 1 : 1.5); w = cv.width = cv.clientWidth * DPR; h = cv.height = cv.clientHeight * DPR; }
+  var raf = null, cv = null, ctx = null, sprite = null;
+  var stars = [], haze = [], shooters = [], w = 0, h = 0;
+  var mx = 0, my = 0, tx = 0, ty = 0, last = 0, t = 0;
+  var DPR = 1, low = false, visCb = null;
+
+  function onMove(e) {
+    tx = (e.clientX / innerWidth - 0.5);
+    ty = (e.clientY / innerHeight - 0.5);
+  }
+
+  function resize() {
+    if (!cv) return;
+    DPR = Math.min(devicePixelRatio || 1, low ? 1 : 1.5);
+    w = cv.width = Math.max(1, cv.clientWidth * DPR);
+    h = cv.height = Math.max(1, cv.clientHeight * DPR);
+  }
 
   function makeSprite() {
-    sprite = document.createElement('canvas'); sprite.width = sprite.height = 64;
+    sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 96;
     var c = sprite.getContext('2d');
-    var g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
-    g.addColorStop(0, 'rgba(200,215,255,1)'); g.addColorStop(0.35, 'rgba(150,175,255,0.45)'); g.addColorStop(1, 'rgba(120,140,255,0)');
-    c.fillStyle = g; c.beginPath(); c.arc(32, 32, 32, 0, 6.2832); c.fill();
+    var g = c.createRadialGradient(48, 48, 0, 48, 48, 48);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.13, 'rgba(220,233,255,.94)');
+    g.addColorStop(0.38, 'rgba(154,190,255,.42)');
+    g.addColorStop(0.72, 'rgba(111,153,230,.10)');
+    g.addColorStop(1, 'rgba(90,130,210,0)');
+    c.fillStyle = g;
+    c.beginPath();
+    c.arc(48, 48, 48, 0, Math.PI * 2);
+    c.fill();
   }
 
   function make() {
-    stars = []; dust = []; nebs = [];
-    var arms = 3;
-    var starN = (global.PERF && global.PERF.low) ? 420 : 1600; for (var i = 0; i < starN; i++) {
-      var r = Math.pow(Math.random(), 0.58);
-      var arm = Math.floor(Math.random() * arms);
-      var ang = arm * (Math.PI * 2 / arms) + r * 2.9 + (Math.random() - 0.5) * 0.75;
-      stars.push({ r: r, ang: ang, s: (Math.random() * 1.7 + 0.3) * DPR, tw: Math.random() * 6.283, sp: 0.14 + Math.random() * 0.42, big: Math.random() < 0.055 });
+    stars = [];
+    haze = [];
+    shooters = [];
+    var area = Math.max(320000, innerWidth * innerHeight);
+    var count = low ? 290 : Math.min(1700, Math.round(area / 1050));
+    for (var i = 0; i < count; i++) {
+      var depth = 0.16 + Math.random() * 0.84;
+      stars.push({
+        x: Math.random(),
+        y: Math.random(),
+        depth: depth,
+        size: (0.38 + Math.random() * 1.35) * DPR * (0.55 + depth * 0.7),
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.55 + Math.random() * 1.55,
+        color: Math.random() < 0.12 ? [183, 214, 255] : (Math.random() < 0.08 ? [255, 224, 178] : [231, 239, 255]),
+        big: Math.random() < (low ? 0.015 : 0.045)
+      });
     }
-    var dustN = (global.PERF && global.PERF.low) ? 0 : 140; for (var j = 0; j < dustN; j++) {
-      dust.push({ r: Math.pow(Math.random(), 0.5), ang: Math.random() * 6.283, sz: (18 + Math.random() * 46) * DPR, a: 0.05 + Math.random() * 0.10, sp: 0.04 + Math.random() * 0.12 });
-    }
-    nebs = [
-      { c: 'rgba(126,92,255,', x: 0.50, y: 0.50, r: 0.80, sp: 0.05 },
-      { c: 'rgba(72,178,255,', x: 0.63, y: 0.40, r: 0.55, sp: -0.08 },
-      { c: 'rgba(255,96,200,', x: 0.40, y: 0.62, r: 0.50, sp: 0.11 }
+    var hz = low ? 2 : 4;
+    var colors = [
+      { c: '90,138,210', a: 0.085, x: .20, y: .30, r: .72 },
+      { c: '50,161,178', a: 0.065, x: .78, y: .28, r: .64 },
+      { c: '164,126,214', a: 0.052, x: .62, y: .74, r: .70 },
+      { c: '218,183,126', a: 0.035, x: .45, y: .54, r: .52 }
     ];
+    for (var j = 0; j < hz; j++) {
+      var c = colors[j];
+      haze.push({ c: c.c, a: c.a, x: c.x, y: c.y, r: c.r, ph: Math.random() * Math.PI * 2 });
+    }
+  }
+
+  function spawnShooter() {
+    if (low || shooters.length > 1) return;
+    var angle = Math.PI * (0.17 + Math.random() * 0.08);
+    var speed = 260 + Math.random() * 240;
+    shooters.push({
+      x: w * (0.06 + Math.random() * 0.56),
+      y: h * (0.05 + Math.random() * 0.22),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0,
+      max: 1.25 + Math.random() * 0.55,
+      len: 70 + Math.random() * 90,
+      alpha: 0.45 + Math.random() * 0.25
+    });
   }
 
   function stop() {
     if (raf) { cancelAnimationFrame(raf); raf = null; }
-    removeEventListener('resize', resize); removeEventListener('pointermove', onMove); if (visCb) { document.removeEventListener('visibilitychange', visCb); visCb = null; }
+    removeEventListener('resize', resize);
+    removeEventListener('pointermove', onMove);
+    if (visCb) { document.removeEventListener('visibilitychange', visCb); visCb = null; }
+  }
+
+  function drawHaze() {
+    for (var i = 0; i < haze.length; i++) {
+      var q = haze[i];
+      var drift = Math.sin(t * 0.025 + q.ph) * w * 0.018;
+      var x = q.x * w + drift + mx * w * 0.018;
+      var y = q.y * h + Math.cos(t * 0.022 + q.ph) * h * 0.012 + my * h * 0.018;
+      var r = Math.max(w, h) * q.r;
+      var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(' + q.c + ',' + q.a + ')');
+      g.addColorStop(0.48, 'rgba(' + q.c + ',' + (q.a * 0.42) + ')');
+      g.addColorStop(1, 'rgba(' + q.c + ',0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+
+  function drawStars() {
+    for (var i = 0; i < stars.length; i++) {
+      var st = stars[i];
+      var x = st.x * w + mx * w * 0.026 * st.depth;
+      var y = st.y * h + my * h * 0.020 * st.depth;
+      var tw = 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
+      var alpha = (0.20 + tw * 0.64) * (0.45 + st.depth * 0.55);
+      if (st.big) {
+        var bs = st.size * (8 + tw * 4);
+        ctx.globalAlpha = alpha * 0.72;
+        ctx.drawImage(sprite, x - bs / 2, y - bs / 2, bs, bs);
+        ctx.globalAlpha = 1;
+      }
+      ctx.beginPath();
+      ctx.arc(x, y, st.size * (st.big ? 1.25 : 1), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + st.color[0] + ',' + st.color[1] + ',' + st.color[2] + ',' + alpha.toFixed(3) + ')';
+      ctx.fill();
+    }
+  }
+
+  function drawShooters(dt) {
+    for (var i = shooters.length - 1; i >= 0; i--) {
+      var s = shooters[i];
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.life += dt;
+      var fade = Math.max(0, 1 - s.life / s.max);
+      var a = s.alpha * fade;
+      var angle = Math.atan2(s.vy, s.vx);
+      var tailX = s.x - Math.cos(angle) * s.len;
+      var tailY = s.y - Math.sin(angle) * s.len;
+      var g = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
+      g.addColorStop(0, 'rgba(180,215,255,0)');
+      g.addColorStop(0.72, 'rgba(194,224,255,' + (a * 0.56).toFixed(3) + ')');
+      g.addColorStop(1, 'rgba(255,255,255,' + a.toFixed(3) + ')');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.2 * DPR;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(tailX, tailY); ctx.lineTo(s.x, s.y); ctx.stroke();
+      ctx.globalAlpha = a * 0.8;
+      ctx.drawImage(sprite, s.x - 10 * DPR, s.y - 10 * DPR, 20 * DPR, 20 * DPR);
+      ctx.globalAlpha = 1;
+      if (s.life >= s.max || s.x > w + 120 || s.y > h + 120) shooters.splice(i, 1);
+    }
+  }
+
+  function frame(now) {
+    if (!cv || !ctx) return;
+    raf = requestAnimationFrame(frame);
+    var dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+    last = now;
+    t += dt;
+    mx += (tx - mx) * 0.035;
+    my += (ty - my) * 0.035;
+
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#03050d');
+    bg.addColorStop(0.55, '#060a18');
+    bg.addColorStop(1, '#0a1021');
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.globalCompositeOperation = 'lighter';
+    drawHaze();
+    drawStars();
+    if (!low && Math.random() < 0.00035) spawnShooter();
+    drawShooters(dt);
+    ctx.globalCompositeOperation = 'source-over';
+
+    var vignette = ctx.createRadialGradient(w * .5, h * .48, Math.min(w, h) * .16, w * .5, h * .48, Math.max(w, h) * .78);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(0.72, 'rgba(0,0,0,.13)');
+    vignette.addColorStop(1, 'rgba(0,0,0,.46)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
   }
 
   function mount(canvas) {
-    stop(); cv = canvas; if (!cv) return;
-    ctx = cv.getContext('2d'); resize(); make(); if (!sprite) makeSprite(); drawNeb = !(global.PERF && global.PERF.low);
-    if (!(global.PERF && global.PERF.low) && innerWidth < 700 && stars.length > 900) { stars = stars.slice(0, 900); dust = dust.slice(0, 70); }
-    addEventListener('resize', resize); addEventListener('pointermove', onMove); visCb = function () { if (document.hidden) { if (raf) { cancelAnimationFrame(raf); raf = null; } } else if (!raf) { lastT = 0; raf = requestAnimationFrame(frame); } }; document.addEventListener('visibilitychange', visCb);
-    var t = 0, lastT = 0, MIN_GAP = (global.PERF && global.PERF.low) ? 33 : 16;
-    function frame(ts) {
-      raf = requestAnimationFrame(frame);
-      if (ts && lastT && ts - lastT < MIN_GAP - 1) return;
-      lastT = ts || 0;
-      t += 0.0065;
-      var pulse = 1 + 0.06 * Math.sin(t * 0.45);
-      var cx = w / 2 + mx * w * 0.09, cy = h / 2 + my * h * 0.09, R = Math.min(w, h) * 0.62 * pulse;
-
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = '#04050c'; ctx.fillRect(0, 0, w, h);
-      ctx.globalCompositeOperation = 'lighter';
-
-      for (var n = 0; n < (drawNeb ? nebs.length : 0); n++) {
-        var nb = nebs[n];
-        var nr = R * nb.r;
-        var nx = cx + Math.cos(t * nb.sp + n * 2.1) * R * nb.r * 0.55;
-        var ny = cy + Math.sin(t * nb.sp * 1.3 + n * 1.7) * R * nb.r * 0.34;
-        var g = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
-        g.addColorStop(0, nb.c + '0.34)');
-        g.addColorStop(0.45, nb.c + '0.12)');
-        g.addColorStop(1, nb.c + '0)');
-        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    stop();
+    cv = canvas;
+    if (!cv) return;
+    low = !!(global.PERF && global.PERF.low);
+    ctx = cv.getContext('2d');
+    resize();
+    make();
+    if (!sprite) makeSprite();
+    addEventListener('resize', resize);
+    addEventListener('pointermove', onMove);
+    visCb = function () {
+      if (document.hidden) {
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+      } else if (!raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(frame);
       }
-
-      for (var d = 0; d < dust.length; d++) {
-        var du = dust[d], da = du.ang + t * du.sp, dr = du.r * R;
-        var dx = cx + Math.cos(da) * dr, dy = cy + Math.sin(da) * dr * 0.58;
-        ctx.globalAlpha = du.a;
-        ctx.drawImage(sprite, dx - du.sz / 2, dy - du.sz / 2, du.sz, du.sz);
-      }
-      ctx.globalAlpha = 1;
-
-      for (var i = 0; i < stars.length; i++) {
-        var st = stars[i], a = st.ang + t * st.sp, rr = st.r * R;
-        var x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.58;
-        var tw = 0.5 + 0.5 * Math.sin(st.tw + t * 2.2);
-        var alpha = (1 - st.r) * 0.85 * tw + 0.14;
-        if (st.big) {
-          var bs = st.s * 5;
-          ctx.globalAlpha = Math.min(0.75, alpha);
-          ctx.drawImage(sprite, x - bs / 2, y - bs / 2, bs, bs);
-          ctx.globalAlpha = 1;
-        }
-        ctx.beginPath(); ctx.arc(x, y, st.s, 0, 6.2832);
-        ctx.fillStyle = 'rgba(222,232,255,' + alpha.toFixed(3) + ')';
-        ctx.fill();
-      }
-      ctx.globalCompositeOperation = 'source-over';
-    }
+    };
+    document.addEventListener('visibilitychange', visCb);
+    if (!low) setTimeout(function () { if (cv) spawnShooter(); }, 1600);
+    last = performance.now();
     raf = requestAnimationFrame(frame);
   }
 

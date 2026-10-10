@@ -95,10 +95,17 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
   function toggleWatched(id) { var m = watchedMap(); if (m[id]) delete m[id]; else m[id] = Date.now(); saveWatched(m); var btn = document.getElementById('vidWatchBtn'); if (btn) btn.textContent = m[id] ? '取消已看' : '标记看完'; renderVideo(); }
 
+  function starryMode() {
+    var p = ((Store.get().settings || {}).portal || {});
+    return p.starry === 'on' || p.starry === 'off' ? p.starry : 'auto';
+  }
   function isNight() {
     var q = String(location.search || '');
     if (q.indexOf('night=1') >= 0) return true;
     if (q.indexOf('night=0') >= 0) return false;
+    var m = starryMode();
+    if (m === 'on') return true;
+    if (m === 'off') return false;
     var d = new Date(), h = d.getHours() + d.getMinutes() / 60;
     return h >= 23.5 || h < 6;
   }
@@ -280,12 +287,13 @@
         '<div class="pt-grid-wrap pt-reveal"><div class="pt-grid">' + gridHTML() + '</div></div>' +
         '<footer class="pt-foot pt-reveal">' +
           '<span class="pt-foot-actions"><span class="pt-more">更多模块 · 陆续开放</span>' +
-          '<button class="pt-update" type="button" onclick="App.forceUpdate()">强制更新</button></span>' +
+          '<button class="pt-update pt-starry" id="ptStarryToggle" type="button" onclick="Portal.cycleNightMode()">星空：自动</button><button class="pt-update" type="button" onclick="App.forceUpdate()">强制更新</button></span>' +
           '<span class="pt-hint" id="ptHint">' + (night ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空') + '</span>' +
         '</footer>' +
       '</div>';
     loadWeather(false);
     applyNight(night);
+    syncStarryUI();
     startFx();
     if (global.PortalPlan && PortalPlan.mount) PortalPlan.mount();
   }
@@ -300,11 +308,40 @@
       else { global.Galaxy.stop(); gc.style.display = 'none'; }
     }
   }
-  function applyNightNow() {
+  function starryLabel(n) {
+    var m = starryMode();
+    if (m === 'on') return { btn: '星空：常亮', hint: '星空：常亮 · 手动设置' };
+    if (m === 'off') return { btn: '星空：关闭', hint: '星空：关闭 · 手动设置' };
+    return { btn: n ? '星空：自动 · 已亮' : '星空：自动', hint: n ? '星空：自动 · 已亮，点按钮可切换' : '23:30 后自动亮起 · 点「星空」可手动切换' };
+  }
+  function syncStarryUI() {
     var n = isNight();
-    applyNight(n);
+    var b = document.getElementById('ptStarryToggle');
+    if (b) {
+      var l = starryLabel(n);
+      b.textContent = l.btn;
+      b.classList.toggle('on', n);
+      b.setAttribute('aria-pressed', n ? 'true' : 'false');
+      b.setAttribute('data-mode', starryMode());
+    }
     var h = document.getElementById('ptHint');
-    if (h) h.textContent = n ? '夜深了 · 星空已亮' : '23:30 之后，这里会亮起星空';
+    if (h) h.textContent = starryLabel(n).hint;
+  }
+  function applyNightNow() {
+    applyNight(isNight());
+    syncStarryUI();
+  }
+  function setNightMode(mode) {
+    if (mode !== 'on' && mode !== 'off') mode = 'auto';
+    var st = Store.get().settings;
+    st.portal = st.portal || {};
+    st.portal.starry = mode;
+    Store.save();
+    if (document.getElementById('ptLanding')) applyNightNow();
+  }
+  function cycleNightMode() {
+    var m = starryMode();
+    setNightMode(m === 'auto' ? 'on' : m === 'on' ? 'off' : 'auto');
   }
 
   function fxBuild() {
@@ -569,7 +606,7 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, closeLanyard: closeLanyard, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, closeLanyard: closeLanyard, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, cycleNightMode: cycleNightMode, setNightMode: setNightMode, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
 
 

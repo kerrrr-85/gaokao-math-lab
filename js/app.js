@@ -668,6 +668,13 @@
   }
   function applyTheme() { var t = (Store.get().settings || {}).theme || 'light'; document.body.classList.toggle('dark', t === 'dark'); }
   function setTheme(t) { Store.get().settings.theme = t; Store.save(); applyTheme(); toast(t === 'dark' ? '已切换到深色' : '已切换到浅色'); renderSettings(); }
+  function setStarry(mode) {
+    if (mode !== 'on' && mode !== 'off') mode = 'auto';
+    if (window.Portal && Portal.setNightMode) Portal.setNightMode(mode);
+    else { var st = Store.get().settings; st.portal = st.portal || {}; st.portal.starry = mode; Store.save(); }
+    toast(mode === 'on' ? '星空设为常亮' : mode === 'off' ? '星空已关闭' : '星空设为自动');
+    renderSettings();
+  }
   function clearDraft() { var q = session.list[session.i]; if (q && window.InputTools && InputTools.clearPad) InputTools.clearPad('draftPad', q.id); }
   /* ============ 练习 ============ */
   var session = { list: [], i: 0, answered: false, lastAttempt: null };
@@ -1105,11 +1112,12 @@
       '</div>' +
       '<div class="set-group">' +
         '<div class="set-h">星空彩蛋</div>' +
-        setRow('夜间星空', '23:30 之后门户自动亮起，次日 06:00 恢复', '<a class="btn sm" href="?night=1#/" target="_blank" rel="noopener">预览</a>') +
+        setRow('星空模式', '自动遵循时间，也可以手动常亮或关闭', '<div class="row" style="gap:8px"><button class="chip' + (((s.portal && s.portal.starry) || 'auto') === 'auto' ? ' on' : '') + '" onclick="App.setStarry(\'auto\')">自动</button><button class="chip' + (((s.portal && s.portal.starry) || 'auto') === 'on' ? ' on' : '') + '" onclick="App.setStarry(\'on\')">常亮</button><button class="chip' + (((s.portal && s.portal.starry) || 'auto') === 'off' ? ' on' : '') + '" onclick="App.setStarry(\'off\')">关闭</button></div>') +
+        setRow('星空预览', '不影响当前设置', '<a class="btn sm" href="?night=1#/" target="_blank" rel="noopener">新窗口预览</a>') +
       '</div>' +
       '<div class="set-group">' +
         '<div class="set-h">关于</div>' +
-        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v89</span>') +
+        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v90</span>') +
         setRow('数据存储', '只存在这台设备，不上传', '<span class="set-val">本机</span>') +
       '</div>';
 
@@ -1188,7 +1196,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v89 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v90 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg five" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -1272,7 +1280,7 @@
   }
 
   window.App = {
-    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, graphZoom: graphZoom, graphFull: graphFull, graphCard: graphCard, graphStep: graphStep, startNode: startNode, setTheme: setTheme, setSetTab: setSetTab, syncSave: syncSave, syncTest: syncTest, syncCreate: syncCreate, syncRotate: syncRotate, syncRestore: syncRestore, syncCopy: syncCopy, syncRefresh: syncRefresh, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
+    go: go, back: back, setModule: setModule, pomoToggle: pomoToggle, pomoReset: pomoReset, addCustomWrong: addCustomWrong, delCustomWrong: delCustomWrong, openModule: openModule, setPF: setPF, flipCard: flipCard, toggleFav: toggleFav, graphHover: graphHover, graphInit: graphInit, graphReset: graphReset, graphZoom: graphZoom, graphFull: graphFull, graphCard: graphCard, graphStep: graphStep, startNode: startNode, setTheme: setTheme, setStarry: setStarry, setSetTab: setSetTab, syncSave: syncSave, syncTest: syncTest, syncCreate: syncCreate, syncRotate: syncRotate, syncRestore: syncRestore, syncCopy: syncCopy, syncRefresh: syncRefresh, setDayTab: setDayTab, deckPick: deckPick, deckStep: deckStep, deckDown: deckDown, deckMove: deckMove, deckUp: deckUp, deckCancel: deckCancel, clearDraft: clearDraft,
     forceUpdate: forceUpdate,
     reviewCard: function (id, g) { Store.grade(id, g); toast(SRS.label(g) + '，复习计划已更新'); router(); },
     selOpt: selOpt, submit: submit, nextQ: nextQ, beginPractice: beginPractice, resetPractice: resetPractice,
