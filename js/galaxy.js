@@ -1,10 +1,10 @@
-/* 原生 Canvas 星空 v3：远近星层 · 银河薄雾 · 缓慢视差 · 少量流星 */
+/* 原生 Canvas 星空 v4：星河主带 · 远近星层 · 缓慢视差 · 定时流星 */
 (function (global) {
   'use strict';
 
-  var raf = null, cv = null, ctx = null, sprite = null;
-  var stars = [], haze = [], shooters = [], w = 0, h = 0;
-  var mx = 0, my = 0, tx = 0, ty = 0, last = 0, t = 0;
+  var raf = null, cv = null, ctx = null, sprite = null, bandCanvas = null;
+  var stars = [], haze = [], band = [], shooters = [], w = 0, h = 0;
+  var mx = 0, my = 0, tx = 0, ty = 0, last = 0, t = 0, nextShot = 0.75;
   var DPR = 1, low = false, visCb = null;
 
   function onMove(e) {
@@ -17,6 +17,7 @@
     DPR = Math.min(devicePixelRatio || 1, low ? 1 : 1.5);
     w = cv.width = Math.max(1, cv.clientWidth * DPR);
     h = cv.height = Math.max(1, cv.clientHeight * DPR);
+    if (bandCanvas) buildBand();
   }
 
   function makeSprite() {
@@ -35,17 +36,30 @@
     c.fill();
   }
 
+  function bandPoint(p, spread) {
+    return {
+      x: p * 1.10 - 0.05 + (Math.random() - 0.5) * spread,
+      y: 0.12 + p * 0.74 + Math.sin(p * Math.PI * 2.25) * 0.035 + (Math.random() - 0.5) * spread * 1.35
+    };
+  }
+
   function make() {
     stars = [];
     haze = [];
+    band = [];
     shooters = [];
     var area = Math.max(320000, innerWidth * innerHeight);
-    var count = low ? 290 : Math.min(1700, Math.round(area / 1050));
+    var count = low ? 300 : Math.min(1700, Math.round(area / 1050));
     for (var i = 0; i < count; i++) {
+      var river = Math.random() < 0.58;
+      var p = Math.random();
+      var bp = bandPoint(p, river ? 0.11 : 0.95);
+      var x = river ? bp.x : Math.random();
+      var y = river ? bp.y : Math.random();
       var depth = 0.16 + Math.random() * 0.84;
       stars.push({
-        x: Math.random(),
-        y: Math.random(),
+        x: x,
+        y: y,
         depth: depth,
         size: (0.38 + Math.random() * 1.35) * DPR * (0.55 + depth * 0.7),
         phase: Math.random() * Math.PI * 2,
@@ -56,30 +70,86 @@
     }
     var hz = low ? 2 : 4;
     var colors = [
-      { c: '90,138,210', a: 0.085, x: .20, y: .30, r: .72 },
-      { c: '50,161,178', a: 0.065, x: .78, y: .28, r: .64 },
-      { c: '164,126,214', a: 0.052, x: .62, y: .74, r: .70 },
-      { c: '218,183,126', a: 0.035, x: .45, y: .54, r: .52 }
+      { c: '90,138,210', a: 0.080, x: .20, y: .30, r: .72 },
+      { c: '50,161,178', a: 0.060, x: .78, y: .28, r: .64 },
+      { c: '164,126,214', a: 0.045, x: .62, y: .74, r: .70 },
+      { c: '218,183,126', a: 0.028, x: .45, y: .54, r: .52 }
     ];
     for (var j = 0; j < hz; j++) {
-      var c = colors[j];
-      haze.push({ c: c.c, a: c.a, x: c.x, y: c.y, r: c.r, ph: Math.random() * Math.PI * 2 });
+      var q = colors[j];
+      haze.push({ c: q.c, a: q.a, x: q.x, y: q.y, r: q.r, ph: Math.random() * Math.PI * 2 });
+    }
+    var bandN = low ? 20 : 38;
+    for (var b = 0; b < bandN; b++) {
+      var f = b / (bandN - 1);
+      var point = bandPoint(f, 0.045);
+      var center = Math.sin(Math.PI * f);
+      band.push({
+        x: point.x, y: point.y,
+        r: 0.17 + center * 0.10,
+        a: 0.035 + center * 0.055,
+        c: '91,137,213'
+      });
+      if (b % 3 === 0) {
+        band.push({
+          x: point.x + 0.006, y: point.y - 0.008,
+          r: 0.045 + center * 0.035,
+          a: 0.055 + center * 0.075,
+          c: '232,226,207'
+        });
+      }
+    }
+    buildBand();
+  }
+
+  function buildBand() {
+    if (!w || !h) return;
+    bandCanvas = bandCanvas || document.createElement('canvas');
+    bandCanvas.width = w;
+    bandCanvas.height = h;
+    var b = bandCanvas.getContext('2d');
+    b.clearRect(0, 0, w, h);
+    b.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < band.length; i++) {
+      var q = band[i];
+      var x = q.x * w;
+      var y = q.y * h;
+      var r = q.r * Math.max(w, h);
+      var g = b.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(' + q.c + ',' + q.a + ')');
+      g.addColorStop(0.38, 'rgba(' + q.c + ',' + (q.a * 0.46) + ')');
+      g.addColorStop(1, 'rgba(' + q.c + ',0)');
+      b.fillStyle = g;
+      b.fillRect(0, 0, w, h);
+    }
+    b.globalCompositeOperation = 'source-over';
+    for (var k = 0; k < band.length; k += 3) {
+      var d = band[k];
+      var dx = (d.x + 0.018) * w;
+      var dy = (d.y - 0.012) * h;
+      var dr = (0.06 + Math.sin(k) * 0.015) * Math.max(w, h);
+      var dg = b.createRadialGradient(dx, dy, 0, dx, dy, dr);
+      dg.addColorStop(0, 'rgba(3,6,17,.18)');
+      dg.addColorStop(0.5, 'rgba(3,6,17,.07)');
+      dg.addColorStop(1, 'rgba(3,6,17,0)');
+      b.fillStyle = dg;
+      b.fillRect(dx - dr, dy - dr, dr * 2, dr * 2);
     }
   }
 
   function spawnShooter() {
-    if (low || shooters.length > 1) return;
-    var angle = Math.PI * (0.17 + Math.random() * 0.08);
-    var speed = 260 + Math.random() * 240;
+    if (shooters.length > (low ? 0 : 1)) return;
+    var angle = Math.PI * (0.19 + Math.random() * 0.07);
+    var speed = low ? (175 + Math.random() * 75) : (245 + Math.random() * 150);
     shooters.push({
-      x: w * (0.06 + Math.random() * 0.56),
-      y: h * (0.05 + Math.random() * 0.22),
+      x: w * (0.04 + Math.random() * 0.52),
+      y: h * (0.04 + Math.random() * 0.20),
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       life: 0,
-      max: 1.25 + Math.random() * 0.55,
-      len: 70 + Math.random() * 90,
-      alpha: 0.45 + Math.random() * 0.25
+      max: low ? (1.60 + Math.random() * 0.35) : (1.35 + Math.random() * 0.45),
+      len: low ? (125 + Math.random() * 55) : (150 + Math.random() * 75),
+      alpha: low ? 0.54 : (0.62 + Math.random() * 0.18)
     });
   }
 
@@ -104,6 +174,13 @@
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
+  }
+
+  function drawBand() {
+    if (!bandCanvas) return;
+    ctx.globalAlpha = low ? 0.68 : 0.86;
+    ctx.drawImage(bandCanvas, mx * w * 0.013, my * h * 0.010, w, h);
+    ctx.globalAlpha = 1;
   }
 
   function drawStars() {
@@ -139,16 +216,16 @@
       var tailY = s.y - Math.sin(angle) * s.len;
       var g = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
       g.addColorStop(0, 'rgba(180,215,255,0)');
-      g.addColorStop(0.72, 'rgba(194,224,255,' + (a * 0.56).toFixed(3) + ')');
+      g.addColorStop(0.68, 'rgba(194,224,255,' + (a * 0.60).toFixed(3) + ')');
       g.addColorStop(1, 'rgba(255,255,255,' + a.toFixed(3) + ')');
       ctx.strokeStyle = g;
-      ctx.lineWidth = 1.2 * DPR;
+      ctx.lineWidth = (low ? 1.9 : 2.25) * DPR;
       ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(tailX, tailY); ctx.lineTo(s.x, s.y); ctx.stroke();
-      ctx.globalAlpha = a * 0.8;
-      ctx.drawImage(sprite, s.x - 10 * DPR, s.y - 10 * DPR, 20 * DPR, 20 * DPR);
+      ctx.globalAlpha = a * 0.86;
+      ctx.drawImage(sprite, s.x - 11 * DPR, s.y - 11 * DPR, 22 * DPR, 22 * DPR);
       ctx.globalAlpha = 1;
-      if (s.life >= s.max || s.x > w + 120 || s.y > h + 120) shooters.splice(i, 1);
+      if (s.life >= s.max || s.x > w + 140 || s.y > h + 140) shooters.splice(i, 1);
     }
   }
 
@@ -171,8 +248,9 @@
 
     ctx.globalCompositeOperation = 'lighter';
     drawHaze();
+    drawBand();
     drawStars();
-    if (!low && Math.random() < 0.00035) spawnShooter();
+    if (t >= nextShot) { spawnShooter(); nextShot = t + (low ? (10 + Math.random() * 6) : (7 + Math.random() * 5)); }
     drawShooters(dt);
     ctx.globalCompositeOperation = 'source-over';
 
@@ -193,6 +271,8 @@
     resize();
     make();
     if (!sprite) makeSprite();
+    t = 0;
+    nextShot = 0.75;
     addEventListener('resize', resize);
     addEventListener('pointermove', onMove);
     visCb = function () {
@@ -204,7 +284,6 @@
       }
     };
     document.addEventListener('visibilitychange', visCb);
-    if (!low) setTimeout(function () { if (cv) spawnShooter(); }, 1600);
     last = performance.now();
     raf = requestAnimationFrame(frame);
   }
