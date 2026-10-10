@@ -1,4 +1,4 @@
-﻿/* 门户首页（Portal）：天气小部件 + 图标墙 */
+/* 门户首页（Portal）：天气小部件 + 图标墙 */
 (function (global) {
   var ICONS = {
     study: '<svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zm0 7.8L4.6 7 12 3.4 19.4 7 12 10.8zM4 11.2V16l8 4 8-4v-4.8l-8 4-8-4z"/></svg>',
@@ -53,6 +53,7 @@
   function applyWeather(d) {
     var q = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     q('ptCity', d.city); q('ptDesc', wmoText(d.code)); q('ptTemp', Math.round(d.temp) + '°'); q('ptRange', '今日 ' + Math.round(d.min) + '~' + Math.round(d.max) + '°');
+    if (d.code >= 0 && global.PortalPlan && PortalPlan.onWeather) PortalPlan.onWeather(d);
   }
   function loadWeather(force) {
     var wx = ((Store.get().settings || {}).weather || {});
@@ -265,11 +266,14 @@
             '<p class="pt-eyebrow pt-reveal">' + dateStr() + ' · 青树坪</p>' +
             '<h1 class="pt-title" aria-label="我在呢"><span style="--i:0">我</span><span style="--i:1">在</span><span style="--i:2">呢</span></h1>' +
             '<p class="pt-lede pt-reveal" id="ptTrigger" title="">今天想从哪儿开始？</p>' +
-            '<button class="pt-weather pt-reveal" onclick="Portal.loadWeather(true)" title="点一下刷新天气">' +
-              '<span class="pt-temp" id="ptTemp">--°</span>' +
-              '<span class="pt-wxmeta"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
-              '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
-            '</button>' +
+            '<div class="pt-quickrow pt-reveal">' +
+              '<button class="pt-weather" onclick="Portal.loadWeather(true)" title="点一下刷新天气">' +
+                '<span class="pt-temp" id="ptTemp">--°</span>' +
+                '<span class="pt-wxmeta"><b id="ptCity">青树坪</b><i id="ptDesc">加载中…</i></span>' +
+                '<span class="pt-wxrange" id="ptRange">今日 --~--°</span>' +
+              '</button>' +
+              '<button class="pt-plan-open" type="button" onclick="PortalPlan.open()" title="打开今日计划"><b id="ptPlanDays">--</b><small>天后高考 · 今日计划</small></button>' +
+            '</div>' +
           '</div>' +
           '<figure class="pt-hero-art pt-reveal"><img src="./assets/ink-hero.jpg?v=77" alt="" decoding="async"></figure>' +
         '</header>' +
@@ -283,6 +287,7 @@
     loadWeather(false);
     applyNight(night);
     startFx();
+    if (global.PortalPlan && PortalPlan.mount) PortalPlan.mount();
   }
 
   function applyNight(night) {
