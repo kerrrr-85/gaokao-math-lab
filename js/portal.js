@@ -12,6 +12,8 @@
     wrong: '<svg viewBox="0 0 24 24"><path d="M4 3h13a3 3 0 013 3v15l-5-3-5 3-5-3-1 0V3zm3 5h7v2H7V8zm0 4h7v2H7v-2z"/></svg>',
     board: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20h1.6a1.9 1.9 0 001.5-3.1c-.5-.6-.1-1.6.7-1.6H18A4 4 0 0022 13c0-6.1-4.5-11-10-11zM6.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3-4a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3 4a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>',
     solid: '<svg viewBox="0 0 24 24"><path d="M12 2 2 7v10l10 5 10-5V7L12 2zm0 2.3 7 3.5-7 3.5-7-3.5 7-3.5zM4 9.2l7 3.5v6.9l-7-3.5V9.2zm9 10.4v-6.9l7-3.5v6.9l-7 3.5z"/></svg>',
+    calc: '<svg viewBox="0 0 24 24"><path d="M5 2h14a2 2 0 012 2v16a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2zm0 2v3h14V4H5zm1.6 5.4h2.8v2.8H6.6v-2.8zm4.4 0h2.8v2.8h-2.8v-2.8zm4.4 0h2.8v2.8h-2.8v-2.8zM6.6 14.4h2.8v2.8H6.6v-2.8zm4.4 0h2.8v5.6h-2.8v-5.6zm4.4 0h2.8v2.8h-2.8v-2.8zm0 4h2.8v1.6h-2.8v-1.6z"/></svg>',
+    scan: '<svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3H9zm3 5a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6z"/></svg>',
     settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4c0-.4 0-.9-.1-1.3l2-1.5-2-3.4-2.3 1a9 9 0 00-2.2-1.3L15.9 3h-4l-.4 2.5a9 9 0 00-2.2 1.3l-2.3-1-2 3.4 2 1.5A9 9 0 006.9 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a9 9 0 002.2 1.3l.4 2.5h4l.4-2.5a9 9 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></svg>'
   };
   var TILE_STYLE = {
@@ -20,6 +22,8 @@
     wrong: 'linear-gradient(135deg,#dc2626,#f87171)',
     board: 'linear-gradient(135deg,#6366f1,#22d3ee)',
     solid: 'linear-gradient(135deg,#3730a3,#60a5fa)',
+    calc: 'linear-gradient(135deg,#0e7490,#67e8f9)',
+    scan: 'linear-gradient(135deg,#ea580c,#fdba74)',
     study: 'linear-gradient(135deg,#0f766e,#2dd4bf)',
     video: 'linear-gradient(135deg,#ec4899,#f472b6)',
     globe: 'linear-gradient(135deg,#2563eb,#38bdf8)',
@@ -267,6 +271,8 @@
       ['search', '搜索', '#/search', 0],
       ['globe', '地球', '#/globe', 0],
       ['solid', '立体几何', 'https://www.geogebra.org/3d', 1],
+      ['calc', '计算器', 'https://www.geogebra.org/calculator', 1],
+      ['scan', '拍照解题', 'https://mathsolver.microsoft.com/', 1],
       ['video', 'B站视频', '#/video', 0],
       ['doubao', '豆包', 'https://www.doubao.com/chat/', 1]
     ];
