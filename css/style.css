@@ -1182,6 +1182,9 @@ body.gx-welcome-open{overflow:hidden}
 .gx-kicker{display:flex;align-items:center;gap:13px;margin:0 0 28px;color:rgba(255,255,255,.6);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
 .gx-chip{display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:4px 8px;border:1px solid currentColor;border-radius:2px;background:#fff;color:#111;font-size:9px;font-weight:700;letter-spacing:.08em;line-height:1}
 .gx-hero h1{margin:0;max-width:930px;font-size:clamp(62px,9.2vw,142px);font-weight:720;line-height:1;letter-spacing:-.075em}
+.gx-hero-title{cursor:pointer;outline:none}
+.gx-hero-title:focus-visible{outline:2px solid #7d9cff;outline-offset:8px}
+.gx-hero-title:hover .gx-outline,.gx-hero-title:focus-visible .gx-outline{-webkit-text-stroke-color:#fff;text-shadow:0 0 40px rgba(125,156,255,.18)}
 .gx-hero h1 span{display:block}
 .gx-hero h1 .gx-outline{color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.78);text-stroke:1.5px rgba(255,255,255,.78)}
 .gx-hero-copy>p{max-width:560px;margin:34px 0 0;font-size:clamp(14px,1.35vw,18px);line-height:1.55;color:rgba(255,255,255,.68);letter-spacing:.01em}

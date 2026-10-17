@@ -170,7 +170,7 @@
           '<div class="gx-hero-grid">' +
             '<div class="gx-hero-copy gx-reveal">' +
               '<div class="gx-kicker"><span class="gx-chip">GML.26</span><span>本地优先 · 数据不上传 · 每天推进一点</span></div>' +
-              '<h1><span>把每一步</span><span class="gx-outline">变成底气</span></h1>' +
+              '<h1 class="gx-hero-title" role="button" tabindex="0" aria-label="把每一步变成底气，点击发现隐藏彩蛋" title="点一下，看看会发生什么"><span>把每一步</span><span class="gx-outline">变成底气</span></h1>' +
               '<p>函数、三角、数列，以及物理与生物视频。先看方向，再做眼前这一题。</p>' +
               '<div class="gx-hero-actions">' +
                 '<a class="gx-cta" href="#/practice/start"><span>开始今天的练习</span><i>↗</i></a>' +
@@ -295,6 +295,18 @@
           pointerFrame = 0;
           hero.style.transform = 'translate3d(' + (pointerX * -10).toFixed(1) + 'px,' + (pointerY * -8).toFixed(1) + 'px,0) scale(1.04)';
         });
+      });
+    }
+
+    var titleEgg = home.querySelector('.gx-hero-title');
+    if (titleEgg && global.Portal && Portal.inkOpen) {
+      var openEgg = function (event) {
+        event.preventDefault();
+        Portal.inkOpen(event);
+      };
+      titleEgg.addEventListener('click', openEgg);
+      titleEgg.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') openEgg(event);
       });
     }
 
