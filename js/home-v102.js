@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
 
-  var WELCOME_KEY = 'gml_home_v102_seen';
+  var WELCOME_KEY = 'gml_home_v102_intro_seen';
   var homeTimer = null;
   var revealObserver = null;
   var scrollFrame = 0;
