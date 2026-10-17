@@ -316,7 +316,6 @@
     loadWeather(false);
     applyNight(night);
     syncStarryUI();
-    tuneWeatherCard();
     startFx();
     if (global.PortalPlan && PortalPlan.mount) PortalPlan.mount();
   }
