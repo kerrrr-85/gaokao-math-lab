@@ -28,16 +28,16 @@
   };
 
   var MODULES = [
-    ['study', '学习台', '#/today', 0, '今日复习队列与学习热力'],
-    ['practice', '练习', '#/practice', 0, '按节点、难度和题型训练'],
-    ['map', '知识图谱', '#/map', 0, '先修关系与掌握度地图'],
+    ['study', '学习台', '#/today', 0, '今日复习队列与学习热力', './assets/gallery/temple.webp'],
+    ['practice', '练习', '#/practice', 0, '按节点、难度和题型训练', './assets/gallery/city-lights.webp'],
+    ['map', '知识图谱', '#/map', 0, '先修关系与掌握度地图', './assets/gallery/starry-night.webp'],
     ['wrong', '错题本', '#/wrong', 0, '错因归因、重做与导出'],
     ['search', '搜索', '#/search', 0, '知识点、方法卡和题目检索'],
     ['video', 'B站视频', '#/video', 0, '按专题整理的精选课程'],
-    ['globe', '地球', '#/globe', 0, '三维地球与高精度地图'],
+    ['globe', '地球', '#/globe', 0, '三维地球与高精度地图', './assets/gallery/world-hands.webp'],
     ['solid', '立体几何', 'https://www.geogebra.org/3d', 1, 'GeoGebra 三维作图'],
     ['calc', '计算器', 'https://www.geogebra.org/calculator', 1, 'GeoGebra 科学计算'],
-    ['scan', '拍照解题', 'https://mathsolver.microsoft.com/', 1, '微软数学识别与求解'],
+    ['scan', '拍照解题', 'https://mathsolver.microsoft.com/', 1, '微软数学识别与求解', './assets/gallery/car-interior.webp'],
     ['board', '白板', 'https://drawnix.com', 1, '无限画布整理思路'],
     ['doubao', '豆包', 'https://www.doubao.com/chat/', 1, '外部 AI 对话助手']
   ];
@@ -109,18 +109,19 @@
   function metric(value, label, note) {
     return '<div class="gx-metric"><b>' + esc(value) + '</b><span>' + esc(label) + '</span><small>' + esc(note) + '</small></div>';
   }
-  function heroLink(key, index, title, text, href, ext) {
+  function heroLink(key, index, title, text, href, ext, image) {
     var attrs = ext ? ' target="_blank" rel="noopener"' : '';
     return '<a class="gx-hero-link" href="' + href + '"' + attrs + '>' +
-      '<span class="gx-hero-link-media"><img src="./assets/ink-hero.jpg?v=102" alt="" loading="lazy"></span>' +
+      '<span class="gx-hero-link-media"><img src="' + image + '" alt="" loading="lazy"></span>' +
       '<span class="gx-hero-link-index">' + index + '</span>' +
       '<span class="gx-hero-link-copy"><b>' + esc(title) + '</b><small>' + esc(text) + '</small></span>' +
       '<span class="gx-hero-link-arrow">↗</span></a>';
   }
   function moduleCard(item, index) {
-    var key = item[0], title = item[1], href = item[2], ext = item[3], text = item[4];
+    var key = item[0], title = item[1], href = item[2], ext = item[3], text = item[4], image = item[5] || '';
     var attrs = ext ? ' target="_blank" rel="noopener"' : '';
-    return '<a class="gx-module" href="' + href + '"' + attrs + '>' +
+    return '<a class="gx-module' + (image ? ' has-image' : '') + '" href="' + href + '"' + attrs + '>' +
+      (image ? '<img class="gx-module-image" src="' + image + '" alt="" loading="lazy">' : '') +
       '<span class="gx-module-top"><span class="gx-module-no">' + String(index + 1).padStart(2, '0') + '</span><span class="gx-module-icon">' + (GX_ICONS[key] || '') + '</span></span>' +
       '<span class="gx-module-copy"><b>' + esc(title) + '</b><small>' + esc(text) + '</small></span>' +
       '<span class="gx-module-arrow">↗</span></a>';
@@ -165,7 +166,7 @@
         '</header>' +
 
         '<section class="gx-hero" id="gxTop">' +
-          '<div class="gx-hero-media" aria-hidden="true"><img src="./assets/ink-hero.jpg?v=102" alt=""></div>' +
+          '<div class="gx-hero-media" aria-hidden="true"><img src="./assets/gallery/cosmos.webp?v=103" alt="" fetchpriority="high"></div>' +
           '<div class="gx-hero-shade" aria-hidden="true"></div>' +
           '<div class="gx-hero-grid">' +
             '<div class="gx-hero-copy gx-reveal">' +
@@ -185,8 +186,8 @@
           '<div class="gx-hero-bottom gx-reveal">' +
             '<div class="gx-hero-status"><span>OVER TIME / 今日轨迹</span><p><b>' + today + '</b> 次作答 · <b>' + due + '</b> 张待复习 · 连续 <b>' + streak + '</b> 天</p></div>' +
             '<div class="gx-hero-links">' +
-              heroLink('study', '01', '学习台', '先看清今天该做什么', '#/today', false) +
-              heroLink('practice', '02', '智能训练', '从薄弱点直接开始', '#/practice', false) +
+              heroLink('study', '01', '学习台', '先看清今天该做什么', '#/today', false, './assets/gallery/temple.webp') +
+              heroLink('practice', '02', '智能训练', '从薄弱点直接开始', '#/practice', false, './assets/gallery/city-lights.webp') +
             '</div>' +
           '</div>' +
         '</section>' +
@@ -198,7 +199,7 @@
           '<div class="gx-statement gx-reveal"><p>今天，只把眼前这一步做扎实。</p><h2>复习、练习、记录，<br>让每一步都有下一步。</h2></div>' +
           '<div class="gx-focus-grid">' +
             '<button class="gx-weather gx-reveal" type="button" onclick="Outfit.open()">' +
-              '<span class="gx-weather-art" aria-hidden="true"><i></i><i></i><i></i></span>' +
+              '<span class="gx-weather-art" aria-hidden="true"><img src="./assets/gallery/snow-sunset.webp?v=103" alt="" loading="lazy"><i></i><i></i><i></i></span>' +
               '<span class="gx-weather-top"><small>LOCAL WEATHER</small><span id="ptDesc">加载中…</span></span>' +
               '<span class="gx-weather-main"><b id="ptTemp">--°</b><span><strong id="ptCity">青树坪</strong><small id="ptRange">今日 --~--°</small></span></span>' +
               '<span class="gx-weather-foot"><b id="ptWOutfit">正在读取穿衣建议…</b><small>点开查看完整穿衣面板 ↗</small></span>' +
@@ -245,7 +246,7 @@
 
         '<footer class="gx-footer">' +
           '<div class="gx-footer-mark"><span>G</span><p><b>高考数学学习台</b><small>把复杂的，变成会做的。</small></p></div>' +
-          '<div class="gx-footer-meta"><span>v102 / HOMEPAGE</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">系统设置</a></div>' +
+          '<div class="gx-footer-meta"><span>v103 / HOMEPAGE</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">系统设置</a></div>' +
         '</footer>' +
       '</div>';
 
@@ -352,7 +353,7 @@
     overlay.className = 'gx-welcome';
     overlay.innerHTML =
       '<section class="gx-welcome-panel" role="dialog" aria-modal="true" aria-labelledby="gxWelcomeTitle">' +
-        '<header class="gx-welcome-head"><span>NEW HOMEPAGE / v102</span><button type="button" aria-label="关闭新版介绍" onclick="Portal.closeHomeWelcome()">×</button></header>' +
+        '<header class="gx-welcome-head"><span>NEW HOMEPAGE / v103</span><button type="button" aria-label="关闭新版介绍" onclick="Portal.closeHomeWelcome()">×</button></header>' +
         '<div class="gx-welcome-grid">' +
           '<div class="gx-welcome-index"><span>02</span><small>NEW<br>DIRECTION</small></div>' +
           '<div class="gx-welcome-copy">' +
