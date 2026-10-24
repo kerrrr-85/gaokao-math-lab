@@ -1277,6 +1277,11 @@ body.gx-welcome-open{overflow:hidden}
 .gx-module:hover .gx-module-copy small{color:rgba(255,255,255,.55)}
 .gx-module-arrow{position:absolute;right:21px;bottom:20px;font-size:17px;opacity:.28;transition:opacity .3s,transform .3s}
 .gx-module:hover .gx-module-arrow{opacity:1;transform:translate(2px,-2px)}
+.gx-module.is-featured{grid-column:1/-1;min-height:190px;overflow:hidden;border-color:#164bff;background:#164bff;color:#fff}
+.gx-module.is-featured::before{content:"READ / 3 MIN";position:absolute;right:28px;top:24px;font-size:clamp(47px,7vw,96px);font-weight:650;letter-spacing:-.07em;line-height:.8;color:rgba(255,255,255,.12);white-space:nowrap}
+.gx-module.is-featured:hover{background:#0f35c7;color:#fff}
+.gx-module.is-featured .gx-module-copy{max-width:45%}
+.gx-module.is-featured .gx-module-copy small{color:rgba(255,255,255,.7)}
 .gx-inline-link{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:22px;padding-top:18px;border-top:1px solid var(--gx-line);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 .gx-inline-link span{color:var(--gx-muted)}
 .gx-inline-link a{color:#111;text-decoration:none;font-weight:700}
@@ -1383,7 +1388,7 @@ body.gx-welcome-open{overflow:hidden}
   .gx-brand-mark{width:32px;height:32px}
   .gx-navlinks{gap:0;padding:3px}
   .gx-navlinks button,.gx-navlinks a{padding:7px 8px;font-size:9px}
-  .gx-navlinks button:nth-child(4){display:none}
+  .gx-navlinks>*:nth-child(5){display:none}
   .gx-hero{min-height:820px;padding:84px 14px 14px}
   .gx-hero-media img{object-position:58% 45%}
   .gx-hero-shade{background:linear-gradient(0deg,rgba(7,10,9,.94) 0%,rgba(7,10,9,.35) 55%,rgba(7,10,9,.62) 100%)}
@@ -1419,6 +1424,9 @@ body.gx-welcome-open{overflow:hidden}
   .gx-module-copy b{font-size:19px}
   .gx-module-copy small{font-size:9px;line-height:1.35}
   .gx-module-arrow{right:14px;bottom:14px}
+  .gx-module.is-featured{min-height:170px}
+  .gx-module.is-featured::before{right:14px;top:18px;font-size:48px;white-space:normal;text-align:right;line-height:.85}
+  .gx-module.is-featured .gx-module-copy{max-width:66%}
   .gx-inline-link{font-size:8px}
   .gx-progress-head h2{font-size:clamp(36px,10.5vw,56px)}
   .gx-orbit{width:min(310px,84vw)}

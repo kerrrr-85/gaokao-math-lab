@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
 
-  var WELCOME_KEY = 'gml_home_v102_intro_seen';
+  var WELCOME_KEY = 'gml_home_v104_intro_seen';
   var homeTimer = null;
   var revealObserver = null;
   var scrollFrame = 0;
@@ -24,7 +24,8 @@
     calc: '<svg viewBox="0 0 24 24"><path d="M5 2h14a2 2 0 012 2v16a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2zm0 2v3h14V4H5zm1.6 5.4h2.8v2.8H6.6v-2.8zm4.4 0h2.8v2.8h-2.8v-2.8zm4.4 0h2.8v2.8h-2.8v-2.8zM6.6 14.4h2.8v2.8H6.6v-2.8zm4.4 0h2.8v5.6h-2.8v-5.6zm4.4 0h2.8v2.8h-2.8v-2.8zm0 4h2.8v1.6h-2.8v-1.6z"/></svg>',
     scan: '<svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3H9zm3 5a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6z"/></svg>',
     video: '<svg viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1zm6 3.5v7l6-3.5-6-3.5z"/></svg>',
-    doubao: '<svg viewBox="0 0 24 24"><path d="M7 3h10a4 4 0 014 4v6a4 4 0 01-4 4h-3l-5 4v-4H7a4 4 0 01-4-4V7a4 4 0 014-4zm1 5h8v2H8V8zm0 4h5v2H8v-2z"/></svg>'
+    doubao: '<svg viewBox="0 0 24 24"><path d="M7 3h10a4 4 0 014 4v6a4 4 0 01-4 4h-3l-5 4v-4H7a4 4 0 01-4-4V7a4 4 0 014-4zm1 5h8v2H8V8zm0 4h5v2H8v-2z"/></svg>',
+    reading: '<svg viewBox="0 0 24 24"><path d="M2 5.5c3.7-1.3 7 .1 10 2v12c-3-1.9-6.3-3.3-10-2v-12zm20 0c-3.7-1.3-7 .1-10 2v12c3-1.9 6.3-3.3 10-2v-12z"/></svg>'
   };
 
   var MODULES = [
@@ -39,7 +40,8 @@
     ['calc', '计算器', 'https://www.geogebra.org/calculator', 1, 'GeoGebra 科学计算'],
     ['scan', '拍照解题', 'https://mathsolver.microsoft.com/', 1, '微软数学识别与求解', './assets/gallery/car-interior.webp'],
     ['board', '白板', 'https://drawnix.com', 1, '无限画布整理思路'],
-    ['doubao', '豆包', 'https://www.doubao.com/chat/', 1, '外部 AI 对话助手']
+    ['doubao', '豆包', 'https://www.doubao.com/chat/', 1, '外部 AI 对话助手'],
+    ['reading', '秒读训练', '#/reading', 0, '调速阅读、理解测验与本机训练记录']
   ];
 
   function esc(s) {
@@ -120,7 +122,7 @@
   function moduleCard(item, index) {
     var key = item[0], title = item[1], href = item[2], ext = item[3], text = item[4], image = item[5] || '';
     var attrs = ext ? ' target="_blank" rel="noopener"' : '';
-    return '<a class="gx-module' + (image ? ' has-image' : '') + '" href="' + href + '"' + attrs + '>' +
+    return '<a class="gx-module' + (image ? ' has-image' : '') + (key === 'reading' ? ' is-featured' : '') + '" href="' + href + '"' + attrs + '>' +
       (image ? '<img class="gx-module-image" src="' + image + '" alt="" loading="lazy">' : '') +
       '<span class="gx-module-top"><span class="gx-module-no">' + String(index + 1).padStart(2, '0') + '</span><span class="gx-module-icon">' + (GX_ICONS[key] || '') + '</span></span>' +
       '<span class="gx-module-copy"><b>' + esc(title) + '</b><small>' + esc(text) + '</small></span>' +
@@ -158,6 +160,7 @@
           '<nav class="gx-navlinks" aria-label="首页导航">' +
             '<button type="button" onclick="Portal.homeScroll(\'gxFocus\')">今日</button>' +
             '<button type="button" onclick="Portal.homeScroll(\'gxModules\')">模块</button>' +
+            '<a href="#/reading">阅读</a>' +
             '<button type="button" onclick="Portal.homeScroll(\'gxProgress\')">进度</button>' +
             '<button type="button" onclick="Portal.homeScroll(\'gxTools\')">工具</button>' +
             '<a href="#/settings">设置</a>' +
@@ -176,6 +179,7 @@
               '<div class="gx-hero-actions">' +
                 '<a class="gx-cta" href="#/practice/start"><span>开始今天的练习</span><i>↗</i></a>' +
                 '<button class="gx-cta gx-cta-ghost" type="button" onclick="PortalPlan.open()"><span>打开今日计划</span><i>＋</i></button>' +
+                '<a class="gx-cta gx-cta-ghost" href="#/reading"><span>秒读训练</span><i>→</i></a>' +
               '</div>' +
             '</div>' +
             '<aside class="gx-hero-aside gx-reveal">' +
@@ -246,7 +250,7 @@
 
         '<footer class="gx-footer">' +
           '<div class="gx-footer-mark"><span>G</span><p><b>高考数学学习台</b><small>把复杂的，变成会做的。</small></p></div>' +
-          '<div class="gx-footer-meta"><span>v103 / HOMEPAGE</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">系统设置</a></div>' +
+          '<div class="gx-footer-meta"><span>v104 / HOMEPAGE</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">系统设置</a></div>' +
         '</footer>' +
       '</div>';
 
@@ -353,14 +357,14 @@
     overlay.className = 'gx-welcome';
     overlay.innerHTML =
       '<section class="gx-welcome-panel" role="dialog" aria-modal="true" aria-labelledby="gxWelcomeTitle">' +
-        '<header class="gx-welcome-head"><span>NEW HOMEPAGE / v103</span><button type="button" aria-label="关闭新版介绍" onclick="Portal.closeHomeWelcome()">×</button></header>' +
+        '<header class="gx-welcome-head"><span>NEW HOMEPAGE / v104</span><button type="button" aria-label="关闭新版介绍" onclick="Portal.closeHomeWelcome()">×</button></header>' +
         '<div class="gx-welcome-grid">' +
           '<div class="gx-welcome-index"><span>02</span><small>NEW<br>DIRECTION</small></div>' +
           '<div class="gx-welcome-copy">' +
             '<p class="gx-kicker"><span class="gx-chip">第一次见</span><span>同样的内容，换一种更清醒的打开方式</span></p>' +
             '<h2 id="gxWelcomeTitle">新版主页，<br>先把方向看清楚。</h2>' +
-            '<p>入口更直接，进度更清楚。今天的任务、薄弱知识点和练习入口现在都在第一屏之后，继续向下就行。</p>' +
-            '<div class="gx-welcome-points"><span><b>01</b> 一眼看到今日重点</span><span><b>02</b> 从薄弱点直接练习</span><span><b>03</b> 原有数据完整保留</span></div>' +
+            '<p>入口更直接，进度更清楚，并新增无需学校账号的本地秒读训练。今天的任务、薄弱知识点和练习入口都在第一屏之后，继续向下就行。</p>' +
+            '<div class="gx-welcome-points"><span><b>01</b> 一眼看到今日重点</span><span><b>02</b> 从薄弱点直接练习</span><span><b>03</b> 秒读训练与图片版首页</span></div>' +
             '<button class="gx-cta" type="button" onclick="Portal.closeHomeWelcome()"><span>进入新版首页</span><i>↗</i></button>' +
           '</div>' +
         '</div>' +

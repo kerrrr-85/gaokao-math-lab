@@ -40,6 +40,8 @@
   function setTab(page) {
     if (page !== 'portal' && page) document.body.classList.remove('pt-full');
     if (page !== 'portal' && window.Portal && Portal.stopFx) Portal.stopFx();
+    if (page !== 'reading' && window.Reading && Reading.stop) Reading.stop();
+    document.body.classList.toggle('reading-mode', page === 'reading');
     var _night = (page === 'portal' || !page) && window.Portal && Portal.isNight && Portal.isNight();
     document.body.classList.toggle('portal-dark', !!_night);
     if (page !== 'portal' && window.Galaxy) Galaxy.stop();
@@ -1116,7 +1118,7 @@
       '</div>' +
       '<div class="set-group">' +
         '<div class="set-h">关于</div>' +
-        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v103</span>') +
+        setRow('版本', '函数与导数 · 三角函数 · 数列 · 物理 · 生物', '<span class="set-val">v104</span>') +
         setRow('数据存储', '只存在这台设备，不上传', '<span class="set-val">本机</span>') +
       '</div>';
 
@@ -1195,7 +1197,7 @@
 
     view.innerHTML =
       '<div class="set-wrap">' +
-        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v103 · 数据只存在本机</p></div></div>' +
+        '<div class="phead"><span class="ico">⚙</span><div class="grow"><h2>设置</h2><p>版本 v104 · 数据只存在本机</p></div></div>' +
         '<div class="set-seg five" id="setSeg">' +
           '<button class="set-segbtn" data-k="look" onclick="App.setSetTab(\'look\')">外观</button>' +
           '<button class="set-segbtn" data-k="voice" onclick="App.setSetTab(\'voice\')">语音</button>' +
@@ -1270,6 +1272,7 @@
     else if (page === 'today') renderToday(parts[1]);
     else if (page === 'study') { history.replaceState(null, '', '#/today'); renderToday(); }
     else if (page === 'portal') Portal.renderPortal();
+    else if (page === 'reading') Reading.render();
     else if (page === 'video') Portal.renderVideo();
     else if (page === 'globe') Globe.render(parts[1]);
     else renderHub();
