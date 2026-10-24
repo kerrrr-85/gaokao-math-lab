@@ -106,7 +106,7 @@
           '<button type="button" class="ex-study-toggle" onclick="CloudRoom.toggleTools()"><span><small>WHEN YOU NEED IT</small><b>需要学习时，再打开工具。</b></span><i>＋</i></button>' +
           '<div class="ex-tools" id="exTools"><div class="ex-tools-head"><span>STUDY DRAWER</span><button type="button" onclick="CloudRoom.toggleTools(false)">收起 ×</button></div><div class="ex-tools-grid">' + toolsHTML() + '</div><p>这些入口仍然可用，但不再占据首页。</p></div>' +
         '</section>' +
-          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v108 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
+          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v109 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
         '<div class="ex-lightbox" id="exLightbox" aria-hidden="true"><button type="button" data-close-lightbox aria-label="关闭图片">×</button><figure><img id="exLightboxImg" alt=""><figcaption><small id="exLightboxLabel"></small><b id="exLightboxTitle"></b><span id="exLightboxSub"></span></figcaption></figure></div>' +
       '</div>';
     bind();
