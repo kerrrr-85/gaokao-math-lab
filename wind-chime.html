@@ -24,6 +24,9 @@
   .stage::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 45%,transparent 0 24%,rgba(0,0,0,.2) 80%);}
   .topline{position:absolute;left:26px;top:24px;display:flex;align-items:center;gap:12px;z-index:5;color:rgba(244,240,232,.54);font-size:8px;letter-spacing:.18em;text-transform:uppercase}
   .topline i{width:28px;height:1px;background:rgba(244,240,232,.32)}
+  .back{color:rgba(244,240,232,.7);text-decoration:none;letter-spacing:.08em}
+  .back:hover{color:#fff}
+  html.embedded .back{display:none}
   .sound{position:absolute;right:24px;bottom:22px;z-index:5;padding:9px 13px;border:1px solid rgba(244,240,232,.22);border-radius:999px;background:rgba(9,13,18,.35);color:rgba(244,240,232,.72);font:inherit;font-size:9px;letter-spacing:.08em;cursor:pointer;backdrop-filter:blur(8px)}
   .sound:hover{background:rgba(255,255,255,.12);color:#fff}
   .sound.off{opacity:.55}
@@ -83,7 +86,7 @@
 <body>
 <div class="stage" id="stage">
   <div class="curtain" aria-hidden="true"><span></span><span></span><span></span></div>
-  <div class="topline"><span>WIND CHIME</span><i></i><span>风吹到哪里，就停在哪里</span></div>
+  <div class="topline"><a class="back" href="./#/" target="_top">← 云空间</a><span>WIND CHIME</span><i></i><span>风吹到哪里，就停在哪里</span></div>
   <svg class="rope" id="rope" aria-hidden="true">
     <defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="rgba(0,0,0,.38)"/></filter></defs>
     <line id="ropeShadow" stroke="rgba(179,164,143,.68)" stroke-width="2.2" stroke-linecap="round" filter="url(#shadow)"></line>
@@ -110,6 +113,7 @@
 <script>
 (function(){
   'use strict';
+  if(window.self!==window.top)document.documentElement.classList.add('embedded');
   var stage=document.getElementById('stage'), ballEl=document.getElementById('ball'), chime=document.getElementById('chime');
   var anchor=document.getElementById('anchor'), stickPivot=document.getElementById('stickPivot'), cardPivot=document.getElementById('cardPivot');
   var ropeShadow=document.getElementById('ropeShadow'), ropeLight=document.getElementById('ropeLight');
