@@ -46,12 +46,10 @@
     var w = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
     return d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + d.getDate()).slice(-2) + ' / 星期' + w;
   }
-  function galleryHTML() {
+  function scenePickerHTML() {
     return GALLERY.map(function (item, i) {
-      return '<button type="button" class="ex-photo ex-reveal" data-gallery="' + i + '" aria-label="查看图片：' + esc(item.title) + '">' +
-        '<span class="ex-photo-meta"><small>' + item.label + '</small><b>' + esc(item.title) + '</b><em>' + esc(item.sub) + '</em><i>查看画面 ›</i></span>' +
-        '<span class="ex-photo-media"><img src="' + item.src + '" alt="' + esc(item.title) + '" loading="lazy"></span>' +
-        '</button>';
+      return '<button type="button" data-scene="' + i + '" aria-label="切换为背景：' + esc(item.title) + '">' +
+        '<img src="' + item.src + '" alt="" loading="lazy"><span><b>' + esc(item.title) + '</b><small>' + ('0' + (i + 1)).slice(-2) + '</small></span></button>';
     }).join('');
   }
   function toolsHTML() {
@@ -62,6 +60,7 @@
 
   function render() {
     stop();
+    slideIndex = 0;
     document.body.classList.add('pt-full');
     document.body.classList.toggle('portal-dark', !!(global.Portal && Portal.isNight && Portal.isNight()));
     var view = document.getElementById('view');
@@ -69,31 +68,23 @@
       '<div class="ex-home' + (Portal.isNight && Portal.isNight() ? ' is-night' : '') + '" id="ptLanding">' +
         '<header class="ex-nav">' +
           '<a class="ex-brand" href="#/" onclick="return Portal.homeScroll(\'exTop\')"><i>G</i><span><b>我们的云空间</b><small>CLOUD ROOM / A QUIET PLACE</small></span></a>' +
-          '<nav><button type="button" onclick="Portal.homeScroll(\'exTop\')">漫游</button><button type="button" onclick="Portal.homeScroll(\'exGallery\')">光影</button><button type="button" onclick="CloudRoom.openCabin()">小屋</button><button type="button" onclick="CloudRoom.toggleTools()">工具</button></nav>' +
+          '<nav><button type="button" onclick="Portal.homeScroll(\'exTop\')">漫游</button><button type="button" onclick="CloudRoom.openScenes()">换景</button><button type="button" onclick="CloudRoom.openCabin()">小屋</button><button type="button" onclick="CloudRoom.toggleTools()">工具</button></nav>' +
           '<div class="ex-nav-time"><span id="exClock">' + clock() + '</span><small>' + dateText() + '</small></div>' +
         '</header>' +
         '<section class="ex-hero" id="exTop">' +
-          '<div class="ex-slides" aria-hidden="true">' +
-            '<img class="is-active" src="./assets/gallery/cosmos.webp?v=107" alt="">' +
-            '<img src="./assets/gallery/snow-sunset.webp?v=107" alt="">' +
-            '<img src="./assets/gallery/reading-starry.jpg?v=107" alt="">' +
-          '</div>' +
+          '<div class="ex-slides" aria-hidden="true">' + GALLERY.map(function (g, i) { return '<img class="' + (i === 0 ? 'is-active' : '') + '" src="' + g.src + '?v=110" alt="">'; }).join('') + '</div>' +
           '<div class="ex-hero-shade" aria-hidden="true"></div>' +
           '<div class="ex-hero-copy">' +
             '<p class="ex-kicker"><span>ROOM 01</span> 给眼睛和心情的一点留白</p>' +
             '<h1 class="ex-title" role="button" tabindex="0" aria-label="进入隐藏彩蛋" title="点一下，看看会发生什么">在这里，<br><em>不必完成什么。</em></h1>' +
             '<p class="ex-lede">看看星空，听一会风铃，或者只是向下翻几张图。这里没有任务倒计时。</p>' +
-            '<div class="ex-actions"><button type="button" onclick="Portal.homeScroll(\'exGallery\')">开始漫游 <i>↓</i></button><a href="./wind-chime.html" target="_blank" rel="noopener">去听风 <i>↗</i></a></div>' +
+            '<div class="ex-actions"><button type="button" onclick="Portal.homeScroll(\'exRoom\')">进入游乐场 <i>↓</i></button><button type="button" onclick="CloudRoom.openScenes()">换一幅风景 <i>↗</i></button><a href="./wind-chime.html" target="_blank" rel="noopener">去听风 <i>↗</i></a></div>' +
           '</div>' +
           '<div class="ex-hero-corner"><span>NOW PLAYING</span><b id="exSlideLabel">01 / 星海</b><i></i><small>SCROLL TO WANDER</small></div>' +
-          '<div class="ex-hero-strip">' + GALLERY.slice(0,3).map(function (g,i) { return '<button type="button" data-gallery="' + i + '"><img src="' + g.src + '" alt="" loading="lazy"><span>' + ('0'+(i+1)).slice(-2) + ' · ' + esc(g.title) + '</span></button>'; }).join('') + '</div>' +
+          '<div class="ex-hero-strip">' + GALLERY.slice(0,3).map(function (g,i) { return '<button type="button" data-scene="' + i + '"><img src="' + g.src + '" alt="" loading="lazy"><span>' + ('0'+(i+1)).slice(-2) + ' · ' + esc(g.title) + '</span></button>'; }).join('') + '</div>' +
         '</section>' +
         '<div class="ex-marquee" aria-hidden="true"><span>LOOK UP</span><i></i><span>BREATHE SLOW</span><i></i><span>NOTHING TO FINISH</span><i></i><span>STAY A WHILE</span></div>' +
-        '<section class="ex-section ex-gallery-sec" id="exGallery">' +
-          '<div class="ex-section-head ex-reveal"><div><span class="ex-kicker">VISUAL.01 / 光影收藏</span><h2>七种画面，<br>七种不赶时间的方式。</h2></div><p>点击任意画面，安静地看一会儿。</p></div>' +
-          '<div class="ex-gallery">' + galleryHTML() + '</div>' +
-        '</section>' +
-        '<section class="ex-room">' +
+        '<section class="ex-room" id="exRoom">' +
           '<div class="ex-room-head ex-reveal"><span class="ex-kicker">PLAY.02 / 小小游乐场</span><h2>不做什么，<br>也可以很好玩。</h2></div>' +
           '<div class="ex-room-grid">' +
             '<button class="ex-room-card cabin ex-reveal" type="button" onclick="CloudRoom.openCabin()"><img class="ex-room-thumb" src="./assets/gallery/cabin-preview.webp?v=108" alt="" loading="lazy"><span class="ex-room-copy"><small>SPACE / 01</small><h3>魔法小屋</h3><p>走进一座线稿森林，推开门，在会呼吸的木屋里待一会儿。</p><b>进入空间 ↗</b></span></button>' +
@@ -106,8 +97,7 @@
           '<button type="button" class="ex-study-toggle" onclick="CloudRoom.toggleTools()"><span><small>WHEN YOU NEED IT</small><b>需要学习时，再打开工具。</b></span><i>＋</i></button>' +
           '<div class="ex-tools" id="exTools"><div class="ex-tools-head"><span>STUDY DRAWER</span><button type="button" onclick="CloudRoom.toggleTools(false)">收起 ×</button></div><div class="ex-tools-grid">' + toolsHTML() + '</div><p>这些入口仍然可用，但不再占据首页。</p></div>' +
         '</section>' +
-          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v109 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
-        '<div class="ex-lightbox" id="exLightbox" aria-hidden="true"><button type="button" data-close-lightbox aria-label="关闭图片">×</button><figure><img id="exLightboxImg" alt=""><figcaption><small id="exLightboxLabel"></small><b id="exLightboxTitle"></b><span id="exLightboxSub"></span></figcaption></figure></div>' +
+          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v110 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
       '</div>';
     bind();
     start();
@@ -115,10 +105,10 @@
   }
 
   function bind() {
-    document.querySelectorAll('[data-gallery]').forEach(function (el) {
+    document.querySelectorAll('[data-scene]').forEach(function (el) {
       el.addEventListener('click', function (e) {
         e.preventDefault();
-        openGallery(Number(el.getAttribute('data-gallery')));
+        setScene(Number(el.getAttribute('data-scene')));
       });
     });
     var title = document.querySelector('.ex-title');
@@ -128,8 +118,6 @@
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); Portal.inkOpen(e); }
       });
     }
-    var lb = document.getElementById('exLightbox');
-    if (lb) lb.addEventListener('click', function (e) { if (e.target === lb || e.target.closest('[data-close-lightbox]')) closeGallery(); });
   }
 
   function start() {
@@ -144,17 +132,7 @@
       }, { threshold: 0.06 });
       reveals.forEach(function (el) { revealObserver.observe(el); });
     }
-    var slides = document.querySelectorAll('.ex-slides img');
-    if (!reduced && slides.length) {
-      slideTimer = setInterval(function () {
-        if (!document.querySelector('.ex-home')) return;
-        slides[slideIndex].classList.remove('is-active');
-        slideIndex = (slideIndex + 1) % slides.length;
-        slides[slideIndex].classList.add('is-active');
-        var label = document.getElementById('exSlideLabel');
-        if (label) label.textContent = ['01 / 星海','02 / 群山','03 / 星夜'][slideIndex];
-      }, 7000);
-    }
+    if (!reduced) startSlideshow();
     clockTimer = setInterval(function () { var c = document.getElementById('exClock'); if (c) c.textContent = clock(); }, 30000);
     scrollHandler = function () {
       var nav = document.querySelector('.ex-nav');
@@ -171,22 +149,58 @@
     if (scrollHandler) { removeEventListener('scroll', scrollHandler); scrollHandler = null; }
     var intro = document.getElementById('exIntro'); if (intro) intro.remove();
     closeCabin();
+    closeScenes();
     document.body.classList.remove('ex-mode', 'ex-intro-open');
   }
 
-  function openGallery(i) {
-    var item = GALLERY[i]; if (!item) return;
-    var box = document.getElementById('exLightbox'); if (!box) return;
-    document.getElementById('exLightboxImg').src = item.src;
-    document.getElementById('exLightboxImg').alt = item.title;
-    document.getElementById('exLightboxLabel').textContent = item.label;
-    document.getElementById('exLightboxTitle').textContent = item.title;
-    document.getElementById('exLightboxSub').textContent = item.sub;
-    box.classList.add('on'); box.setAttribute('aria-hidden', 'false');
+  function startSlideshow() {
+    var slides = document.querySelectorAll('.ex-slides img');
+    if (!slides.length) return;
+    slideTimer = setInterval(function () {
+      if (!document.querySelector('.ex-home')) return;
+      slides[slideIndex].classList.remove('is-active');
+      slideIndex = (slideIndex + 1) % slides.length;
+      slides[slideIndex].classList.add('is-active');
+      var label = document.getElementById('exSlideLabel');
+      if (label) label.textContent = ('0' + (slideIndex + 1)).slice(-2) + ' / ' + GALLERY[slideIndex].title;
+    }, 7000);
   }
-  function closeGallery() {
-    var box = document.getElementById('exLightbox');
-    if (box) { box.classList.remove('on'); box.setAttribute('aria-hidden', 'true'); }
+  function setScene(i) {
+    var item = GALLERY[i]; if (!item) return;
+    var slides = document.querySelectorAll('.ex-slides img');
+    if (slides.length) {
+      slides[slideIndex].classList.remove('is-active');
+      slideIndex = i % slides.length;
+      slides[slideIndex].classList.add('is-active');
+    }
+    var label = document.getElementById('exSlideLabel');
+    if (label) label.textContent = ('0' + (i + 1)).slice(-2) + ' / ' + item.title;
+    closeScenes();
+  }
+  function openScenes() {
+    var box = document.getElementById('exScenes');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'exScenes';
+      box.className = 'ex-scenes';
+      box.setAttribute('aria-hidden', 'true');
+      box.innerHTML = '<section><header><div><small>ATMOSPHERE</small><h2>换一幅风景</h2></div><button type="button" class="ex-scenes-close" aria-label="关闭换景面板">×</button></header><div class="ex-scenes-grid">' + scenePickerHTML() + '</div></section>';
+      document.body.appendChild(box);
+      box.addEventListener('click', function (e) {
+        if (e.target === box || e.target.closest('.ex-scenes-close')) { closeScenes(); return; }
+        var bit = e.target.closest('[data-scene]');
+        if (bit) setScene(Number(bit.getAttribute('data-scene')));
+      });
+    }
+    box.classList.add('on');
+    box.setAttribute('aria-hidden', 'false');
+  }
+  function closeScenes() {
+    var box = document.getElementById('exScenes');
+    if (!box) return;
+    box.classList.remove('on');
+    box.setAttribute('aria-hidden', 'true');
+    setTimeout(function () { if (box && !box.classList.contains('on')) box.remove(); }, 260);
   }
   function openCabin() {
     var layer = document.getElementById('exCabinLayer');
@@ -246,7 +260,7 @@
     box.classList.remove('on'); document.body.classList.remove('ex-intro-open');
     setTimeout(function () { box.remove(); }, 350);
   }
-  function closeTransient() { closeGallery(); closeIntro(); closeCabin(); toggleTools(false); }
+  function closeTransient() { closeScenes(); closeIntro(); closeCabin(); toggleTools(false); }
   function homeScroll(id) {
     var el = document.getElementById(id); if (!el) return false;
     try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { el.scrollIntoView(); }
@@ -257,7 +271,7 @@
   }
   document.addEventListener('keydown', keydown);
 
-  global.CloudRoom = { toggleTools: toggleTools, closeIntro: closeIntro, openCabin: openCabin, closeCabin: closeCabin };
+  global.CloudRoom = { toggleTools: toggleTools, closeIntro: closeIntro, openCabin: openCabin, closeCabin: closeCabin, openScenes: openScenes, closeScenes: closeScenes };
   Portal.renderPortal = render;
   Portal.homeScroll = homeScroll;
   Portal.closeHomeWelcome = closeIntro;
