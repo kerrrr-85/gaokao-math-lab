@@ -1,0 +1,282 @@
+/* Cloud Tape music library. The overlay deliberately reuses the terminal sheet. */
+#track-library .index-in {
+  width: min(44rem, calc(100vw - 3rem));
+}
+
+#track-close {
+  border: 1px solid var(--hair);
+  border-radius: var(--r);
+  padding: .4375rem .75rem;
+  letter-spacing: .18em;
+}
+
+#track-close::after {
+  display: none;
+}
+
+#track-close:hover {
+  border-color: var(--accent-line);
+}
+
+.track-library-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem 0 .95rem;
+}
+
+.track-library-head h2 {
+  margin: 0;
+  font-family: var(--disp);
+  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  font-weight: 700;
+  line-height: .92;
+  letter-spacing: -.045em;
+}
+
+.track-library-head p {
+  max-width: 23rem;
+  margin: .45rem 0 0;
+  color: var(--ink-dim);
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+}
+
+.track-count {
+  flex: none;
+  padding-bottom: .25rem;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.track-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--hair);
+  list-style: none;
+}
+
+.track-choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 1rem .7rem 1rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--hair-soft);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: padding-left var(--t-med) var(--e-out), background var(--t-med) var(--e-out);
+}
+
+.track-choice::before {
+  content: "";
+  position: absolute;
+  inset: .55rem 0;
+  border-radius: var(--r);
+  background: var(--accent-soft);
+  opacity: 0;
+  transform: scaleX(.98);
+  transition: opacity var(--t-med) var(--e-out), transform var(--t-med) var(--e-out);
+}
+
+.track-choice:hover,
+.track-choice:focus-visible {
+  padding-left: .7rem;
+}
+
+.track-choice:hover::before,
+.track-choice:focus-visible::before,
+.track-choice.is-active::before {
+  opacity: 1;
+  transform: none;
+}
+
+.track-choice:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.track-choice > * {
+  position: relative;
+}
+
+.track-no {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  letter-spacing: .08em;
+  color: var(--ink-faint);
+}
+
+.track-copy {
+  min-width: 0;
+}
+
+.track-copy b {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-copy em,
+.track-copy small {
+  display: block;
+  font-style: normal;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: .12em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.track-copy em {
+  margin-top: .22rem;
+  color: var(--ink-dim);
+  letter-spacing: .05em;
+}
+
+.track-state {
+  min-width: 4.25rem;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: .14em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.track-choice.is-active .track-state {
+  color: var(--accent);
+}
+
+.track-choice.is-loading .track-state {
+  color: var(--accent);
+  animation: trackPulse .8s ease-in-out infinite alternate;
+}
+
+.track-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0 .25rem;
+}
+
+.track-footer p {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: var(--fs-micro);
+  line-height: 1.55;
+}
+
+.track-import {
+  flex: none;
+  padding: .58rem .8rem;
+  border: 1px solid var(--hair);
+  border-radius: var(--r);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-ui);
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: color var(--t-swift) var(--e-out), border-color var(--t-swift) var(--e-out);
+}
+
+.track-import:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.track-status {
+  min-height: 1.2em;
+  margin: .15rem 0 0;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: .08em;
+}
+
+#btn-add.open {
+  color: var(--accent);
+}
+
+#btn-add.open::after {
+  transform: scaleX(1);
+}
+
+@keyframes trackPulse {
+  from { opacity: .38; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 620px) {
+  #track-library .index-in {
+    width: calc(100vw - 1.5rem);
+    max-height: 78vh;
+  }
+
+  .track-library-head {
+    align-items: flex-start;
+    padding-top: 1rem;
+  }
+
+  .track-library-head h2 {
+    font-size: 2.6rem;
+  }
+
+  .track-head-copy > p {
+    max-width: 15rem;
+  }
+
+  .track-count {
+    display: none;
+  }
+
+  .track-choice {
+    grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+    gap: .65rem;
+    min-height: 5rem;
+  }
+
+  .track-copy b {
+    font-size: .95rem;
+  }
+
+  .track-state {
+    min-width: 2.8rem;
+  }
+
+  .track-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-choice,
+  .track-choice::before,
+  .track-import {
+    transition: none;
+  }
+
+  .track-choice.is-loading .track-state {
+    animation: none;
+  }
+}

@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>云磁带 · OHM TAPE</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=112b">
+<link rel="stylesheet" href="track-picker.css?v=112b">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -32,7 +33,7 @@
       <i class="vr" aria-hidden="true"></i>
       <button class="tb ui-hit" id="btn-add">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.1 12.1V4.3l5.1-1.1v7.3"/><ellipse cx="4.3" cy="12.2" rx="1.9" ry="1.6"/><ellipse cx="9.4" cy="11" rx="1.9" ry="1.6"/><path d="M13.2 2.5v3.2M11.6 4.1h3.2"/></svg>
-        ADD MUSIC
+        MUSIC LIBRARY
         <span class="vol-read" id="add-read" aria-hidden="true"></span>
       </button>
       <i class="vr" aria-hidden="true"></i>
@@ -168,6 +169,52 @@
     </div>
   </div>
 
+  <!-- ── music library ─────────────────────────────────────────── -->
+  <div class="index track-library" id="track-library" hidden>
+    <div class="index-in" role="dialog" aria-modal="true" aria-labelledby="track-library-title">
+      <div class="index-top">
+        <p class="index-h">MUSIC LIBRARY<i>/</i><span>选择这盘磁带要记住的声音</span></p>
+        <button class="tb ui-hit" id="track-close">CLOSE ✕</button>
+      </div>
+      <div class="track-library-head">
+        <div class="track-head-copy">
+          <h2 id="track-library-title">换一首歌，<br>让磁带转起来。</h2>
+          <p>选择后会直接写入磁带。文件只在这台设备里播放，不会上传。</p>
+        </div>
+        <span class="track-count">02 TRACKS / LOCAL</span>
+      </div>
+      <ul class="track-list" role="radiogroup" aria-label="可播放的音乐">
+        <li>
+          <button class="track-choice is-active" type="button" role="radio" aria-checked="true" data-track="demo">
+            <span class="track-no">01</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · DEMO</em>
+              <small>MP3 / 内置示例</small>
+            </span>
+            <span class="track-state">当前</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="ambient">
+            <span class="track-no">02</span>
+            <span class="track-copy">
+              <b>静夜磁带</b>
+              <em>CLOUD TAPE · ROOM 111</em>
+              <small>WAV / 48 SEC / GENERATED</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+      </ul>
+      <div class="track-footer">
+        <p>也可以选一首自己的歌，临时装进这盘磁带。</p>
+        <button class="track-import" id="track-import" type="button">＋ 导入本地音乐</button>
+      </div>
+      <p class="track-status" id="track-status" aria-live="polite"></p>
+    </div>
+  </div>
+
   <!-- ── settings ──────────────────────────────────────────────── -->
   <div class="index" id="settings" hidden>
     <div class="index-in">
@@ -182,7 +229,7 @@
   <svg class="lines" id="lines" aria-hidden="true"></svg>
 </div>
 
-<audio id="tape-audio" src="assets/cloud-tape-ambient.wav" preload="auto"></audio>
+<audio id="tape-audio" src="assets/tracks/lu-guo-ni-de-quan-shi-jie.mp3" preload="auto"></audio>
 <input type="file" id="tape-file" accept="audio/*,.mp3,.m4a,.m4b,.aac,.flac,.wav,.wave,.ogg,.oga,.opus,.webm" hidden>
 
 <div class="loader" id="loader">
@@ -194,7 +241,8 @@
 </div>
 
 <noscript><p style="color:#111;padding:2rem">需要启用 JavaScript。</p></noscript>
-<script src="dist/app.js"></script>
+<script src="dist/app.js?v=112b"></script>
+<script src="track-picker.js?v=112b"></script>
 <script>
   addEventListener('keydown', function (event) {
     if (event.key === 'Escape') parent.postMessage({ type: 'gml-close-cassette' }, '*');

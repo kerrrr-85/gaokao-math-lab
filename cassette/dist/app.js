@@ -34122,10 +34122,10 @@ void main() {
   orbit.home = { theta: 0.62, phi: 1.03, radius: 33 };
   var audio = new TapeAudio();
   var TRACK_DEFAULT = {
-    title: "静夜磁带",
-    artist: "CLOUD TAPE",
-    album: "ROOM 111",
-    src: "assets/cloud-tape-ambient.wav",
+    title: "路過你的銓世界",
+    artist: "抖音收藏",
+    album: "DEMO 01",
+    src: "assets/tracks/lu-guo-ni-de-quan-shi-jie.mp3",
     file: null
   };
   var TRACK = { ...TRACK_DEFAULT };
@@ -35633,6 +35633,28 @@ void main() {
     const tags = await readTags(file);
     applyTrack({ ...tags, src: URL.createObjectURL(file), file });
   }
+  async function addLibraryTrack(track) {
+    if (!track || !track.src) throw new Error("invalid track");
+    if (swap.state !== "idle") throw new Error("tape busy");
+    flashAdd("\u6B63\u5728\u88C5\u5165");
+    const response = await fetch(track.src);
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const blob = await response.blob();
+    const file = new File([blob], track.filename || track.title, {
+      type: blob.type || track.type || "audio/mpeg",
+      lastModified: Date.now()
+    });
+    applyTrack({
+      title: track.title,
+      artist: track.artist || "",
+      album: track.album || "",
+      src: URL.createObjectURL(file),
+      file
+    });
+  }
+  window.CloudTapeLibrary = {
+    load: addLibraryTrack
+  };
   addBtn.addEventListener("click", openPicker);
   fileInput.addEventListener("change", () => {
     if (fileInput.files?.length) addFiles(fileInput.files);
