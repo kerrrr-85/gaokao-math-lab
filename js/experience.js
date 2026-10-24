@@ -69,7 +69,7 @@
       '<div class="ex-home' + (Portal.isNight && Portal.isNight() ? ' is-night' : '') + '" id="ptLanding">' +
         '<header class="ex-nav">' +
           '<a class="ex-brand" href="#/" onclick="return Portal.homeScroll(\'exTop\')"><i>G</i><span><b>我们的云空间</b><small>CLOUD ROOM / A QUIET PLACE</small></span></a>' +
-          '<nav><button type="button" onclick="Portal.homeScroll(\'exTop\')">漫游</button><button type="button" onclick="Portal.homeScroll(\'exGallery\')">光影</button><a href="./wind-chime.html" target="_blank" rel="noopener">风铃</a><button type="button" onclick="CloudRoom.toggleTools()">工具</button></nav>' +
+          '<nav><button type="button" onclick="Portal.homeScroll(\'exTop\')">漫游</button><button type="button" onclick="Portal.homeScroll(\'exGallery\')">光影</button><button type="button" onclick="CloudRoom.openCabin()">小屋</button><button type="button" onclick="CloudRoom.toggleTools()">工具</button></nav>' +
           '<div class="ex-nav-time"><span id="exClock">' + clock() + '</span><small>' + dateText() + '</small></div>' +
         '</header>' +
         '<section class="ex-hero" id="exTop">' +
@@ -96,6 +96,7 @@
         '<section class="ex-room">' +
           '<div class="ex-room-head ex-reveal"><span class="ex-kicker">PLAY.02 / 小小游乐场</span><h2>不做什么，<br>也可以很好玩。</h2></div>' +
           '<div class="ex-room-grid">' +
+            '<button class="ex-room-card cabin ex-reveal" type="button" onclick="CloudRoom.openCabin()"><img class="ex-room-thumb" src="./assets/gallery/cabin-preview.webp?v=108" alt="" loading="lazy"><span class="ex-room-copy"><small>SPACE / 01</small><h3>魔法小屋</h3><p>走进一座线稿森林，推开门，在会呼吸的木屋里待一会儿。</p><b>进入空间 ↗</b></span></button>' +
             '<a class="ex-room-card wind ex-reveal" href="./wind-chime.html" target="_blank" rel="noopener"><small>WIND / 01</small><h3>风铃室</h3><p>拖动玻璃球，把它扔进风里。手机也可以用手指玩。</p><span>打开风铃 ↗</span></a>' +
             '<a class="ex-room-card globe ex-reveal" href="#/globe"><small>EARTH / 02</small><h3>看看地球</h3><p>转到另一个半球，看看城市、晨昏线和很远的地方。</p><span>进入地球 ↗</span></a>' +
             '<a class="ex-room-card secret ex-reveal" href="#/" onclick="Portal.inkOpen(event);return false;"><small>HIDDEN / 03</small><h3>彩蛋房</h3><p>在标题里藏了一扇门。慢一点，再点一次标题也能进去。</p><span>进入隐藏空间 ↗</span></a>' +
@@ -105,7 +106,7 @@
           '<button type="button" class="ex-study-toggle" onclick="CloudRoom.toggleTools()"><span><small>WHEN YOU NEED IT</small><b>需要学习时，再打开工具。</b></span><i>＋</i></button>' +
           '<div class="ex-tools" id="exTools"><div class="ex-tools-head"><span>STUDY DRAWER</span><button type="button" onclick="CloudRoom.toggleTools(false)">收起 ×</button></div><div class="ex-tools-grid">' + toolsHTML() + '</div><p>这些入口仍然可用，但不再占据首页。</p></div>' +
         '</section>' +
-          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v107 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
+          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v108 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
         '<div class="ex-lightbox" id="exLightbox" aria-hidden="true"><button type="button" data-close-lightbox aria-label="关闭图片">×</button><figure><img id="exLightboxImg" alt=""><figcaption><small id="exLightboxLabel"></small><b id="exLightboxTitle"></b><span id="exLightboxSub"></span></figcaption></figure></div>' +
       '</div>';
     bind();
@@ -169,6 +170,7 @@
     if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
     if (scrollHandler) { removeEventListener('scroll', scrollHandler); scrollHandler = null; }
     var intro = document.getElementById('exIntro'); if (intro) intro.remove();
+    closeCabin();
     document.body.classList.remove('ex-mode', 'ex-intro-open');
   }
 
@@ -185,6 +187,38 @@
   function closeGallery() {
     var box = document.getElementById('exLightbox');
     if (box) { box.classList.remove('on'); box.setAttribute('aria-hidden', 'true'); }
+  }
+  function openCabin() {
+    var layer = document.getElementById('exCabinLayer');
+    var frame = document.getElementById('exCabinFrame');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'exCabinLayer';
+      layer.className = 'ex-cabin-layer';
+      layer.setAttribute('aria-hidden', 'true');
+      layer.innerHTML = '<button type="button" class="ex-cabin-close">← 返回云空间</button><iframe id="exCabinFrame" title="线稿魔法小屋空间" allow="fullscreen; pointer-lock"></iframe><p>点击画面锁定视角 · Esc 释放鼠标</p>';
+      document.body.appendChild(layer);
+      frame = document.getElementById('exCabinFrame');
+      layer.querySelector('.ex-cabin-close').addEventListener('click', closeCabin);
+    }
+    if (!frame) return;
+    if (!frame.getAttribute('src')) frame.setAttribute('src', './magic-cabin/index.html');
+    layer.classList.add('on');
+    layer.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('ex-cabin-open');
+  }
+  function closeCabin() {
+    var layer = document.getElementById('exCabinLayer');
+    var frame = document.getElementById('exCabinFrame');
+    if (!layer) return;
+    layer.classList.remove('on');
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('ex-cabin-open');
+    setTimeout(function () {
+      if (!frame || layer.classList.contains('on')) return;
+      frame.removeAttribute('src');
+      layer.remove();
+    }, 320);
   }
   function toggleTools(force) {
     var sec = document.getElementById('exStudy');
@@ -212,7 +246,7 @@
     box.classList.remove('on'); document.body.classList.remove('ex-intro-open');
     setTimeout(function () { box.remove(); }, 350);
   }
-  function closeTransient() { closeGallery(); closeIntro(); toggleTools(false); }
+  function closeTransient() { closeGallery(); closeIntro(); closeCabin(); toggleTools(false); }
   function homeScroll(id) {
     var el = document.getElementById(id); if (!el) return false;
     try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { el.scrollIntoView(); }
@@ -223,7 +257,7 @@
   }
   document.addEventListener('keydown', keydown);
 
-  global.CloudRoom = { toggleTools: toggleTools, closeIntro: closeIntro };
+  global.CloudRoom = { toggleTools: toggleTools, closeIntro: closeIntro, openCabin: openCabin, closeCabin: closeCabin };
   Portal.renderPortal = render;
   Portal.homeScroll = homeScroll;
   Portal.closeHomeWelcome = closeIntro;
