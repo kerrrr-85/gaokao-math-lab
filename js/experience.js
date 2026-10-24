@@ -1,8 +1,8 @@
-/* v106 云空间 · 视觉漫游首页 */
+/* v107 云空间 · Apple-inspired quiet gallery */
 (function (global) {
   'use strict';
 
-  var INTRO_KEY = 'gml_cloud_room_intro_v106';
+  var INTRO_KEY = 'gml_cloud_room_intro_v107';
   var slideTimer = 0;
   var clockTimer = 0;
   var revealObserver = null;
@@ -49,10 +49,9 @@
   function galleryHTML() {
     return GALLERY.map(function (item, i) {
       return '<button type="button" class="ex-photo ex-reveal" data-gallery="' + i + '" aria-label="查看图片：' + esc(item.title) + '">' +
-        '<img src="' + item.src + '" alt="' + esc(item.title) + '" loading="lazy">' +
-        '<span class="ex-photo-shade"></span>' +
-        '<span class="ex-photo-meta"><small>' + item.label + '</small><b>' + esc(item.title) + '</b><em>' + esc(item.sub) + '</em></span>' +
-        '<span class="ex-photo-arrow">↗</span></button>';
+        '<span class="ex-photo-meta"><small>' + item.label + '</small><b>' + esc(item.title) + '</b><em>' + esc(item.sub) + '</em><i>查看画面 ›</i></span>' +
+        '<span class="ex-photo-media"><img src="' + item.src + '" alt="' + esc(item.title) + '" loading="lazy"></span>' +
+        '</button>';
     }).join('');
   }
   function toolsHTML() {
@@ -75,9 +74,9 @@
         '</header>' +
         '<section class="ex-hero" id="exTop">' +
           '<div class="ex-slides" aria-hidden="true">' +
-            '<img class="is-active" src="./assets/gallery/cosmos.webp?v=106" alt="">' +
-            '<img src="./assets/gallery/snow-sunset.webp?v=106" alt="">' +
-            '<img src="./assets/gallery/reading-starry.jpg?v=106" alt="">' +
+            '<img class="is-active" src="./assets/gallery/cosmos.webp?v=107" alt="">' +
+            '<img src="./assets/gallery/snow-sunset.webp?v=107" alt="">' +
+            '<img src="./assets/gallery/reading-starry.jpg?v=107" alt="">' +
           '</div>' +
           '<div class="ex-hero-shade" aria-hidden="true"></div>' +
           '<div class="ex-hero-copy">' +
@@ -106,7 +105,7 @@
           '<button type="button" class="ex-study-toggle" onclick="CloudRoom.toggleTools()"><span><small>WHEN YOU NEED IT</small><b>需要学习时，再打开工具。</b></span><i>＋</i></button>' +
           '<div class="ex-tools" id="exTools"><div class="ex-tools-head"><span>STUDY DRAWER</span><button type="button" onclick="CloudRoom.toggleTools(false)">收起 ×</button></div><div class="ex-tools-grid">' + toolsHTML() + '</div><p>这些入口仍然可用，但不再占据首页。</p></div>' +
         '</section>' +
-        '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v106 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
+          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v107 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
         '<div class="ex-lightbox" id="exLightbox" aria-hidden="true"><button type="button" data-close-lightbox aria-label="关闭图片">×</button><figure><img id="exLightboxImg" alt=""><figcaption><small id="exLightboxLabel"></small><b id="exLightboxTitle"></b><span id="exLightboxSub"></span></figcaption></figure></div>' +
       '</div>';
     bind();
@@ -201,7 +200,7 @@
     var seen = false; try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch (e) {}
     if (seen || document.getElementById('exIntro')) return;
     var box = document.createElement('div'); box.id = 'exIntro'; box.className = 'ex-intro';
-    box.innerHTML = '<section class="ex-intro-card" role="dialog" aria-modal="true" aria-labelledby="exIntroTitle"><img src="./assets/gallery/cosmos.webp?v=106" alt=""><div class="ex-intro-shade"></div><div class="ex-intro-copy"><p class="ex-kicker"><span>WELCOME</span> 这一次，不为完成任务</p><h2 id="exIntroTitle">先看看风景，<br>再决定要不要学习。</h2><p>任务、练习和统计都收进了下方的工具抽屉。这里的首页只负责好看、安静和一点点好玩。</p><button type="button" id="exEnter">进入云空间 <i>↗</i></button></div></section>';
+    box.innerHTML = '<section class="ex-intro-card" role="dialog" aria-modal="true" aria-labelledby="exIntroTitle"><img src="./assets/gallery/cosmos.webp?v=107" alt=""><div class="ex-intro-shade"></div><div class="ex-intro-copy"><p class="ex-kicker"><span>WELCOME</span> 这一次，不为完成任务</p><h2 id="exIntroTitle">先看看风景，<br>再决定要不要学习。</h2><p>任务、练习和统计都收进了下方的工具抽屉。这里的首页只负责好看、安静和一点点好玩。</p><button type="button" id="exEnter">进入云空间 <i>↗</i></button></div></section>';
     document.body.appendChild(box);
     document.body.classList.add('ex-intro-open');
     requestAnimationFrame(function () { box.classList.add('on'); });
