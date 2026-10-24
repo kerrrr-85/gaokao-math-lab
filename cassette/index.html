@@ -4,14 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>云磁带 · OHM TAPE</title>
-<link rel="stylesheet" href="styles.css?v=1133">
-<link rel="stylesheet" href="track-picker.css?v=1133">
+<link rel="stylesheet" href="styles.css?v=114">
+<link rel="stylesheet" href="track-picker.css?v=114">
+<link rel="stylesheet" href="lyrics.css?v=114">
 </head>
 <body>
 <canvas id="gl"></canvas>
 
 <div class="ui">
   <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+  <!-- ── kinetic lyric layer: only the 14-second take owns this surface ── -->
+  <aside class="lyric-stage" id="lyric-stage" aria-hidden="true" aria-live="polite">
+    <div class="lyric-orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="lyric-index" aria-hidden="true"><span>05</span><small>LYRIC<br>FILM</small></div>
+    <div class="lyric-copy">
+      <p class="lyric-ident"><span>识别片段</span><b>当遇见你</b><em>刘宇宁 · 14 SEC</em></p>
+      <p class="lyric-line lyric-main" data-line="0"></p>
+      <p class="lyric-line lyric-sub" data-line="1"></p>
+    </div>
+  </aside>
 
   <!-- ── masthead: the product, and the lights ─────────────────── -->
   <header class="mast">
@@ -238,7 +250,7 @@
             <span class="track-copy">
               <b>路過你的銓世界</b>
               <em>抖音收藏 · 00:14</em>
-              <small>MP3 / 128 KBPS / DEMO 05</small>
+              <small>MP3 / 128 KBPS / 悬浮歌词</small>
             </span>
             <span class="track-state">装载</span>
           </button>
@@ -322,8 +334,9 @@
 </div>
 
 <noscript><p style="color:#111;padding:2rem">需要启用 JavaScript。</p></noscript>
-<script src="dist/app.js?v=1133"></script>
-<script src="track-picker.js?v=1133"></script>
+<script src="dist/app.js?v=114"></script>
+<script src="track-picker.js?v=114"></script>
+<script src="lyrics.js?v=114"></script>
 <script>
   addEventListener('keydown', function (event) {
     if (event.key === 'Escape') parent.postMessage({ type: 'gml-close-cassette' }, '*');
