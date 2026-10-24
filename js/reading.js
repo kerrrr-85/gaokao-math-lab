@@ -120,7 +120,7 @@
     view.innerHTML =
       '<div class="sr-page">' +
         '<header class="sr-hero">' +
-          '<div class="sr-hero-media" aria-hidden="true"><img src="./assets/gallery/starry-night.webp?v=104" alt=""></div>' +
+          '<div class="sr-hero-media" aria-hidden="true"><img src="./assets/gallery/starry-night-reader.webp?v=104" alt=""></div>' +
           '<div class="sr-hero-shade" aria-hidden="true"></div>' +
           '<div class="sr-hero-copy">' +
             '<p><span>SPEED READING</span> 本地训练 / 无需学校账号</p>' +

@@ -10,6 +10,7 @@
 | `world-hands.webp` | `stokpic-hands-600497_1920.jpg` |
 | `car-interior.webp` | `toby_parsons-bmw-2964072_1920.jpg` |
 | `starry-night.webp` | `perlinator-starry-night-1093721_1920.jpg` |
+| `starry-night-reader.webp` | 由 `starry-night.webp` 派生，用于阅读训练首屏 |
 | `snow-sunset.webp` | `yoshitaka2-sunset-7704594_1920.jpg` |
 
 如用于公开商业站点，请根据原始素材来源再次确认对应授权范围。
