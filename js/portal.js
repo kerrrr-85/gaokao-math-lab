@@ -199,7 +199,7 @@
     roomEl.classList.add('on');
     var b = document.getElementById('roomBody');
     if (b) {
-      b.innerHTML = roomHTML() + '<div class="irm-hint">轻触中心 · 展开「我在呢」</div>';
+      b.innerHTML = roomHTML() + '<button class="irm-wind-open" type="button" onclick="Portal.openWindChime()">🔔 玩风铃</button>' + '<div class="irm-hint">轻触中心 · 展开「我在呢」</div>';
       var card = document.getElementById('irmCard');
       if (card) {
         card.addEventListener('pointerup', function (e) { e.stopPropagation(); });
@@ -235,6 +235,7 @@
     }
   }
   function openLanyard() {
+    closeWindChime();
     var body = document.getElementById('roomBody'); if (!body) return;
     var old = document.getElementById('irmLanyard'); if (old) { old.classList.add('on'); return; }
     var box = document.createElement('div'); box.id = 'irmLanyard'; box.className = 'irm-lanyard';
@@ -246,9 +247,23 @@
     box.classList.remove('on');
     setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 420);
   }
+  function openWindChime() {
+    closeLanyard();
+    var body = document.getElementById('roomBody'); if (!body) return;
+    var old = document.getElementById('irmWindChime'); if (old) { old.classList.add('on'); return; }
+    var box = document.createElement('div'); box.id = 'irmWindChime'; box.className = 'irm-lanyard irm-wind-layer';
+    box.innerHTML = '<iframe src="./wind-chime.html" title="可拖拽的风铃彩蛋" loading="lazy"></iframe><button type="button" class="irm-lanyard__close" onclick="Portal.closeWindChime()">关闭风铃</button>';
+    body.appendChild(box); requestAnimationFrame(function () { box.classList.add('on'); });
+  }
+  function closeWindChime() {
+    var box = document.getElementById('irmWindChime'); if (!box) return;
+    box.classList.remove('on');
+    setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 420);
+  }
   function inkClose() {
     if (global.EggGallery) global.EggGallery.close();
     closeLanyard();
+    closeWindChime();
     inkHoldStop();
     roomOn = false; inkReady = false;
     if (roomEl) roomEl.classList.remove('on');
@@ -637,7 +652,7 @@
     if (!q) return;
     window.open('https://search.bilibili.com/all?keyword=' + encodeURIComponent(q), '_blank');
   }
-  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, closeLanyard: closeLanyard, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, cycleNightMode: cycleNightMode, setNightMode: setNightMode, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
+  global.Portal = { videoTag: videoTag, videoSubject: videoSubject, toggleWatched: toggleWatched, toggleHtml5: toggleHtml5, cycleSpeed: cycleSpeed, closeLanyard: closeLanyard, openWindChime: openWindChime, closeWindChime: closeWindChime, pickPart: pickPart, inkOpen: inkOpen, inkClose: inkClose, roomOpen: roomOpen, isNight: isNight, cycleNightMode: cycleNightMode, setNightMode: setNightMode, stopFx: fxStop, refreshNight: applyNightNow, closeVideo: closeVideo, openModule: function (m) { App.openModule(m); }, renderPortal: renderPortal, renderVideo: renderVideo, loadWeather: loadWeather, play: play, searchBili: searchBili };
 })(window);
 
 

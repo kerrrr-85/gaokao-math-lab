@@ -855,6 +855,9 @@ body.map-full .gmap-wrap{position:fixed;inset:0;z-index:180;height:100vh;border-
 .ink-room-body{flex-direction:column;gap:16px}
 .irm-room-center{display:flex;flex-direction:column;align-items:center;gap:14px}
 .irm-hint{font-size:11px;letter-spacing:.24em;color:rgba(27,36,64,.5);transition:opacity .4s}
+.irm-wind-open{padding:9px 16px;border:1px solid rgba(74,64,49,.28);border-radius:999px;background:rgba(255,255,255,.42);color:#4a4031;font:inherit;font-size:10px;font-weight:650;letter-spacing:.12em;cursor:pointer;backdrop-filter:blur(8px);transition:background .3s,border-color .3s,transform .3s}
+.irm-wind-open:hover{background:rgba(255,255,255,.86);border-color:rgba(74,64,49,.58);transform:translateY(-2px)}
+.irm-wind-open:active{transform:scale(.96)}
 .egm{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:scale(1.035);pointer-events:none;color:#f4f7fc;background:
   radial-gradient(900px 520px at 50% 16%,rgba(80,150,185,.22),transparent 66%),
   radial-gradient(760px 520px at 12% 86%,rgba(191,160,106,.14),transparent 62%),

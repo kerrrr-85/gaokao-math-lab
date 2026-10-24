@@ -250,7 +250,7 @@
 
         '<footer class="gx-footer">' +
           '<div class="gx-footer-mark"><span>G</span><p><b>高考数学学习台</b><small>把复杂的，变成会做的。</small></p></div>' +
-          '<div class="gx-footer-meta"><span>v104 / HOMEPAGE</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">系统设置</a></div>' +
+          '<div class="gx-footer-meta"><span>v105 / HOMEPAGE</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">系统设置</a></div>' +
         '</footer>' +
       '</div>';
 
@@ -357,7 +357,7 @@
     overlay.className = 'gx-welcome';
     overlay.innerHTML =
       '<section class="gx-welcome-panel" role="dialog" aria-modal="true" aria-labelledby="gxWelcomeTitle">' +
-        '<header class="gx-welcome-head"><span>NEW HOMEPAGE / v104</span><button type="button" aria-label="关闭新版介绍" onclick="Portal.closeHomeWelcome()">×</button></header>' +
+        '<header class="gx-welcome-head"><span>NEW HOMEPAGE / v105</span><button type="button" aria-label="关闭新版介绍" onclick="Portal.closeHomeWelcome()">×</button></header>' +
         '<div class="gx-welcome-grid">' +
           '<div class="gx-welcome-index"><span>02</span><small>NEW<br>DIRECTION</small></div>' +
           '<div class="gx-welcome-copy">' +
