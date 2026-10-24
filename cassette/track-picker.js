@@ -10,6 +10,62 @@
       artist: '抖音收藏',
       album: 'DEMO 01'
     },
+    take02: {
+      src: 'assets/tracks/lu-guo-02.mp3',
+      filename: '路過你的銓世界 - 抖音 02.mp3',
+      type: 'audio/mpeg',
+      title: '路過你的銓世界',
+      artist: '抖音收藏',
+      album: 'DEMO 02'
+    },
+    take03: {
+      src: 'assets/tracks/lu-guo-03.mp3',
+      filename: '路過你的銓世界 - 抖音 03.mp3',
+      type: 'audio/mpeg',
+      title: '路過你的銓世界',
+      artist: '抖音收藏',
+      album: 'DEMO 03'
+    },
+    take04: {
+      src: 'assets/tracks/lu-guo-04.mp3',
+      filename: '路過你的銓世界 - 抖音 04.mp3',
+      type: 'audio/mpeg',
+      title: '路過你的銓世界',
+      artist: '抖音收藏',
+      album: 'DEMO 04'
+    },
+    take05: {
+      src: 'assets/tracks/lu-guo-05.mp3',
+      filename: '路過你的銓世界 - 抖音 05.mp3',
+      type: 'audio/mpeg',
+      title: '路過你的銓世界',
+      artist: '抖音收藏',
+      album: 'DEMO 05'
+    },
+    take06: {
+      src: 'assets/tracks/lu-guo-06.mp3',
+      filename: '路過你的銓世界 - 抖音 06.mp3',
+      type: 'audio/mpeg',
+      title: '路過你的銓世界',
+      artist: '抖音收藏',
+      album: 'DEMO 06'
+    },
+    take07: {
+      src: 'assets/tracks/lu-guo-07.mp3',
+      filename: '路過你的銓世界 - 抖音 07.mp3',
+      type: 'audio/mpeg',
+      title: '路過你的銓世界',
+      artist: '抖音收藏',
+      album: 'DEMO 07'
+    },
+    mv: {
+      src: 'assets/tracks/lu-guo-mv.mp4',
+      filename: '路過你的銓世界 - MV.mp4',
+      type: 'audio/mp4',
+      title: '路過你的銓世界 · MV 音轨',
+      artist: '抖音收藏',
+      album: 'DEMO 08'
+    },
     ambient: {
       src: 'assets/cloud-tape-ambient.wav',
       filename: '静夜磁带.wav',

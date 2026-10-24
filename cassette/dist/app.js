@@ -34135,7 +34135,7 @@ void main() {
   var muted = false;
   var volume = 0.1;
   var VOL_STEP = 0.05;
-  var bedLevel = () => prefs.hiss ? muted ? 0.45 : 0.3 * volume : 0;
+  var bedLevel = () => 0;
   var audioOk = () => audioEl.readyState >= 2 && isFinite(audioEl.duration) && audioEl.duration > 0;
   var SWAP_DUR = 1.2;
   var swap = { state: "idle", p: 0, press: 0, neu: null, old: null, dur: 0, play: false, meta: null };
@@ -35300,8 +35300,8 @@ void main() {
   }
   var toggleIndex = () => indexOpen ? closeIndex() : openIndex();
   var PREF_KEY = "ohmtape.prefs";
-  var PREF_V = 2;
-  var prefs = { intro: true, loop: true, hiss: true, keys: true, mirror: true, vig: 0.5 };
+  var PREF_V = 3;
+  var prefs = { intro: true, loop: true, hiss: false, keys: true, mirror: true, vig: 0.5 };
   try {
     const saved = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
     const stale = saved.v !== PREF_V;
@@ -35321,7 +35321,6 @@ void main() {
   var SETTINGS = [
     { k: "intro", cn: "\u5F00\u573A\u52A8\u753B", en: "OPENING MOVE", note: "\u6253\u5F00\u65F6\u90A3 3.4 \u79D2\u7684\u63A8\u8F68\u4E0E\u6D6E\u8D77\uFF0C\u4E0B\u6B21\u6253\u5F00\u751F\u6548\u3002" },
     { k: "loop", cn: "\u5FAA\u73AF\u64AD\u653E", en: "AUTO REVERSE", note: "\u653E\u5B8C\u81EA\u52A8\u5012\u5E26\u91CD\u653E\uFF1B\u5173\u6389\u5219\u5012\u56DE\u5F00\u5934\u505C\u4F4F\u3002" },
-    { k: "hiss", cn: "\u78C1\u5E26\u5E95\u566A", en: "TAPE BED", note: "\u8D70\u5E26\u65F6\u7684\u5636\u58F0\u4E0E\u9A6C\u8FBE\u55E1\u58F0\uFF0C\u4E0D\u542B\u6362\u5411\u58F0\u4E0E\u65CB\u94AE\u58F0\u3002" },
     { k: "keys", cn: "\u6309\u952E\u63D0\u793A", en: "KEY LEGEND", note: "\u5E95\u90E8\u90A3\u884C\u5FEB\u6377\u952E\u8BF4\u660E\u3002" },
     { k: "mirror", cn: "\u5730\u9762\u955C\u50CF", en: "FLOOR MIRROR", note: "\u5730\u9762\u5B9E\u65F6\u53CD\u5C04\uFF0C\u5173\u6389\u53EF\u7701\u4E00\u6574\u904D\u573A\u666F\u6E32\u67D3\u3002" },
     { k: "vig", cn: "\u6697\u89D2", en: "VIGNETTE", dial: true, note: "\u753B\u9762\u56DB\u5468\u538B\u6697\uFF0C\u50CF\u955C\u5934\u524D\u7684\u906E\u5149\u7F69\u3002\u6ED1\u6761\u8C03\u7684\u662F\u5F3A\u5EA6\uFF0C\u4E09\u5957\u706F\u5149\u5404\u7559\u81EA\u5DF1\u7684\u6DF1\u6D45\u3002" }

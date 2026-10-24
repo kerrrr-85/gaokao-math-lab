@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>云磁带 · OHM TAPE</title>
-<link rel="stylesheet" href="styles.css?v=112b">
-<link rel="stylesheet" href="track-picker.css?v=112b">
+<link rel="stylesheet" href="styles.css?v=113">
+<link rel="stylesheet" href="track-picker.css?v=113">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -181,7 +181,7 @@
           <h2 id="track-library-title">换一首歌，<br>让磁带转起来。</h2>
           <p>选择后会直接写入磁带。文件只在这台设备里播放，不会上传。</p>
         </div>
-        <span class="track-count">02 TRACKS / LOCAL</span>
+        <span class="track-count">09 TRACKS / LOCAL</span>
       </div>
       <ul class="track-list" role="radiogroup" aria-label="可播放的音乐">
         <li>
@@ -189,15 +189,92 @@
             <span class="track-no">01</span>
             <span class="track-copy">
               <b>路過你的銓世界</b>
-              <em>抖音收藏 · DEMO</em>
-              <small>MP3 / 内置示例</small>
+              <em>抖音收藏 · 00:44</em>
+              <small>MP3 / 128 KBPS / DEMO 01</small>
             </span>
             <span class="track-state">当前</span>
           </button>
         </li>
         <li>
-          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="ambient">
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="take02">
             <span class="track-no">02</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · 00:25</em>
+              <small>MP3 / 320 KBPS / DEMO 02</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="take03">
+            <span class="track-no">03</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · 00:19</em>
+              <small>MP3 / 192 KBPS / DEMO 03</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="take04">
+            <span class="track-no">04</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · 00:54</em>
+              <small>MP3 / 224 KBPS / DEMO 04</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="take05">
+            <span class="track-no">05</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · 00:14</em>
+              <small>MP3 / 128 KBPS / DEMO 05</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="take06">
+            <span class="track-no">06</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · 00:33</em>
+              <small>MP3 / 128 KBPS / DEMO 06</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="take07">
+            <span class="track-no">07</span>
+            <span class="track-copy">
+              <b>路過你的銓世界</b>
+              <em>抖音收藏 · 00:17</em>
+              <small>MP3 / 128 KBPS / DEMO 07</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="mv">
+            <span class="track-no">08</span>
+            <span class="track-copy">
+              <b>路過你的銓世界 · MV 音轨</b>
+              <em>抖音收藏 · 01:33</em>
+              <small>MP4 / 93 SEC / VIDEO AUDIO</small>
+            </span>
+            <span class="track-state">装载</span>
+          </button>
+        </li>
+        <li>
+          <button class="track-choice" type="button" role="radio" aria-checked="false" data-track="ambient">
+            <span class="track-no">09</span>
             <span class="track-copy">
               <b>静夜磁带</b>
               <em>CLOUD TAPE · ROOM 111</em>
@@ -241,8 +318,8 @@
 </div>
 
 <noscript><p style="color:#111;padding:2rem">需要启用 JavaScript。</p></noscript>
-<script src="dist/app.js?v=112b"></script>
-<script src="track-picker.js?v=112b"></script>
+<script src="dist/app.js?v=113"></script>
+<script src="track-picker.js?v=113"></script>
 <script>
   addEventListener('keydown', function (event) {
     if (event.key === 'Escape') parent.postMessage({ type: 'gml-close-cassette' }, '*');
