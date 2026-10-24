@@ -82,13 +82,18 @@
   var importButton = document.getElementById('track-import');
   var fileInput = document.getElementById('tape-file');
   var status = document.getElementById('track-status');
+  var previousButton = document.getElementById('track-prev');
+  var nextButton = document.getElementById('track-next');
   var choices = Array.prototype.slice.call(document.querySelectorAll('[data-track]'));
+  var order = ['demo', 'take02', 'take03', 'take04', 'take05', 'take06', 'take07', 'mv', 'ambient'];
   var closeTimer = 0;
   var busy = false;
+  var currentId = 'demo';
 
   if (!library || !trigger || !fileInput || !choices.length) return;
 
   function setActive(id) {
+    if (tracks[id]) currentId = id;
     choices.forEach(function (button) {
       var active = button.getAttribute('data-track') === id;
       button.classList.toggle('is-active', active);
@@ -124,6 +129,7 @@
 
   async function chooseTrack(id) {
     if (busy || !tracks[id]) return;
+    var wasPlaying = document.body.classList.contains('playing');
     var choice = choices.find(function (button) { return button.getAttribute('data-track') === id; });
     var state = choice && choice.querySelector('.track-state');
     busy = true;
@@ -149,6 +155,10 @@
       }
       trigger.setAttribute('data-current-track', id);
       setActive(id);
+      if (wasPlaying) {
+        var playButton = document.getElementById('btn-play');
+        if (playButton) playButton.click();
+      }
       status.textContent = '已装载，按“走带”开始播放。';
       setTimeout(function () { setOpen(false); }, 260);
     } catch (error) {
@@ -173,6 +183,16 @@
     });
   });
 
+  function stepTrack(direction) {
+    var index = order.indexOf(currentId);
+    if (index < 0) index = 0;
+    var next = (index + direction + order.length) % order.length;
+    chooseTrack(order[next]);
+  }
+
+  if (previousButton) previousButton.addEventListener('click', function () { stepTrack(-1); });
+  if (nextButton) nextButton.addEventListener('click', function () { stepTrack(1); });
+
   closeButton.addEventListener('click', function () { setOpen(false); });
   library.addEventListener('click', function (event) {
     if (event.target === library) setOpen(false);
@@ -186,6 +206,7 @@
   fileInput.addEventListener('change', function () {
     if (fileInput.files && fileInput.files.length) {
       trigger.removeAttribute('data-current-track');
+      currentId = '';
       choices.forEach(function (button) {
         button.classList.remove('is-active');
         button.setAttribute('aria-checked', 'false');
