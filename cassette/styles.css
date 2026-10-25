@@ -260,6 +260,23 @@ b, .counter, .col-id, .sel-num, input[type="range"] { font-variant-numeric: tabu
   letter-spacing: -.024em; line-height: 1; margin-top: 0.0625rem;
 }
 .mast-nav { display: flex; align-items: center; gap: 0.875rem; padding-top: 0.5rem; }
+.landscape-pill {
+  display: none;
+  position: absolute;
+  z-index: 8;
+  right: var(--pad);
+  top: 7.4rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--hair);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--sheet-tint) 88%, transparent);
+  color: var(--ink-dim);
+  font: 0.625rem/1 var(--mono);
+  letter-spacing: .08em;
+  cursor: pointer;
+  backdrop-filter: blur(0.75rem);
+}
+.landscape-pill:hover { color: var(--accent); border-color: var(--accent-line); }
 .vr { width: 0.0625rem; height: 0.9375rem; background: var(--hair); flex: none; }
 
 /* the masthead buttons draw their rule in on hover — the same gesture as
@@ -1172,6 +1189,14 @@ body.ready .dossier { opacity: 1; transform: none; }
   /* the bottom sheet is already the whole column: the retract has nothing to
      give way to down here, and folding would push it off the left edge */
   .sheet, .dossier.tight .sheet, .dossier.folded .sheet { margin-left: 0; }
+  .dossier.folded .sheet {
+    max-height: 3.15rem;
+    overflow: hidden;
+    padding-top: 0.72rem;
+    padding-bottom: 0.62rem;
+  }
+  .dossier.folded .fileno,
+  .dossier.folded .dbody > .access { display: none; }
   .sheet { overflow: auto; scrollbar-width: thin; }
   .doc-note, .vr { display: none; }
   .dossier-grid { grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
@@ -1189,6 +1214,7 @@ body.ready .dossier { opacity: 1; transform: none; }
   .kg[data-p="3"] { display: none; }
   .hud { justify-content: center; }
   .hud-l, .hud-r { display: none; }
+  .landscape-pill { display: inline-flex; align-items: center; gap: 0.3rem; }
 }
 @media (max-width: 620px) {
   .brand-mid, .doc-note { display: none; }
@@ -1199,6 +1225,65 @@ body.ready .dossier { opacity: 1; transform: none; }
   .set-t em { display: none; }
   .dial-track { width: 5.75rem; }
   .index-cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Phone and tablet landscape: keep the scene wide; information folds against
+   the right edge and the deck becomes one compact console. */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 620px) {
+  :root {
+    --pad: 0.9rem;
+    --sheet-pad-x: 0.9rem;
+    --sheet-pad-t: 0.8rem;
+    --sheet-pad-b: 0.9rem;
+  }
+  .frame { inset: 0.45rem; }
+  .mast {
+    top: 0.75rem;
+    left: 0.9rem;
+    right: 0.9rem;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .brand h1 { font-size: 1.45rem; }
+  .brand-mid { display: none; }
+  .brand-end { font-size: 1.1rem; }
+  .mast-nav { justify-content: flex-end; gap: 0.45rem 0.7rem; padding-top: 0; }
+  .mast-nav .tb { font-size: 0.58rem; }
+  .mast-nav .vr { display: none; }
+  #btn-reinit { display: none; }
+  .landscape-pill { top: 4.3rem; left: 0.9rem; right: auto; }
+  .dossier {
+    top: 4.65rem;
+    right: 0.9rem;
+    bottom: auto;
+    left: auto;
+    width: min(17rem, 34vw);
+    max-height: calc(100vh - 9rem);
+  }
+  .dossier, .sheet { max-height: calc(100vh - 9rem); }
+  .sheet, .dossier.tight .sheet, .dossier.folded .sheet { margin-left: 0; }
+  .dossier.folded .sheet { max-height: 2.8rem; }
+  .dossier.folded .crumb { padding-bottom: 0; }
+  .dossier .dbody { max-height: calc(100vh - 13rem); overflow: auto; }
+  .now {
+    left: 0.9rem;
+    bottom: 5.8rem;
+    max-width: calc(100vw - 20rem);
+  }
+  .deck {
+    left: 0.9rem;
+    right: 0.9rem;
+    bottom: 0.7rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "right";
+    gap: 0;
+  }
+  .deck > .sel, .deck > .pager { display: none; }
+  .deck-right { width: min(42rem, 74vw); justify-self: end; }
+  .transport { width: 100%; }
+  .hud { display: none; }
+  .landscape-pill { font-size: 0.56rem; }
 }
 
 /* ---------- the panel measured against itself ----------

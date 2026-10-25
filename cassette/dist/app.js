@@ -33841,9 +33841,13 @@ void main() {
   // src/main.js
   var $ = (s) => document.querySelector(s);
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var mobileView = matchMedia("(max-width: 760px)").matches ||
+  var coarsePointer = matchMedia("(pointer: coarse)").matches;
+  var noHover = matchMedia("(hover: none)").matches;
+  var mobileView = matchMedia("(max-width: 1024px)").matches ||
     (navigator.userAgentData && navigator.userAgentData.mobile === true) ||
-    /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+    /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && (coarsePointer || noHover)) ||
+    (navigator.deviceMemory && navigator.deviceMemory <= 4);
   var canvas2 = $("#gl");
   var RISE = { duration: 300, easing: "cubic-bezier(.16, 1, .3, 1)" };
   var LEAVE = { duration: 150, easing: "cubic-bezier(.4, 0, 1, 1)", fill: "forwards" };
@@ -33960,7 +33964,7 @@ void main() {
     document.body.innerHTML = '<p style="color:#eee;font:14px/1.6 system-ui;padding:3rem">\u5F53\u524D\u6D4F\u89C8\u5668\u65E0\u6CD5\u521D\u59CB\u5316 WebGL\uFF0C\u8BF7\u4F7F\u7528 Chrome / Edge \u6253\u5F00\u3002</p>';
     throw err;
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobileView ? 1.25 : 2) * (mobileView ? 0.7 : 1));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobileView ? 1.5 : 2) * (mobileView ? 0.9 : 1));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = NeutralToneMapping ?? ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
@@ -34674,6 +34678,10 @@ void main() {
     render();
     pinPanel();
     applyPrefs();
+    if (mobileView) {
+      setFold(true);
+      syncViewShift();
+    }
     const qIntro = Q.get("intro");
     const wantsIntro = qIntro === "1" ? true : qIntro === "0" ? false : prefs.intro && ![...Q.keys()].length;
     if (!wantsIntro) intro.fade = 1;
@@ -34830,7 +34838,8 @@ void main() {
     accessLabel: $("#access-label"),
     dossier: $("#dossier"),
     dbody: $("#dbody"),
-    fold: $("#btn-fold")
+    fold: $("#btn-fold"),
+    landscape: $("#btn-landscape")
   };
   D2.colN.textContent = String(VANTAGES.length).padStart(2, "0");
   D2.selN.textContent = RECORDS[RECORDS.length - 1].no;
@@ -35066,6 +35075,37 @@ void main() {
     audio.tick();
     document.body.classList.add("moved");
   });
+  function updateLandscapeButton() {
+    if (!D2.landscape) return;
+    const landscape = innerWidth > innerHeight;
+    D2.landscape.textContent = document.fullscreenElement ? "退出横屏" : landscape ? "横屏中" : "↻ 横屏";
+  }
+  D2.landscape?.addEventListener("click", async () => {
+    try {
+      if (document.fullscreenElement) {
+        if (screen.orientation?.unlock) screen.orientation.unlock();
+        await document.exitFullscreen();
+      } else {
+        if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+        if (screen.orientation?.lock) await screen.orientation.lock("landscape");
+        else D2.landscape.textContent = "请旋转设备";
+      }
+    } catch {
+      D2.landscape.textContent = "请旋转设备";
+      setTimeout(updateLandscapeButton, 1800);
+    }
+    updateLandscapeButton();
+    measure();
+    pinPanel();
+  });
+  document.addEventListener("fullscreenchange", updateLandscapeButton);
+  addEventListener("orientationchange", () => setTimeout(() => {
+    measure();
+    pinPanel();
+    updateLandscapeButton();
+  }, 180));
+  addEventListener("resize", updateLandscapeButton);
+  updateLandscapeButton();
   var NO_ERASE = 0.3;
   var NO_HOLD = 0.12;
   var NO_TYPE = 0.36;
@@ -35822,12 +35862,12 @@ void main() {
     audio.clunk(on ? 0.8 : 1.2);
     document.body.classList.add("moved");
   }
-  var quality = mobileView ? 0.68 : 1;
+  var quality = mobileView ? 0.9 : 1;
   var perfAcc = 0;
   var perfN = 0;
   var fps = 0;
   var jsMs = 0;
-  var qualityCeil = mobileView ? 0.82 : 1;
+  var qualityCeil = 1;
   var goodWindows = 0;
   var perfSkip = 0;
   var perfEl = null;
@@ -35848,8 +35888,8 @@ void main() {
     }
     if (avg > (mobileView ? 0.024 : 0.03)) {
       goodWindows = 0;
-      if (quality > (mobileView ? 0.5 : 0.6)) {
-        quality = Math.max(mobileView ? 0.5 : 0.6, quality - (mobileView ? 0.1 : 0.2));
+      if (quality > (mobileView ? 0.8 : 0.6)) {
+        quality = Math.max(mobileView ? 0.8 : 0.6, quality - (mobileView ? 0.1 : 0.2));
         qualityCeil = Math.min(qualityCeil, quality);
         onResize();
       }
@@ -35869,7 +35909,7 @@ void main() {
   }
   function onResize() {
     const w = innerWidth, h = innerHeight;
-    const dpr = Math.min(devicePixelRatio || 1, mobileView ? 1.25 : 2) * quality;
+    const dpr = Math.min(devicePixelRatio || 1, mobileView ? 1.5 : 2) * quality;
     camera.aspect = w / h;
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
@@ -35894,7 +35934,7 @@ void main() {
     camera.updateProjectionMatrix();
   }
   addEventListener("resize", () => {
-    qualityCeil = mobileView ? 0.82 : 1;
+    qualityCeil = 1;
     goodWindows = 0;
     onResize();
   });

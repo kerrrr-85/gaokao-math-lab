@@ -39,12 +39,12 @@
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.52;
+  renderer.toneMappingExposure = 0.72;
   if ('outputEncoding' in renderer) renderer.outputEncoding = THREE.sRGBEncoding;
   if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   var scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x03070c, 0.035);
+  scene.fog = new THREE.FogExp2(0xdde2e5, 0.025);
   var camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 80);
 
   var view = { yaw: 0.42, pitch: 0.2, radius: 9.2, target: new THREE.Vector3(0, 0.05, 0) };
@@ -61,16 +61,16 @@
   }
   updateCamera();
 
-  scene.add(new THREE.HemisphereLight(0x9fdfff, 0x071014, 0.3));
-  var keyLight = new THREE.DirectionalLight(0xe7f7ff, 0.82);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xaeb8bd, 0.92));
+  var keyLight = new THREE.DirectionalLight(0xffffff, 2.15);
   keyLight.position.set(4, 7, 6);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(1024, 1024);
   scene.add(keyLight);
-  var cyanLight = new THREE.PointLight(0x54d7ff, 1.8, 18, 2);
+  var cyanLight = new THREE.PointLight(0x7fc7de, 3.1, 18, 2);
   cyanLight.position.set(-5, 2.2, 3.2);
   scene.add(cyanLight);
-  var warmLight = new THREE.PointLight(0xf0a665, 1.25, 14, 2);
+  var warmLight = new THREE.PointLight(0xd29a6a, 1.8, 14, 2);
   warmLight.position.set(4.5, -2, 2.5);
   scene.add(warmLight);
 
@@ -80,30 +80,30 @@
   var floor = new THREE.Mesh(
     new THREE.CylinderGeometry(3.35, 3.55, 0.14, 96),
     new THREE.MeshPhysicalMaterial({
-      color: 0x09131a,
-      metalness: 0.62,
-      roughness: 0.28,
+      color: 0xcbd1d4,
+      metalness: 0.28,
+      roughness: 0.44,
       transparent: true,
-      opacity: 0.72
+      opacity: 0.58
     })
   );
   floor.position.y = -1.82;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  var grid = new THREE.GridHelper(20, 40, 0x2c6075, 0x102934);
+  var grid = new THREE.GridHelper(20, 40, 0x7b8d94, 0xb5c0c4);
   grid.position.y = -1.73;
   grid.material.transparent = true;
-  grid.material.opacity = 0.35;
+  grid.material.opacity = 0.24;
   scene.add(grid);
 
   [2.45, 2.72].forEach(function (radius, index) {
     var ring = new THREE.Mesh(
       new THREE.RingGeometry(radius, radius + 0.012, 112),
       new THREE.MeshBasicMaterial({
-        color: index ? 0x275a6b : 0x69d9f7,
+        color: index ? 0x819198 : 0x9e6842,
         transparent: true,
-        opacity: index ? 0.18 : 0.26,
+        opacity: index ? 0.2 : 0.28,
         side: THREE.DoubleSide
       })
     );
@@ -121,10 +121,10 @@
   var particles = new THREE.Points(
     particleGeometry,
     new THREE.PointsMaterial({
-      color: 0x73cce8,
+      color: 0x6f858d,
       size: 0.022,
       transparent: true,
-      opacity: 0.46,
+      opacity: 0.2,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     })
@@ -619,8 +619,8 @@
       var dx = event.clientX - pointerDown.x;
       var dy = event.clientY - pointerDown.y;
       dragDistance = Math.max(dragDistance, Math.hypot(dx, dy));
-      targetView.yaw = pointerDown.yaw + dx * 0.007;
-      targetView.pitch = Math.max(-0.65, Math.min(0.72, pointerDown.pitch + dy * 0.005));
+      targetView.yaw = pointerDown.yaw - dx * 0.007;
+      targetView.pitch = Math.max(-0.65, Math.min(0.72, pointerDown.pitch - dy * 0.005));
       lastInteraction = performance.now();
       return;
     }

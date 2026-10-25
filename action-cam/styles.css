@@ -868,3 +868,245 @@ a:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* ======================= studio skin / shared cloud-room language =========
+   The geometry stays dark and technical; the surrounding interface now uses
+   the same light archive-paper language as the cassette room. */
+:root {
+  --bg: #e6e9ec;
+  --panel: rgba(246, 247, 248, .88);
+  --line: rgba(20, 22, 26, .15);
+  --line-strong: rgba(20, 22, 26, .29);
+  --text: #14161a;
+  --muted: #626b70;
+  --faint: #8b9397;
+  --cyan: #8d4712;
+  --cyan-soft: rgba(141, 71, 18, .075);
+  --amber: #bd7d43;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.lab {
+  background:
+    radial-gradient(circle at 40% 34%, rgba(255, 255, 255, .95), transparent 34%),
+    radial-gradient(circle at 78% 70%, rgba(197, 207, 212, .42), transparent 34%),
+    linear-gradient(145deg, #f2f3f4, #e3e6e8 54%, #d8dddf);
+}
+
+.ambient-grid {
+  opacity: .55;
+  background-image:
+    linear-gradient(rgba(20, 22, 26, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 22, 26, .045) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at 42% 50%, #000, transparent 68%);
+}
+
+.scanlines {
+  opacity: .025;
+  mix-blend-mode: multiply;
+}
+
+.topbar {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 70px;
+  background: linear-gradient(180deg, rgba(244, 245, 246, .96), rgba(230, 233, 235, .72));
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+.back {
+  color: var(--muted);
+}
+
+.back:hover {
+  color: var(--text);
+}
+
+.brand {
+  justify-self: start;
+  align-items: flex-start;
+  margin-left: 1.25rem;
+  text-align: left;
+}
+
+.brand span {
+  color: var(--accent, var(--cyan));
+}
+
+.brand b {
+  color: var(--text);
+  font-weight: 650;
+  letter-spacing: .09em;
+}
+
+.brand small {
+  color: var(--faint);
+}
+
+.status {
+  color: var(--muted);
+}
+
+.status i {
+  background: #35996a;
+  box-shadow: 0 0 9px rgba(53, 153, 106, .58);
+}
+
+.parts-panel,
+.details-panel {
+  border-color: var(--line);
+  background: var(--panel);
+  box-shadow:
+    0 1.7rem 4rem -2.3rem rgba(29, 35, 39, .32),
+    0 0 0 1px rgba(255, 255, 255, .42) inset;
+  backdrop-filter: blur(18px) saturate(.82);
+}
+
+.panel-head,
+.part-button,
+.specs div {
+  border-color: var(--line);
+}
+
+.panel-head span,
+.details-kicker span,
+.part-en,
+.screen-dock span {
+  color: var(--cyan);
+}
+
+.panel-head b,
+.part-button b,
+.details-panel h1,
+.screen-dock b {
+  color: var(--text);
+}
+
+.panel-head em,
+.part-button > i,
+.part-button small,
+.part-button span,
+.details-kicker,
+.part-note,
+.specs dt,
+.guide,
+.hud-bottom {
+  color: var(--faint);
+}
+
+.part-button {
+  color: var(--muted);
+}
+
+.part-button:hover,
+.part-button.active {
+  color: var(--cyan);
+}
+
+.part-button.active {
+  background: linear-gradient(90deg, var(--cyan-soft), transparent);
+}
+
+.parts-actions button,
+.screen-dock button,
+.access {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, .36);
+  color: var(--text);
+}
+
+.parts-actions button:hover,
+.screen-dock button:hover,
+.access:hover {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+  color: var(--cyan);
+}
+
+.specs dd {
+  color: var(--muted);
+}
+
+.screen-dock {
+  border-color: var(--line);
+  background: rgba(246, 247, 248, .86);
+  box-shadow: 0 1.2rem 2.8rem -1.8rem rgba(30, 37, 41, .3);
+}
+
+.part-label {
+  color: var(--muted);
+}
+
+.part-label > span {
+  border-color: var(--line);
+  background: rgba(244, 246, 247, .8);
+}
+
+.part-label b {
+  color: var(--text);
+}
+
+.part-label::before,
+.part-label.left::before {
+  background: linear-gradient(90deg, var(--cyan), transparent);
+}
+
+.part-label.left::before {
+  background: linear-gradient(90deg, transparent, var(--cyan));
+}
+
+.mouse {
+  border-color: var(--line-strong);
+}
+
+.mouse i {
+  background: var(--cyan);
+}
+
+.hud-bottom i {
+  background: var(--cyan);
+}
+
+.loader {
+  background: #e7eaec;
+}
+
+.loader span {
+  color: var(--muted);
+}
+
+.loader i {
+  background: var(--line);
+}
+
+.loader i::after {
+  background: var(--text);
+}
+
+.screen-expand {
+  color: #eef7fb;
+}
+
+.screen-expand .expanded-head span,
+.screen-expand .expanded-head button:hover {
+  color: #f0a665;
+}
+
+@media (max-width: 880px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .brand {
+    grid-column: 2;
+    justify-self: end;
+    align-items: flex-end;
+    margin-left: 0;
+    text-align: right;
+  }
+}
