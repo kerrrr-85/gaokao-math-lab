@@ -423,7 +423,7 @@
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: "gml-close-conics" }, location.origin);
       } else {
-        location.href = "../?v=117#/";
+        location.href = "../?v=118#/";
       }
     });
   }

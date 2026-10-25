@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f0e7">
+  <title>f(x) 与 f(2x+1) 的奇偶性区别</title>
+  <link rel="stylesheet" href="./even-function.css">
+</head>
+<body>
+  <main class="sheet">
+    <header class="head">
+      <div>
+        <p class="eyebrow">FUNCTION PROPERTIES / COMPOSITE INPUT</p>
+        <h1><i>f</i>(<i>x</i>) 偶函数，<br><em><i>f</i>(2<i>x</i>+1) 也偶吗？</em></h1>
+      </div>
+      <button id="guideButton" type="button">逐句讲义 ↗</button>
+    </header>
+
+    <section class="layout">
+      <div class="visual-card">
+        <div class="mode-tabs" role="group" aria-label="选择函数条件">
+          <button class="active" data-mode="fEven" type="button">f(x) 是偶函数</button>
+          <button data-mode="compositeEven" type="button">f(2x+1) 是偶函数</button>
+        </div>
+
+        <canvas id="board" aria-label="函数图像与输入值对比"></canvas>
+
+        <div class="board-foot">
+          <label class="slider-row" for="xSlider">
+            <span>观察成对的 <i>x</i> 与 −<i>x</i></span>
+            <input id="xSlider" type="range" min="-1.2" max="1.2" step="0.05" value="0.8">
+            <output id="xValue">x = 0.80</output>
+          </label>
+          <div class="axis-status">
+            <span>f 的对称轴</span><strong id="axisF">x = 0</strong>
+            <span>g 的对称轴</span><strong id="axisG">x = −0.5</strong>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rules">
+        <p class="kicker">先分辨主语</p>
+        <article class="rule-card">
+          <span>A</span>
+          <h2>f(x) 是偶函数</h2>
+          <div class="formula">f(−x)=f(x)</div>
+          <p>关于 <b>y 轴</b>，也就是直线 <b>x=0</b> 对称。</p>
+        </article>
+        <article class="rule-card accent">
+          <span>B</span>
+          <h2>f(2x+1) 是偶函数</h2>
+          <div class="formula">f(1−t)=f(1+t)</div>
+          <p>关于直线 <b>x=1</b> 对称。括号里的数围绕 1 成对出现。</p>
+        </article>
+        <article class="rule-card warning">
+          <span>!</span>
+          <h2>两者不是一回事</h2>
+          <p><b>f(x)</b> 偶，不能自动推出 <b>f(2x+1)</b> 偶；反过来也不能直接推出 <b>f(x)</b> 偶。</p>
+        </article>
+        <button id="openGuide" class="guide-link" type="button">查看每一句话的完整拆解 <span>→</span></button>
+      </aside>
+    </section>
+
+    <section class="live-note">
+      <span id="stateIndex">01</span>
+      <p id="liveText">f(x)=x² 是偶函数，但 g(x)=f(2x+1)=(2x+1)² 不一定是偶函数。</p>
+    </section>
+
+    <footer class="foot">
+      <span>核心：偶函数偶的是“括号整体”，不是括号里的 x。</span>
+      <button id="returnCloud" type="button">返回云空间 ↗</button>
+    </footer>
+  </main>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="guide-drawer" id="guideDrawer" aria-hidden="true" aria-labelledby="guideTitle">
+    <header class="guide-head">
+      <div>
+        <small>EVERY STEP EXPLAINED</small>
+        <h2 id="guideTitle">偶函数复合自变量 · 逐句讲义</h2>
+      </div>
+      <button id="closeGuide" type="button" aria-label="关闭讲义">×</button>
+    </header>
+
+    <div class="guide-body">
+      <section class="guide-intro">
+        <b>整节课只解决一个问题：</b>
+        <p>题目说“谁是偶函数”，要看清偶函数的主语是整个括号，还是最外层的 f(x)。</p>
+        <div class="key-formula">F(−x)=F(x)</div>
+      </section>
+
+      <details open>
+        <summary>01 · 偶函数到底在说什么？</summary>
+        <p>若 F(x) 是偶函数，则对定义域内任意 x，都有 F(−x)=F(x)。图像沿 y 轴左右折叠后完全重合。</p>
+        <p>这里的关键不是“x 变负”，而是“整个输入变负”。偶函数比较的是输入 u 和 −u 对应的两个输出。</p>
+        <div class="note">正确：F(−x)=F(x)。错误：只把括号里某个字母换成正负。</div>
+      </details>
+
+      <details>
+        <summary>02 · f(x) 是偶函数是什么意思？</summary>
+        <p>这句话的主语是 f(x)，所以直接把 x 变成 −x：</p>
+        <div class="equation">f(−x)=f(x)</div>
+        <p>它表示 f 的图像关于直线 x=0，也就是 y 轴对称。输入 u 与 −u 的输出相等。</p>
+      </details>
+
+      <details>
+        <summary>03 · 为什么 f(2x+1) 是另一个函数？</summary>
+        <p>题目说的是“函数 f(2x+1) 是偶函数”，不是“f(x) 是偶函数”。为了不混淆，可以把整个新函数命名为 g：</p>
+        <div class="equation">g(x)=f(2x+1)</div>
+        <p>这时 g 是偶函数，只说明 g(−x)=g(x)，不能直接把它写成 f(−x)=f(x)。</p>
+      </details>
+
+      <details>
+        <summary>04 · 逐项代入，得到真正的关系</summary>
+        <p>因为 g 偶，所以 g(−x)=g(x)。</p>
+        <div class="equation">g(−x)=f(2(−x)+1)=f(−2x+1)</div>
+        <div class="equation">g(x)=f(2x+1)</div>
+        <p>两边相等：</p>
+        <div class="equation highlight">f(1−2x)=f(1+2x)</div>
+      </details>
+
+      <details>
+        <summary>05 · 别忘了负号只作用于 x</summary>
+        <p>把 x 换成 −x 时，是 2×(−x)+1=−2x+1，不是 −2x−1。</p>
+        <p>选项 A 的 f(−2x−1) 错在这里；选项 B 的 f(−2x+1) 才是把 x 变成 −x 后的结果。</p>
+      </details>
+
+      <details>
+        <summary>06 · 为什么对称轴是 x=1？</summary>
+        <p>括号中的两个输入分别是 1−2x 和 1+2x。它们的平均数是：</p>
+        <div class="equation">[(1−2x)+(1+2x)]/2=1</div>
+        <p>无论 x 取多少，这两个输入都关于 1 对称。所以 f 的图像关于直线 x=1 对称。令 t=2x，也可写成：</p>
+        <div class="equation">f(1−t)=f(1+t)</div>
+      </details>
+
+      <details>
+        <summary>07 · 从图像变换看，也一样</summary>
+        <p>先从 f(x) 向左平移 1 个单位，得到 f(x+1)；再把横向压缩到原来的二分之一，得到 f(2x+1)。</p>
+        <p>若 f(2x+1) 关于 x=0 对称，逆操作回去：先横向放大两倍，对称轴仍是 x=0；再向右平移 1 个单位，对称轴就变成 x=1。</p>
+        <div class="note">“2” 控制横向压缩，不会把对称轴从 1 变成别的数；“+1” 才决定平移的位置。</div>
+      </details>
+
+      <details>
+        <summary>08 · 一个反例直接看清区别</summary>
+        <p>取 f(x)=x²，则 f(x) 显然是偶函数。但：</p>
+        <div class="equation">f(2x+1)=(2x+1)²=4x²+4x+1</div>
+        <p>其中有一次项 4x，因此它不是偶函数。可见 f(x) 偶不能自动推出 f(2x+1) 偶。</p>
+      </details>
+
+      <details>
+        <summary>09 · 反过来也请看一个反例</summary>
+        <p>取 f(x)=(x−1)²，它不是偶函数，因为顶点轴是 x=1，而不是 x=0。但：</p>
+        <div class="equation">f(2x+1)=(2x)²=4x²</div>
+        <p>4x² 是偶函数。因此 f(2x+1) 偶也不能推出 f(x) 偶。</p>
+      </details>
+
+      <details>
+        <summary>10 · 第一题：四个选项怎么判断</summary>
+        <p>已知 f(2x+1) 是偶函数。正确关系是：</p>
+        <div class="equation">f(2x+1)=f(−2x+1)</div>
+        <p>也可写成 f(1+x)=f(1−x)。所以正确选项是 B、D。A 错在把 +1 也变了号，C 把它误判成 f(x) 本人偶。</p>
+      </details>
+
+      <details>
+        <summary>11 · 第二题：奇函数如何变成点对称</summary>
+        <p>已知 f(2x−3) 是奇函数，且 f(1)=5。</p>
+        <p>令 g(x)=f(2x−3)。g 奇，所以 g(−x)=−g(x)：</p>
+        <div class="equation">f(−2x−3)=−f(2x−3)</div>
+        <p>括号中的两个输入围绕 −3 对称，所以 f 关于点 (−3,0) 中心对称。</p>
+        <p>输入 −3 与自身配对，所以 f(−3)=0。输入 1 关于 −3 的对称输入是 −7，所以 f(−7)=−f(1)=−5。</p>
+      </details>
+
+      <details>
+        <summary>12 · 第三题：用“到对称轴的距离”解不等式</summary>
+        <p>已知 f(3x+1) 是偶函数，所以 f 关于 x=1 对称；又知 f 在 [1,+∞) 上单调递增。</p>
+        <p>距离对称轴越远，函数值越大。因此：</p>
+        <div class="equation">f(2x+1)&gt;f(x−2)</div>
+        <p>等价于两个输入到 1 的距离比较：</p>
+        <div class="equation">|(2x+1)−1|&gt;|(x−2)−1|</div>
+        <div class="equation">|2x|&gt;|x−3|</div>
+        <p>两边平方并化简：</p>
+        <div class="equation">3x²+6x−9&gt;0<br>(x+3)(x−1)&gt;0</div>
+        <p>所以最终答案是 x&lt;−3 或 x&gt;1。</p>
+      </details>
+
+      <details>
+        <summary>13 · 一句话记忆与检查清单</summary>
+        <p><b>一句话：</b>偶函数看的是括号里的“整个人”，不是单独的 x。</p>
+        <ol>
+          <li>先看题目给谁命名：f(x) 还是 f(ax+b)？</li>
+          <li>把整个括号替换，例如 2x+1 整体变成 −2x+1。</li>
+          <li>令括号中两个式子的平均数为对称轴。</li>
+          <li>轴对称条件下，离轴越远，单调递增一侧的函数值越大。</li>
+          <li>奇函数对应点对称，偶函数对应轴对称。</li>
+        </ol>
+      </details>
+    </div>
+  </aside>
+
+  <script src="./even-function.js"></script>
+</body>
+</html>

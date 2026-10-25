@@ -9,6 +9,7 @@ body.ex-cassette-open{overflow:hidden}
 body.ex-action-open{overflow:hidden}
 body.ex-conics-open{overflow:hidden}
 body.ex-video-open{overflow:hidden}
+body.ex-even-open{overflow:hidden}
 .ex-home{
   --ex-ink:#1d1d1f;
   --ex-paper:#f5f5f7;
@@ -136,6 +137,14 @@ body.ex-video-open{overflow:hidden}
 .ex-room-card.action:hover .ex-room-thumb{transform:scale(1.018)}
 .ex-room-card.action .ex-room-copy{top:25px;right:auto;bottom:auto;left:28px;width:min(410px,56%);color:#fff}
 .ex-room-card.action .ex-room-copy h3{margin:54px 0 10px}
+.ex-room-card.lesson,.ex-room-card.translation{grid-column:1/-1;min-height:335px;padding:0;background:#f4f1e9;color:#fff;cursor:pointer;text-align:left}
+.ex-room-card.lesson .ex-room-thumb,.ex-room-card.translation .ex-room-thumb{filter:saturate(.9) contrast(1.02)}
+.ex-room-card.lesson::before,.ex-room-card.translation::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(18,21,30,.94),rgba(18,21,30,.58) 48%,rgba(18,21,30,.04) 80%),linear-gradient(0deg,rgba(18,21,30,.6),transparent 64%)}
+.ex-room-card.lesson::after,.ex-room-card.translation::after{display:none}
+.ex-room-card.lesson:hover .ex-room-thumb,.ex-room-card.translation:hover .ex-room-thumb{transform:scale(1.018)}
+.ex-room-card.lesson .ex-room-copy,.ex-room-card.translation .ex-room-copy{top:25px;right:auto;bottom:auto;left:28px;width:min(450px,59%);color:#fff}
+.ex-room-card.lesson .ex-room-copy h3,.ex-room-card.translation .ex-room-copy h3{margin:54px 0 10px}
+.ex-room-card.translation::before{background:linear-gradient(90deg,rgba(24,35,37,.95),rgba(24,35,37,.72) 43%,rgba(24,35,37,.08) 72%),linear-gradient(0deg,rgba(24,35,37,.58),transparent 62%)}
 .ex-room-card.conics{grid-column:1/-1;min-height:330px;padding:0;background:#f4f1e9;color:#fff;cursor:pointer;text-align:left}
 .ex-room-card.conics .ex-room-thumb{filter:saturate(.92) contrast(1.02)}
 .ex-room-card.conics::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(17,18,31,.94),rgba(17,18,31,.55) 47%,rgba(17,18,31,.04) 78%),linear-gradient(0deg,rgba(17,18,31,.58),transparent 62%)}
@@ -150,6 +159,13 @@ body.ex-video-open{overflow:hidden}
 .ex-room-card.trig-video:hover .ex-room-thumb{transform:scale(1.018)}
 .ex-room-card.trig-video .ex-room-copy{top:25px;right:auto;bottom:auto;left:28px;width:min(460px,61%);color:#fff}
 .ex-room-card.trig-video .ex-room-copy h3{max-width:430px;margin:54px 0 10px;font-size:clamp(32px,3.5vw,48px)}
+.ex-room-card.even-function{grid-column:1/-1;min-height:345px;padding:0;background:#f4f1e8;color:#fff;cursor:pointer;text-align:left}
+.ex-room-card.even-function .ex-room-thumb{filter:saturate(.92) contrast(1.03)}
+.ex-room-card.even-function::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(26,23,36,.95),rgba(31,29,43,.6) 44%,rgba(31,29,43,.02) 78%),linear-gradient(0deg,rgba(24,22,34,.58),transparent 64%)}
+.ex-room-card.even-function::after{display:none}
+.ex-room-card.even-function:hover .ex-room-thumb{transform:scale(1.018)}
+.ex-room-card.even-function .ex-room-copy{top:25px;right:auto;bottom:auto;left:28px;width:min(450px,59%);color:#fff}
+.ex-room-card.even-function .ex-room-copy h3{margin:54px 0 10px}
 .ex-room-copy{position:absolute;right:28px;bottom:26px;left:28px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;color:#fff}
 .ex-room-copy small{font-size:8px;letter-spacing:.1em;color:rgba(255,255,255,.56)}
 .ex-room-copy h3{margin:42px 0 10px;font-size:clamp(34px,4vw,52px);font-weight:600;line-height:1;letter-spacing:-.045em}
@@ -208,17 +224,18 @@ body.ex-video-open{overflow:hidden}
 .ex-scenes-grid b{font-size:11px;font-weight:600}
 .ex-scenes-grid small{font-size:8px;color:#86868b}
 .ex-scenes-grid button:hover img{transform:scale(1.04)}
-.ex-cabin-layer,.ex-cassette-layer,.ex-action-layer,.ex-conics-layer{position:fixed;inset:0;z-index:650;background:#fdfbf6;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
-.ex-cabin-layer.on,.ex-cassette-layer.on,.ex-action-layer.on,.ex-conics-layer.on{opacity:1;visibility:visible}
-.ex-cabin-layer iframe,.ex-cassette-layer iframe,.ex-action-layer iframe,.ex-conics-layer iframe{display:block;width:100%;height:100%;border:0;background:#fdfbf6}
+.ex-cabin-layer,.ex-cassette-layer,.ex-action-layer,.ex-conics-layer,.ex-even-layer{position:fixed;inset:0;z-index:650;background:#fdfbf6;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.ex-cabin-layer.on,.ex-cassette-layer.on,.ex-action-layer.on,.ex-conics-layer.on,.ex-even-layer.on{opacity:1;visibility:visible}
+.ex-cabin-layer iframe,.ex-cassette-layer iframe,.ex-action-layer iframe,.ex-conics-layer iframe,.ex-even-layer iframe{display:block;width:100%;height:100%;border:0;background:#fdfbf6}
 .ex-cassette-layer iframe{background:#111}
 .ex-action-layer iframe{background:#030609}
-.ex-cabin-close,.ex-cassette-close,.ex-action-close,.ex-conics-close{position:absolute;left:18px;top:16px;z-index:702;padding:9px 14px;border:1px solid rgba(30,30,30,.2);border-radius:999px;background:rgba(255,255,255,.88);color:#333;font-size:11px;font-weight:500;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.12);backdrop-filter:blur(10px)}
+.ex-cabin-close,.ex-cassette-close,.ex-action-close,.ex-conics-close,.ex-even-close{position:absolute;left:18px;top:16px;z-index:702;padding:9px 14px;border:1px solid rgba(30,30,30,.2);border-radius:999px;background:rgba(255,255,255,.88);color:#333;font-size:11px;font-weight:500;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.12);backdrop-filter:blur(10px)}
 .ex-cabin-close:hover{background:#fff;color:#000}
 .ex-cassette-close:hover{background:#fff;color:#000}
 .ex-action-close:hover{background:#fff;color:#000}
 .ex-conics-close:hover{background:#fff;color:#000}
-.ex-cabin-layer>p,.ex-cassette-layer>p,.ex-conics-layer>p{position:absolute;left:18px;bottom:16px;z-index:702;margin:0;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.82);color:#747474;font-size:9px;pointer-events:none;backdrop-filter:blur(8px)}
+.ex-even-close:hover{background:#fff;color:#000}
+.ex-cabin-layer>p,.ex-cassette-layer>p,.ex-conics-layer>p,.ex-even-layer>p{position:absolute;left:18px;bottom:16px;z-index:702;margin:0;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.82);color:#747474;font-size:9px;pointer-events:none;backdrop-filter:blur(8px)}
 .ex-action-layer>p{position:absolute;right:18px;bottom:16px;z-index:2;margin:0;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.82);color:#747474;font-size:9px;pointer-events:none;backdrop-filter:blur(8px)}
 .ex-video-layer{position:fixed;inset:0;z-index:720;background:rgba(2,4,7,.97);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
 .ex-video-layer.on{opacity:1;visibility:visible}
@@ -280,22 +297,30 @@ body.ex-video-open{overflow:hidden}
   .ex-room-card.action{min-height:340px;padding:0}
   .ex-room-card.action .ex-room-copy{top:23px;right:23px;left:23px;width:auto}
   .ex-room-card.action .ex-room-copy h3{margin-top:118px}
+  .ex-room-card.lesson,.ex-room-card.translation{min-height:330px;padding:0}
+  .ex-room-card.lesson .ex-room-copy,.ex-room-card.translation .ex-room-copy{top:23px;right:23px;left:23px;width:auto}
+  .ex-room-card.lesson .ex-room-copy h3,.ex-room-card.translation .ex-room-copy h3{margin-top:108px}
   .ex-room-card.conics{min-height:340px;padding:0}
   .ex-room-card.conics .ex-room-copy{top:23px;right:23px;left:23px;width:auto}
   .ex-room-card.conics .ex-room-copy h3{margin-top:118px}
   .ex-room-card.trig-video{min-height:360px;padding:0}
   .ex-room-card.trig-video .ex-room-copy{top:23px;right:23px;left:23px;width:auto}
   .ex-room-card.trig-video .ex-room-copy h3{margin-top:118px}
+  .ex-room-card.even-function{min-height:360px;padding:0}
+  .ex-room-card.even-function .ex-room-copy{top:23px;right:23px;left:23px;width:auto}
+  .ex-room-card.even-function .ex-room-copy h3{margin-top:118px}
   .ex-room-copy{right:23px;bottom:22px;left:23px}
   .ex-room-copy h3{margin-top:38px;font-size:40px}
   .ex-cabin-close{left:12px;top:12px}
   .ex-cassette-close{left:12px;top:12px}
   .ex-action-close{left:12px;top:12px}
   .ex-conics-close{left:12px;top:12px}
+  .ex-even-close{left:12px;top:12px}
   .ex-cabin-layer>p{left:12px;bottom:12px}
   .ex-cassette-layer>p{left:12px;bottom:12px}
   .ex-action-layer>p{right:12px;bottom:12px}
   .ex-conics-layer>p{right:12px;bottom:12px}
+  .ex-even-layer>p{right:12px;bottom:12px}
   .ex-video-stage{inset:50px 6px 28px}
   .ex-video-stage video{border-radius:5px}
   .ex-video-close{left:10px;top:10px}
