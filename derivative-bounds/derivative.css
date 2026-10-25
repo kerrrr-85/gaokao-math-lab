@@ -1,0 +1,730 @@
+:root {
+  --desk: #d6d0c2;
+  --paper: #f8f4e8;
+  --paper-light: #fdfbf4;
+  --ink: #263035;
+  --pencil: #566267;
+  --blue: #27658e;
+  --purple: #684bb0;
+  --green: #39785a;
+  --orange: #c9842d;
+  --red: #ae4b40;
+  --line: rgba(54, 78, 86, 0.15);
+  --rule: rgba(92, 137, 176, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 13% 8%, rgba(255, 255, 255, 0.28), transparent 32rem),
+    linear-gradient(135deg, #dfd9cd, var(--desk));
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+}
+
+.sheet {
+  position: relative;
+  width: min(1450px, 100%);
+  min-height: calc(100vh - 32px);
+  margin: 0 auto;
+  padding: 22px 28px 16px 75px;
+  overflow: hidden;
+  border: 1px solid rgba(93, 86, 72, 0.2);
+  border-radius: 2px;
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--rule) 28px),
+    radial-gradient(circle at 14% 21%, rgba(112, 92, 55, 0.025) 0 1px, transparent 1.4px);
+  background-size: auto, 6px 6px;
+  box-shadow: 0 26px 70px rgba(68, 59, 46, 0.17);
+}
+
+.sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 44px;
+  width: 1px;
+  background: rgba(176, 71, 62, 0.28);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 8px;
+}
+
+.eyebrow {
+  margin: 0 0 1px;
+  color: #7b817e;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+h1 {
+  margin: 0;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(30px, 3.5vw, 48px);
+  line-height: 1;
+}
+
+.title-mark {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--red);
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 12px;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 6px;
+}
+
+.back-cloud {
+  margin-right: 3px;
+  color: #697778;
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.back-cloud:hover {
+  color: var(--blue);
+}
+
+.head-right > span {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+}
+
+.head-right b,
+.head-right small {
+  display: block;
+}
+
+.head-right b {
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 16px;
+}
+
+.head-right small {
+  margin-top: 1px;
+  color: #8a908d;
+  font-size: 9px;
+}
+
+.problem {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  padding: 9px 0 10px;
+  border-top: 1px solid rgba(72, 84, 87, 0.14);
+  border-bottom: 1px solid rgba(72, 84, 87, 0.14);
+}
+
+.problem-no {
+  color: var(--red);
+  font-family: Georgia, serif;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.problem p {
+  margin: 0;
+  color: #303a3d;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(14px, 1.25vw, 18px);
+  line-height: 1.55;
+}
+
+.problem ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 24px;
+  margin: 4px 0 0;
+  padding: 0;
+  color: #5c6668;
+  list-style-position: inside;
+  font-size: 12px;
+}
+
+.deep-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--blue);
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.deep-link:hover {
+  text-decoration: underline;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(330px, 0.72fr);
+  gap: 20px;
+  height: clamp(380px, calc(100vh - 330px), 450px);
+  padding-top: 10px;
+}
+
+.graph-column {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 132px;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.graph-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(67, 84, 88, 0.16);
+  background: rgba(255, 253, 247, 0.52);
+}
+
+.graph-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 7px 10px 0;
+}
+
+.graph-card header span,
+.graph-card header b {
+  display: block;
+}
+
+.graph-card header span {
+  color: #818885;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.graph-card header b {
+  margin-top: 2px;
+  font-family: Cambria, Georgia, serif;
+  font-size: 14px;
+}
+
+.graph-card header small {
+  color: #949994;
+  font-size: 8px;
+  text-align: right;
+}
+
+#mainGraph {
+  display: block;
+  flex: 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  cursor: crosshair;
+}
+
+#compareGraph {
+  display: block;
+  flex: 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+.graph-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 10px 7px;
+  color: #818885;
+  font-size: 8px;
+}
+
+.proof {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.proof-step {
+  position: relative;
+  flex: 1;
+  padding: 11px 12px 10px 15px;
+  border: 1px solid rgba(70, 86, 89, 0.13);
+  border-left: 3px solid rgba(70, 86, 89, 0.12);
+  background: rgba(255, 253, 247, 0.42);
+  opacity: 0.2;
+  transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+
+.proof-step.active,
+.proof-step.done {
+  opacity: 1;
+}
+
+.proof-step.active {
+  border-left-color: var(--orange);
+  background: rgba(237, 211, 149, 0.19);
+}
+
+.proof-step.done {
+  border-left-color: var(--green);
+}
+
+.step-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #767e7d;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.hand-line {
+  margin: 5px 0;
+  color: #354246;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(14px, 1.16vw, 17px);
+  line-height: 1.35;
+}
+
+.hand-line.result {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.hand-line strong {
+  color: var(--green);
+}
+
+.scribble-box {
+  width: max-content;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 4px 9px 3px;
+  border: 1.5px solid var(--red);
+  border-radius: 44% 56% 48% 52%;
+  color: var(--red);
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 18px;
+  transform: rotate(-1deg);
+}
+
+.takeaway {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr auto;
+  gap: 18px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(70, 86, 89, 0.13);
+  opacity: 0.16;
+  transition: opacity 260ms ease;
+}
+
+.takeaway.visible {
+  opacity: 1;
+}
+
+.summary-note {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.summary-note span,
+.final-answer span {
+  flex: none;
+  color: var(--red);
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 12px;
+}
+
+.summary-note p {
+  margin: 0;
+  color: #596467;
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.inequalities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  color: var(--blue);
+  font-family: Cambria, Georgia, serif;
+  font-size: 12px;
+}
+
+.final-answer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.final-answer b {
+  padding: 4px 8px;
+  background: rgba(255, 221, 105, 0.28);
+  color: var(--green);
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.foot {
+  display: grid;
+  grid-template-columns: auto minmax(100px, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.deep-dive {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px solid rgba(39, 101, 142, 0.18);
+}
+
+.deep-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 12px;
+}
+
+.deep-head span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--red);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.deep-head h2 {
+  margin: 0;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 700;
+}
+
+.deep-head p {
+  max-width: 390px;
+  margin: 0;
+  color: #7c837f;
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.deep-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.lesson-card {
+  position: relative;
+  padding: 14px 16px 13px 48px;
+  border: 1px solid rgba(66, 83, 87, 0.14);
+  background: rgba(255, 253, 247, 0.56);
+}
+
+.lesson-no {
+  position: absolute;
+  top: 15px;
+  left: 14px;
+  color: var(--blue);
+  font-family: Georgia, serif;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.lesson-card h3 {
+  margin: 0 0 6px;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(16px, 1.45vw, 20px);
+}
+
+.lesson-card p {
+  margin: 5px 0;
+  color: #4f5a5c;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(12px, 1.02vw, 15px);
+  line-height: 1.55;
+}
+
+.lesson-card p b {
+  color: var(--blue);
+}
+
+.lesson-formula {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--purple);
+  background: rgba(105, 75, 177, 0.055);
+  color: #444c7d;
+  font-family: Cambria, Georgia, serif;
+  font-size: clamp(12px, 1.05vw, 15px);
+  line-height: 1.45;
+}
+
+.margin-note {
+  color: #8b5b4e !important;
+}
+
+.warn-card {
+  background: rgba(238, 214, 154, 0.14);
+}
+
+.warn-card .lesson-no {
+  color: var(--red);
+}
+
+.warn-card ul {
+  margin: 5px 0 0;
+  padding-left: 17px;
+  color: #4f5a5c;
+  font-family: "KaiTi", "STKaiti", "FangSong", serif;
+  font-size: clamp(12px, 1.02vw, 15px);
+  line-height: 1.55;
+}
+
+.warn-card li + li {
+  margin-top: 3px;
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+}
+
+.controls button {
+  min-height: 30px;
+  padding: 4px 11px;
+  border: 1px solid rgba(70, 86, 89, 0.3);
+  background: transparent;
+  cursor: pointer;
+  font-family: "KaiTi", "STKaiti", serif;
+  font-size: 12px;
+}
+
+.controls button:first-child {
+  background: #31464d;
+  color: #fffdf6;
+}
+
+.progress {
+  height: 3px;
+  overflow: hidden;
+  background: rgba(67, 86, 91, 0.12);
+}
+
+.progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--blue);
+}
+
+.foot p {
+  margin: 0;
+  color: #8b918d;
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.foot a {
+  color: #7e8581;
+  font-size: 9px;
+  text-decoration: none;
+}
+
+.foot a:hover {
+  color: var(--blue);
+}
+
+@media (max-width: 900px) {
+  body {
+    padding: 8px;
+  }
+
+  .sheet {
+    min-height: calc(100vh - 16px);
+    padding: 16px 14px 13px 31px;
+  }
+
+  .sheet::before {
+    left: 18px;
+  }
+
+  .head-right {
+    display: flex;
+    gap: 0;
+    padding-top: 0;
+  }
+
+  .head-right > span,
+  .head-right > div {
+    display: none;
+  }
+
+  .back-cloud {
+    font-size: 11px;
+  }
+
+  .problem {
+    grid-template-columns: 32px 1fr;
+    gap: 7px;
+  }
+
+  .problem-no {
+    font-size: 18px;
+  }
+
+  .problem p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .problem ol {
+    display: grid;
+    gap: 3px;
+    font-size: 10px;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    height: auto;
+  }
+
+  .graph-column {
+    grid-template-rows: 330px 145px;
+    height: auto;
+  }
+
+  #mainGraph {
+    min-height: 260px;
+  }
+
+  #compareGraph {
+    min-height: 100px;
+  }
+
+  .proof {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .proof-step {
+    padding: 9px 10px 9px 12px;
+  }
+
+  .hand-line {
+    font-size: 13px;
+  }
+
+  .takeaway {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .deep-dive {
+    margin-top: 12px;
+  }
+
+  .deep-head {
+    display: block;
+  }
+
+  .deep-head p {
+    margin-top: 5px;
+    text-align: left;
+  }
+
+  .deep-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-card {
+    padding: 11px 11px 11px 37px;
+  }
+
+  .lesson-no {
+    top: 12px;
+    left: 10px;
+    font-size: 18px;
+  }
+
+  .summary-note p {
+    font-size: 11px;
+  }
+
+  .final-answer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .foot {
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+  }
+
+  .foot p,
+  .foot a {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proof-step {
+    transition: none;
+  }
+
+  .takeaway {
+    transition: none;
+  }
+}

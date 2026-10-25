@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#d8d2c5">
+  <title>导数放缩 · 从切线推导</title>
+  <link rel="stylesheet" href="./derivative.css">
+</head>
+<body>
+  <main class="sheet">
+    <header class="head">
+      <div>
+        <p class="eyebrow">FUNCTIONS &amp; DERIVATIVES / 17 分综合题</p>
+        <h1>导数放缩</h1>
+        <span class="title-mark">从切线出发，不背答案</span>
+      </div>
+      <div class="head-right">
+        <a class="back-cloud" href="../index.html#/">← 云空间</a>
+        <span id="chapterNo">01</span>
+        <div>
+          <b id="chapterName">切线条件</b>
+          <small>草稿纸推导</small>
+        </div>
+      </div>
+    </header>
+
+    <section class="problem">
+      <span class="problem-no">18</span>
+      <div>
+        <p>已知函数 <i>f</i>(<i>x</i>) = <i>ax</i> − (<i>x</i> + <i>b</i>)/e<sup><i>x</i></sup>，曲线 <i>y</i> = <i>f</i>(<i>x</i>) 在点 (0, <i>f</i>(0)) 处的切线方程为 <i>y</i> = −<i>x</i> + 1。</p>
+        <ol>
+          <li>求 <i>a</i>、<i>b</i> 的值；</li>
+          <li>证明 <i>f</i>(<i>x</i>) 在 (1, +∞) 上单调递增；</li>
+          <li>求函数 <i>f</i>(<i>x</i>) 的零点个数，并说明理由。</li>
+        </ol>
+        <a class="deep-link" href="#deepDive">完整讲解在页面下方 ↓</a>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="graph-column">
+        <article class="graph-card main-graph-card">
+          <header>
+            <div>
+              <span>函数图像</span>
+              <b>f(x) = x − (x − 1)e<sup>−x</sup></b>
+            </div>
+            <small>拖动画布中的蓝点查看切线</small>
+          </header>
+          <canvas id="mainGraph" aria-label="函数 f(x) 的图像与切线"></canvas>
+          <div class="graph-foot">
+            <span>橙色虚线：x = 0 处切线 y = −x + 1</span>
+            <span>绿色区域：f′(x) &gt; 0</span>
+          </div>
+        </article>
+
+        <article class="graph-card comparison-card">
+          <header>
+            <div>
+              <span>为什么 f′(x) 一定大于 0</span>
+              <b>把两个函数放在同一张图中</b>
+            </div>
+          </header>
+          <canvas id="compareGraph" aria-label="e的x次方与二减x的大小比较"></canvas>
+        </article>
+      </div>
+
+      <aside class="proof">
+        <article class="proof-step active" id="proof1">
+          <span class="step-label">01 / 由切线求参数</span>
+          <div class="hand-line">切线过 (0,1)：f(0) = −b = 1，所以 b = −1</div>
+          <div class="hand-line">切线斜率 −1：f′(0) = a − 2 = −1</div>
+          <div class="hand-line">所以 a = 1</div>
+          <div class="hand-line result">f(x) = x − (x−1)e<sup>−x</sup></div>
+        </article>
+
+        <article class="proof-step" id="proof2">
+          <span class="step-label">02 / 把单调性化成比较大小</span>
+          <div class="hand-line">f′(x) = 1 − (2−x)e<sup>−x</sup></div>
+          <div class="hand-line">x ≥ 2：第二项 ≤ 0，所以 f′(x) &gt; 0</div>
+          <div class="hand-line">1 &lt; x &lt; 2：两个正因子都小于 1</div>
+          <div class="scribble-box">e<sup>x</sup> &gt; 2 − x</div>
+        </article>
+
+        <article class="proof-step" id="proof3">
+          <span class="step-label">03 / 判断零点</span>
+          <div class="hand-line">x ≥ 1：f(x) ≥ f(1) = 1 &gt; 0</div>
+          <div class="hand-line">0 &lt; x &lt; 1：x 与 1−x 都为正</div>
+          <div class="hand-line">x ≤ 0：f(x) ≥ x + (1−x) = 1</div>
+          <div class="hand-line result">所以零点个数为 <strong>0</strong></div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="takeaway">
+      <div class="summary-note">
+        <span>老师思路</span>
+        <p id="summaryText">先别急着求根。切线同时给出函数值和斜率，第一问可以从这两个条件反推参数。</p>
+      </div>
+      <div class="inequalities">
+        <span>e<sup>x</sup> ≥ x + 1</span>
+        <span>ln x ≤ x − 1</span>
+        <span>e<sup>x</sup> ≥ e·x</span>
+        <span>ln x ≤ x/e</span>
+      </div>
+      <div class="final-answer">
+        <span>最终答案</span>
+        <b><i>a</i> = 1，<i>b</i> = −1，零点数 = 0</b>
+      </div>
+    </section>
+
+    <section class="deep-dive" id="deepDive" aria-labelledby="deepTitle">
+      <header class="deep-head">
+        <div>
+          <span>完整讲解稿</span>
+          <h2 id="deepTitle">不是记几个结论，而是看懂为什么这样变形</h2>
+        </div>
+        <p>建议顺序：先读思路，再看左边曲线；最后用“最低点法”验算一遍。</p>
+      </header>
+
+      <div class="deep-grid">
+        <article class="lesson-card">
+          <span class="lesson-no">A</span>
+          <h3>切线方程为什么能求两个参数？</h3>
+          <p>切线经过切点，所以切点坐标必须满足切线方程。把 x = 0 代入 y = −x + 1，得到切点是 (0, 1)。原函数在 x = 0 的值是 f(0) = −b，因此 −b = 1，得到 b = −1。</p>
+          <p>切线还给出曲线在该点的变化方向：切线斜率是 −1，所以 f′(0) = −1。先代入 b = −1，再利用这个条件就能得到 a = 1。切线的“点”和“斜率”是两个独立条件，前者求 b，后者求 a。</p>
+          <div class="lesson-formula">f′(x) = 1 + (x−2)e<sup>−x</sup> = 1 − (2−x)e<sup>−x</sup></div>
+        </article>
+
+        <article class="lesson-card">
+          <span class="lesson-no">B</span>
+          <h3>第二问难的不是求导，而是判断正负</h3>
+          <p>导数写成 1 − (2−x)e<sup>−x</sup> 后，直接令它大于零会得到一个无法轻松求解的混合方程。这里要按区间处理：x ≥ 2 时，2−x ≤ 0，所以减去的这一项不是正数，整个导数自然大于零。</p>
+          <p>真正需要观察的是 1 &lt; x &lt; 2。这时 2−x 和 e<sup>−x</sup> 都是正数且都小于 1，所以它们的乘积一定小于 1，单调性已经成立。视频继续把比较改写成 e<sup>x</sup> 与 2−x，是为了看清“放缩”从哪里来：因为 e<sup>x</sup> 已经大于 e，而 2−x 小于 1，所以前者显然更大。</p>
+          <div class="lesson-formula">e<sup>x</sup> &gt; 2−x  ⟹  (2−x)e<sup>−x</sup> &lt; 1  ⟹  f′(x) &gt; 0</div>
+          <p class="margin-note">这就是“放缩”的真正用途：不是随意把式子变大变小，而是换成方向确定、容易比较的量。</p>
+        </article>
+
+        <article class="lesson-card">
+          <span class="lesson-no">C</span>
+          <h3>第三问为什么不直接解 f(x) = 0？</h3>
+          <p>f(x) = x − (x−1)e<sup>−x</sup> 是超越函数，硬解零点既复杂又容易讨论不全。题目只问零点个数，因此只需证明函数图像在 x 轴上方或者下方，不需要真的把零点求出来。</p>
+          <p>由第二问，f 在 [1, +∞) 上递增，且 f(1) = 1，所以右半部分始终为正。0 &lt; x &lt; 1 时，x 是正数，而 x − 1 是负数，于是减号后也是正数，所以 f(x) 是两个正数之和。</p>
+          <div class="lesson-formula">f(x) = x + (1−x)e<sup>−x</sup></div>
+          <p>x ≤ 0 时，1−x &gt; 0，并且 e<sup>−x</sup> ≥ 1，因此第二项不小于 1−x；再与第一项 x 相加，结果至少为 1。三个区间都证明 f(x) &gt; 0，所以零点个数是 0。</p>
+        </article>
+
+        <article class="lesson-card">
+          <span class="lesson-no">D</span>
+          <h3>另一条路：先找函数的最低点</h3>
+          <p>视频还演示了另一种更有代表性的做法。令 h(x) = e<sup>x</sup> + x − 2，则 h′(x) = e<sup>x</sup> + 1 &gt; 0，所以 h 严格递增；且 h(0) = −1、h(1) = e−1 &gt; 0，故存在唯一的 x₀∈(0,1)，使 h(x₀) = 0。</p>
+          <p>这个 x₀ 正好是 f′(x) = 0 的点：f′ 在左侧为负、右侧为正，所以 f 先减后增，x₀ 就是最低点。再利用 e<sup>x₀</sup> = 2−x₀ 去掉指数项，得到：</p>
+          <div class="lesson-formula">f(x₀) = (−x₀² + x₀ + 1)/(2−x₀) &gt; 0</div>
+          <p>因为 0 &lt; x₀ &lt; 1，分子大于 1，而分母小于 2，所以最低点也大于零。这相当于用另一种方式确认：整条曲线都在 x 轴上方。</p>
+        </article>
+
+        <article class="lesson-card">
+          <span class="lesson-no">E</span>
+          <h3>四个常用放缩是怎么来的？</h3>
+          <p>这些并不是需要死记的孤立公式，它们本质上都是曲线在某一点的切线。<b>e<sup>x</sup> ≥ x + 1</b> 来自 e<sup>x</sup> 在 x = 0 的切线；<b>ln x ≤ x − 1</b> 来自 ln x 在 x = 1 的切线。两条曲线分别位于切线的一侧，所以不等式方向固定。</p>
+          <p>把自变量换掉，还能得到另外两条常用结论：e<sup>x</sup> ≥ ex 在 x = 1 处取等，ln x ≤ x/e 在 x = e 处取等。遇到复杂函数时，不要急着求导到底，先想它能否换成这些简单的切线函数。</p>
+          <div class="lesson-formula">e<sup>x</sup> ≥ x+1　　ln x ≤ x−1　　e<sup>x</sup> ≥ ex　　ln x ≤ x/e</div>
+        </article>
+
+        <article class="lesson-card warn-card">
+          <span class="lesson-no">!</span>
+          <h3>考场最容易错的地方</h3>
+          <ul>
+            <li>只知道切点，不知道斜率；或者求出参数后忘记重新代回函数。</li>
+            <li>用“两个因子都小于 1”做判断前，必须先确认两个因子都是正数；同时还要检查放缩后不等式方向是否一致。</li>
+            <li>讨论零点时只看了 x ≥ 1，漏掉 x 为负和 0 &lt; x &lt; 1 的情况。</li>
+            <li>放缩方向与题目要求的方向相反，例如把需要证明大于零的式子放成了更大的式子。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="controls">
+        <button id="playButton" type="button">暂停</button>
+        <button id="resetButton" type="button">从头推导</button>
+      </div>
+      <div class="progress"><i id="progressBar"></i></div>
+      <p id="statusText">一次完整推导，结束后停在结论</p>
+      <a href="../conics/index.html">上一个专题 ↗</a>
+    </footer>
+  </main>
+
+  <script src="./derivative.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f1e9">
+  <title>二次曲线系 · 可视化讲解</title>
+  <link rel="stylesheet" href="./conics.css">
+</head>
+<body>
+  <main class="sheet">
+    <header class="header">
+      <div>
+        <p class="eyebrow">ANALYTIC GEOMETRY · PENCIL OF CONICS</p>
+        <h1>二次曲线系</h1>
+        <i class="title-rule" aria-hidden="true"></i>
+      </div>
+      <div class="header-tools">
+        <span class="page-index"><b id="chapterNumber">01</b> / 原理</span>
+        <button class="lesson-button" id="lessonButton" type="button">详细讲解</button>
+      </div>
+    </header>
+
+    <section class="stage">
+      <div class="plot-wrap">
+        <canvas id="plot" aria-label="椭圆、两条直线与二次曲线系的动态图像"></canvas>
+        <div class="plot-legend">
+          <span><i class="fg f"></i>椭圆 f = 0</span>
+          <span><i class="fg g"></i>两直线 g = 0</span>
+          <span><i class="fg p"></i>曲线系 f + λg = 0</span>
+        </div>
+        <div class="lambda-control">
+          <label for="lambda">
+            <span>改变曲线形状</span>
+            <b>λ = <output id="lambdaValue">0.00</output></b>
+          </label>
+          <input id="lambda" type="range" min="-1.5" max="1.5" step="0.02" value="0">
+        </div>
+      </div>
+
+      <aside class="note-card">
+        <section class="note-step active" id="note1">
+          <span>01 · 基础曲线</span>
+          <div class="equation">f = 4x² + 9y² − 36 = 0</div>
+          <small>这正是椭圆 x²/9 + y²/4 = 1。</small>
+        </section>
+
+        <section class="note-step" id="note2">
+          <span>02 · 退化的二次曲线</span>
+          <div class="equation blue">g = (3x−5y+3)(3x+5y+2) = 0</div>
+          <small>乘积为零，表示点落在其中任意一条直线上。</small>
+        </section>
+
+        <section class="note-step" id="note3">
+          <span>03 · 保留交点</span>
+          <div class="equation purple">f + λg = 0</div>
+          <small>A、B、C、D 同时满足 f=0、g=0，所以对所有 λ 都仍在曲线上。</small>
+        </section>
+
+        <div class="expanded" id="expanded">
+          <span>λ = 1 时</span>
+          <b>13x² − 16y² + 15x + 5y − 30 = 0</b>
+        </div>
+      </aside>
+    </section>
+
+    <section class="caption">
+      <span id="captionIndex">01</span>
+      <p id="captionText">先把椭圆写成方程 f = 0。</p>
+    </section>
+
+    <footer class="footer">
+      <div class="controls">
+        <button id="playButton" type="button">暂停</button>
+        <button id="resetButton" type="button">从头演示</button>
+      </div>
+      <div class="progress"><i id="progressBar"></i></div>
+      <p id="statusText">一次播放，结束后可拖动 λ 自由查看</p>
+      <button id="returnCloud" type="button">返回云空间 ↗</button>
+    </footer>
+  </main>
+
+  <div class="lesson-backdrop" id="lessonBackdrop"></div>
+  <aside class="lesson-drawer" id="lessonDrawer" aria-hidden="true" aria-labelledby="lessonTitle">
+    <header class="lesson-head">
+      <div>
+        <small>BEGINNER'S GUIDE</small>
+        <h2 id="lessonTitle">二次曲线系 · 零基础详解</h2>
+      </div>
+      <button id="closeLesson" type="button" aria-label="关闭详细讲解">×</button>
+    </header>
+
+    <div class="lesson-intro">
+      <p><b>先记一句话：</b>几个点同时属于两条基础曲线，它们的任意加权组合曲线也一定经过这些点。</p>
+      <div class="lesson-key">f + λg = 0</div>
+      <p><i>f</i>、<i>g</i> 是两个关于 <i>x</i>、<i>y</i> 的式子；λ 只是一个可以改变的参数。</p>
+    </div>
+
+    <div class="lesson-content">
+      <details open>
+        <summary><b>01</b> 曲线为什么由方程决定？</summary>
+        <p>把点的坐标代入含 <i>x</i>、<i>y</i> 的式子，结果等于 0，就说明这个点在曲线上。所有结果为 0 的点组成这条曲线。</p>
+        <p>例如 <b>x²+y²−25=0</b> 是半径 5 的圆。代入 (3,4)，结果是 9+16−25=0，所以它在圆上；代入 (1,1)，结果不是 0，所以它不在圆上。</p>
+        <div class="remember">“在曲线上”就是“代入方程后等于 0”。</div>
+      </details>
+
+      <details>
+        <summary><b>02</b> 两条直线怎么变成一个方程？</summary>
+        <p>两个数相乘等于 0，至少有一个数是 0。因此 <b>(x−y)(x+y)=0</b> 表示 x−y=0 或 x+y=0，也就是两条直线 y=x、y=−x。</p>
+        <p>它展开后是 <b>x²−y²=0</b>，最高次为二次，所以两条直线合起来也可以看成一条“退化的二次曲线”。</p>
+        <div class="remember">乘积为零不是阴影区域，而是因式对应的曲线合并在一起。</div>
+      </details>
+
+      <details>
+        <summary><b>03</b> 原图中的椭圆和两条直线</summary>
+        <p>紫色椭圆为 <b>f=4x²+9y²−36=0</b>。除以 36 得 x²/9+y²/4=1，所以横向半轴是 3，纵向半轴是 2。</p>
+        <p>蓝色双直线为 <b>g=(3x−5y+3)(3x+5y+2)=0</b>。因为乘积为 0，所以点只有在 3x−5y+3=0 或 3x+5y+2=0 上。</p>
+      </details>
+
+      <details>
+        <summary><b>04</b> A、B、C、D 为什么固定？</summary>
+        <p>四个交点同时属于椭圆和两条蓝线。以 A 为例：f(A)=0、g(A)=0。</p>
+        <p>代入曲线系：</p>
+        <div class="lesson-formula">f(A) + λg(A) = 0 + λ×0 = 0</div>
+        <p>因此 λ 无论取 −10、0、1、100，A 都仍在曲线上。B、C、D 同理。</p>
+        <div class="remember">公共交点拥有两张基础曲线的“双重通行证”，任何组合曲线都不能拒绝它们。</div>
+      </details>
+
+      <details>
+        <summary><b>05</b> λ 到底改变什么？</summary>
+        <p>λ 不是角度，不是长度，也不是曲线条数。它表示两个基础方程在组合中的比例。</p>
+        <p>λ=0 时，f+0×g=f=0，只剩原来的椭圆。</p>
+        <p>λ=1 时，f+g=0，化简为 <b>13x²−16y²+15x+5y−30=0</b>。x² 项系数为正，y² 项系数为负，所以是双曲线。</p>
+        <div class="remember">绿色曲线向屏幕外继续延伸不是画错。双曲线本来就有两条无限延伸的分支，画布只是截断了它们。</div>
+      </details>
+
+      <details>
+        <summary><b>06</b> 为什么五个点能确定二次曲线？</summary>
+        <p>普通二次曲线为 <b>Ax²+Bxy+Cy²+Dx+Ey+F=0</b>。六个系数可以同时乘同一个非零数，所以真正独立的是五个自由度。</p>
+        <p>一个点提供一个条件。前四点留下一个参数 λ；第五点用来求它：</p>
+        <div class="lesson-formula">f(P₅)+λg(P₅)=0<br>λ=−f(P₅)/g(P₅)</div>
+        <p>只要 g(P₅)≠0，λ 就唯一确定。</p>
+      </details>
+
+      <details>
+        <summary><b>07</b> 用正方形四点看懂整件事</summary>
+        <p>取 A(−1,1)、B(1,1)、C(1,−1)、D(−1,−1)。</p>
+        <p>直线 AB、CD 组成 <b>F₁=(y−1)(y+1)=y²−1</b>；直线 AC、BD 组成 <b>F₂=(x−1)(x+1)=x²−1</b>。</p>
+        <p>所有经过四点的曲线可以写成：</p>
+        <div class="lesson-formula">y²−1+λ(x²−1)=0</div>
+        <p>λ=0 得到两条水平线；λ=1 得到圆 x²+y²=2；λ=2 得到椭圆 2x²+y²=3；λ=−1 得到两条对角线 y=x、y=−x。</p>
+      </details>
+
+      <details>
+        <summary><b>08</b> 考试里的标准步骤</summary>
+        <ol>
+          <li>找到两组具有相同四个交点的曲线。</li>
+          <li>把它们分别写成 f=0、g=0。</li>
+          <li>设曲线系为 f+λg=0。</li>
+          <li>代入第五点、切线、对称性或已知系数。</li>
+          <li>求出 λ，代回并化简。</li>
+        </ol>
+        <p>它的“降维”之处是不必求出四个交点的坐标，而是直接利用“四个公共点”这个整体条件。</p>
+      </details>
+
+      <details>
+        <summary><b>09</b> 新手最容易错的五件事</summary>
+        <ol>
+          <li>g=0 是两条直线本身，不是两条直线之间的区域。</li>
+          <li>λ 改变形状，但不会移动四个公共交点。</li>
+          <li>不同 λ 不一定是同一种曲线，可能从椭圆变成抛物线或双曲线。</li>
+          <li>两条蓝线自己的交点不一定在椭圆上，不能把它误认成 A、B、C、D。</li>
+          <li>双曲线到达屏幕边缘并不意味着曲线结束。</li>
+        </ol>
+      </details>
+    </div>
+  </aside>
+
+  <script src="./conics.js"></script>
+</body>
+</html>
