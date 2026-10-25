@@ -33406,31 +33406,33 @@ void main() {
   `
     )
   };
-  function createComposer(renderer2, scene2, camera2) {
+  function createComposer(renderer2, scene2, camera2, fastMode = false) {
     const size = renderer2.getDrawingBufferSize(new Vector2());
-    const depthTexture = new DepthTexture(size.x, size.y);
-    depthTexture.minFilter = depthTexture.magFilter = NearestFilter;
-    depthTexture.type = UnsignedIntType;
+    const depthTexture = fastMode ? null : new DepthTexture(size.x, size.y);
+    if (depthTexture) {
+      depthTexture.minFilter = depthTexture.magFilter = NearestFilter;
+      depthTexture.type = UnsignedIntType;
+    }
     const rt = new WebGLRenderTarget(size.x, size.y, {
-      type: HalfFloatType,
+      type: fastMode ? UnsignedByteType : HalfFloatType,
       colorSpace: LinearSRGBColorSpace,
-      samples: 4,
+      samples: fastMode ? 0 : 4,
       depthBuffer: true,
       depthTexture,
-      resolveDepthBuffer: true
+      resolveDepthBuffer: !fastMode
     });
     const composer2 = new EffectComposer(renderer2, rt);
-    composer2.renderTarget2.depthTexture = depthTexture;
+    if (depthTexture) composer2.renderTarget2.depthTexture = depthTexture;
     const render2 = new RenderPass(scene2, camera2);
-    const ao = new AOPass(camera2, size.x, size.y);
-    ao.setDepthTexture(depthTexture);
-    const bloom2 = new UnrealBloomPass(new Vector2(size.x, size.y), 0.32, 0.7, 0.87);
+    const ao = fastMode ? null : new AOPass(camera2, size.x, size.y);
+    if (ao) ao.setDepthTexture(depthTexture);
+    const bloom2 = fastMode ? null : new UnrealBloomPass(new Vector2(size.x, size.y), 0.32, 0.7, 0.87);
     const output = new OutputPass();
     const grade2 = new ShaderPass(Grade);
     grade2.uniforms.uFade.value = 0;
     composer2.addPass(render2);
-    composer2.addPass(ao);
-    composer2.addPass(bloom2);
+    if (ao) composer2.addPass(ao);
+    if (bloom2) composer2.addPass(bloom2);
     composer2.addPass(output);
     composer2.addPass(grade2);
     return { composer: composer2, render: render2, ao, bloom: bloom2, grade: grade2, output, depthTexture };
@@ -33839,6 +33841,9 @@ void main() {
   // src/main.js
   var $ = (s) => document.querySelector(s);
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var mobileView = matchMedia("(max-width: 760px)").matches ||
+    (navigator.userAgentData && navigator.userAgentData.mobile === true) ||
+    /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
   var canvas2 = $("#gl");
   var RISE = { duration: 300, easing: "cubic-bezier(.16, 1, .3, 1)" };
   var LEAVE = { duration: 150, easing: "cubic-bezier(.4, 0, 1, 1)", fill: "forwards" };
@@ -33950,16 +33955,16 @@ void main() {
   var themeName = "studio";
   var renderer;
   try {
-    renderer = new WebGLRenderer({ canvas: canvas2, antialias: true, powerPreference: "high-performance" });
+    renderer = new WebGLRenderer({ canvas: canvas2, antialias: !mobileView, powerPreference: "high-performance" });
   } catch (err) {
     document.body.innerHTML = '<p style="color:#eee;font:14px/1.6 system-ui;padding:3rem">\u5F53\u524D\u6D4F\u89C8\u5668\u65E0\u6CD5\u521D\u59CB\u5316 WebGL\uFF0C\u8BF7\u4F7F\u7528 Chrome / Edge \u6253\u5F00\u3002</p>';
     throw err;
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobileView ? 1.25 : 2) * (mobileView ? 0.7 : 1));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = NeutralToneMapping ?? ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = !mobileView;
   renderer.shadowMap.type = PCFSoftShadowMap;
   var scene = new Scene();
   var camera = new PerspectiveCamera(30, innerWidth / innerHeight, 1, 220);
@@ -33983,6 +33988,7 @@ void main() {
   }
   var floorBase = createSoftFloor({ base: 723982, mix: 0.62, y: -1.62, interval: 2 });
   scene.add(floorBase.mesh);
+  if (mobileView) floorBase.setEnabled(false);
   var shadowCatcher = new Mesh(
     new PlaneGeometry(46, 46),
     new ShadowMaterial({ color: 0, opacity: 0.42, transparent: true, depthWrite: false })
@@ -34012,8 +34018,8 @@ void main() {
   }
   setFloorDrop(0);
   var dustLayers = [
-    { n: 220, size: 0.055, color: 16770760, opacity: 0.5, spread: 26, rise: 0.09 },
-    { n: 70, size: 0.34, color: 16762778, opacity: 0.16, spread: 20, rise: 0.045 }
+    { n: mobileView ? 72 : 220, size: 0.055, color: 16770760, opacity: 0.5, spread: 26, rise: 0.09 },
+    { n: mobileView ? 18 : 70, size: 0.34, color: 16762778, opacity: 0.16, spread: 20, rise: 0.045 }
     // out-of-focus bokeh motes
   ].map((cfg) => {
     const { n } = cfg;
@@ -34629,7 +34635,7 @@ void main() {
       captureProbe();
     });
     await step("\u6B63\u5728\u7F16\u8BD1\u7740\u8272\u5668", 88, () => {
-      composer = createComposer(renderer, scene, camera);
+      composer = createComposer(renderer, scene, camera, mobileView);
       grade = composer.grade;
       bloom = composer.bloom;
       setTheme(themeName, true);
@@ -35329,7 +35335,7 @@ void main() {
   function applyPref(k) {
     if (k === "hiss") audio.setLevel(bedLevel());
     else if (k === "keys") document.body.classList.toggle("keys-off", !prefs.keys);
-    else if (k === "mirror") floorBase.setEnabled(prefs.mirror && quality > 0.8);
+    else if (k === "mirror") floorBase.setEnabled(prefs.mirror && quality > 0.8 && !mobileView);
   }
   function applyPrefs() {
     for (const k of Object.keys(prefs)) applyPref(k);
@@ -35816,12 +35822,12 @@ void main() {
     audio.clunk(on ? 0.8 : 1.2);
     document.body.classList.add("moved");
   }
-  var quality = 1;
+  var quality = mobileView ? 0.68 : 1;
   var perfAcc = 0;
   var perfN = 0;
   var fps = 0;
   var jsMs = 0;
-  var qualityCeil = 1;
+  var qualityCeil = mobileView ? 0.82 : 1;
   var goodWindows = 0;
   var perfSkip = 0;
   var perfEl = null;
@@ -35840,14 +35846,14 @@ void main() {
       perfSkip--;
       return;
     }
-    if (avg > 0.03) {
+    if (avg > (mobileView ? 0.024 : 0.03)) {
       goodWindows = 0;
-      if (quality > 0.6) {
-        quality = Math.max(0.6, quality - 0.2);
+      if (quality > (mobileView ? 0.5 : 0.6)) {
+        quality = Math.max(mobileView ? 0.5 : 0.6, quality - (mobileView ? 0.1 : 0.2));
         qualityCeil = Math.min(qualityCeil, quality);
         onResize();
       }
-      if (quality <= 0.8 || !prefs.mirror) floorBase.setEnabled(false);
+      if (mobileView || quality <= 0.8 || !prefs.mirror) floorBase.setEnabled(false);
       perfSkip = 1;
     } else if (avg < 0.018 && quality < qualityCeil) {
       if (++goodWindows >= 2) {
@@ -35855,7 +35861,7 @@ void main() {
         quality = Math.min(qualityCeil, quality + 0.2);
         onResize();
         perfSkip = 1;
-        if (quality >= 1) floorBase.setEnabled(prefs.mirror);
+        if (!mobileView && quality >= 1) floorBase.setEnabled(prefs.mirror);
       }
     } else {
       goodWindows = 0;
@@ -35863,13 +35869,13 @@ void main() {
   }
   function onResize() {
     const w = innerWidth, h = innerHeight;
-    const dpr = Math.min(devicePixelRatio || 1, 2) * quality;
+    const dpr = Math.min(devicePixelRatio || 1, mobileView ? 1.25 : 2) * quality;
     camera.aspect = w / h;
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     camera.updateProjectionMatrix();
     const px2 = w * dpr * h * dpr;
-    const ss = px2 > 9e6 ? 1 : 1.25;
+    const ss = mobileView || px2 > 9e6 ? 1 : 1.25;
     const bw = Math.round(w * dpr * ss), bh = Math.round(h * dpr * ss);
     if (composer) composer.composer.setSize(bw, bh);
     if (bloom) bloom.setSize(bw, bh);
@@ -35888,7 +35894,7 @@ void main() {
     camera.updateProjectionMatrix();
   }
   addEventListener("resize", () => {
-    qualityCeil = 1;
+    qualityCeil = mobileView ? 0.82 : 1;
     goodWindows = 0;
     onResize();
   });
@@ -35926,7 +35932,7 @@ void main() {
     } else {
       cas.st.driven = false;
     }
-    renderer.shadowMap.needsUpdate = true;
+    renderer.shadowMap.needsUpdate = !mobileView;
     const st = cas.update(dt);
     updateGhost(dt);
     updateLabelSwap(dt);

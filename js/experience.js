@@ -72,7 +72,7 @@
           '<div class="ex-nav-time"><span id="exClock">' + clock() + '</span><small>' + dateText() + '</small></div>' +
         '</header>' +
         '<section class="ex-hero" id="exTop">' +
-          '<div class="ex-slides" aria-hidden="true">' + GALLERY.map(function (g, i) { return '<img class="' + (i === 0 ? 'is-active' : '') + '" src="' + g.src + '?v=114" alt="">'; }).join('') + '</div>' +
+          '<div class="ex-slides" aria-hidden="true">' + GALLERY.map(function (g, i) { return '<img class="' + (i === 0 ? 'is-active' : '') + '" src="' + g.src + '?v=115" alt="">'; }).join('') + '</div>' +
           '<div class="ex-hero-shade" aria-hidden="true"></div>' +
           '<div class="ex-hero-copy">' +
             '<p class="ex-kicker"><span>ROOM 01</span> 给眼睛和心情的一点留白</p>' +
@@ -88,7 +88,8 @@
           '<div class="ex-room-head ex-reveal"><span class="ex-kicker">PLAY.02 / 小小游乐场</span><h2>不做什么，<br>也可以很好玩。</h2></div>' +
           '<div class="ex-room-grid">' +
             '<button class="ex-room-card cabin ex-reveal" type="button" onclick="CloudRoom.openCabin()"><img class="ex-room-thumb" src="./assets/gallery/cabin-preview.webp?v=108" alt="" loading="lazy"><span class="ex-room-copy"><small>SPACE / 01</small><h3>魔法小屋</h3><p>走进一座线稿森林，推开门，在会呼吸的木屋里待一会儿。</p><b>进入空间 ↗</b></span></button>' +
-            '<button class="ex-room-card cassette ex-reveal" type="button" onclick="CloudRoom.openCassette()"><img class="ex-room-thumb" src="./assets/gallery/cassette-preview.svg?v=114" alt="" loading="lazy"><span class="ex-room-copy"><small>TAPE / 02</small><h3>三维磁带</h3><p>转动、拆开、翻面，再装进一首属于你的歌。它不负责完成什么，只负责让时间有一点质感。</p><b>拾起这盘磁带 ↗</b></span></button>' +
+            '<button class="ex-room-card cassette ex-reveal" type="button" onclick="CloudRoom.openCassette()"><img class="ex-room-thumb" src="./assets/gallery/cassette-preview.svg?v=115" alt="" loading="lazy"><span class="ex-room-copy"><small>TAPE / 02</small><h3>三维磁带</h3><p>转动、拆开、翻面，再装进一首属于你的歌。它不负责完成什么，只负责让时间有一点质感。</p><b>拾起这盘磁带 ↗</b></span></button>' +
+            '<button class="ex-room-card action ex-reveal" type="button" onclick="CloudRoom.openActionCam()"><img class="ex-room-thumb" src="./assets/gallery/action-cam-preview.svg?v=115" alt="" loading="lazy"><span class="ex-room-copy"><small>LAB / 03</small><h3>Action 4 拆解</h3><p>拆开一台由代码生成的 DJI Action 4，查看镜头、双屏、控制键和磁吸底座。屏幕区域还能装载你的视频。</p><b>进入拆解实验室 ↗</b></span></button>' +
             '<a class="ex-room-card wind ex-reveal" href="./wind-chime.html" target="_blank" rel="noopener"><small>WIND / 01</small><h3>风铃室</h3><p>拖动玻璃球，把它扔进风里。手机也可以用手指玩。</p><span>打开风铃 ↗</span></a>' +
             '<a class="ex-room-card globe ex-reveal" href="#/globe"><small>EARTH / 02</small><h3>看看地球</h3><p>转到另一个半球，看看城市、晨昏线和很远的地方。</p><span>进入地球 ↗</span></a>' +
             '<a class="ex-room-card secret ex-reveal" href="#/" onclick="Portal.inkOpen(event);return false;"><small>HIDDEN / 03</small><h3>彩蛋房</h3><p>在标题里藏了一扇门。慢一点，再点一次标题也能进去。</p><span>进入隐藏空间 ↗</span></a>' +
@@ -98,7 +99,7 @@
           '<button type="button" class="ex-study-toggle" onclick="CloudRoom.toggleTools()"><span><small>WHEN YOU NEED IT</small><b>需要学习时，再打开工具。</b></span><i>＋</i></button>' +
           '<div class="ex-tools" id="exTools"><div class="ex-tools-head"><span>STUDY DRAWER</span><button type="button" onclick="CloudRoom.toggleTools(false)">收起 ×</button></div><div class="ex-tools-grid">' + toolsHTML() + '</div><p>这些入口仍然可用，但不再占据首页。</p></div>' +
         '</section>' +
-          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v114 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
+          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v115 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
       '</div>';
     bind();
     start();
@@ -151,6 +152,7 @@
     var intro = document.getElementById('exIntro'); if (intro) intro.remove();
     closeCabin();
     closeCassette();
+    closeActionCam();
     closeScenes();
     document.body.classList.remove('ex-mode', 'ex-intro-open');
   }
@@ -250,7 +252,7 @@
       layer.querySelector('.ex-cassette-close').addEventListener('click', closeCassette);
     }
     if (!frame) return;
-    if (!frame.getAttribute('src')) frame.setAttribute('src', './cassette/index.html?v=114');
+    if (!frame.getAttribute('src')) frame.setAttribute('src', './cassette/index.html?v=115');
     layer.classList.add('on');
     layer.setAttribute('aria-hidden', 'false');
     document.body.classList.add('ex-cassette-open');
@@ -262,6 +264,38 @@
     layer.classList.remove('on');
     layer.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('ex-cassette-open');
+    setTimeout(function () {
+      if (!frame || layer.classList.contains('on')) return;
+      frame.removeAttribute('src');
+      layer.remove();
+    }, 320);
+  }
+  function openActionCam() {
+    var layer = document.getElementById('exActionLayer');
+    var frame = document.getElementById('exActionFrame');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'exActionLayer';
+      layer.className = 'ex-action-layer';
+      layer.setAttribute('aria-hidden', 'true');
+      layer.innerHTML = '<button type="button" class="ex-action-close">← 返回云空间</button><iframe id="exActionFrame" title="DJI Action 4 三维拆解实验室" allow="autoplay; fullscreen; pointer-lock"></iframe><p>拖动旋转 · 滚轮缩放 · 点击部件拆解</p>';
+      document.body.appendChild(layer);
+      frame = document.getElementById('exActionFrame');
+      layer.querySelector('.ex-action-close').addEventListener('click', closeActionCam);
+    }
+    if (!frame) return;
+    if (!frame.getAttribute('src')) frame.setAttribute('src', './action-cam/index.html?v=115');
+    layer.classList.add('on');
+    layer.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('ex-action-open');
+  }
+  function closeActionCam() {
+    var layer = document.getElementById('exActionLayer');
+    var frame = document.getElementById('exActionFrame');
+    if (!layer) return;
+    layer.classList.remove('on');
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('ex-action-open');
     setTimeout(function () {
       if (!frame || layer.classList.contains('on')) return;
       frame.removeAttribute('src');
@@ -294,7 +328,7 @@
     box.classList.remove('on'); document.body.classList.remove('ex-intro-open');
     setTimeout(function () { box.remove(); }, 350);
   }
-  function closeTransient() { closeScenes(); closeIntro(); closeCabin(); closeCassette(); toggleTools(false); }
+  function closeTransient() { closeScenes(); closeIntro(); closeCabin(); closeCassette(); closeActionCam(); toggleTools(false); }
   function homeScroll(id) {
     var el = document.getElementById(id); if (!el) return false;
     try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { el.scrollIntoView(); }
@@ -307,9 +341,10 @@
   global.addEventListener('message', function (e) {
     if (e.origin !== location.origin) return;
     if (e.data && e.data.type === 'gml-close-cassette') closeCassette();
+    if (e.data && e.data.type === 'gml-close-action-cam') closeActionCam();
   });
 
-  global.CloudRoom = { toggleTools: toggleTools, closeIntro: closeIntro, openCabin: openCabin, closeCabin: closeCabin, openCassette: openCassette, closeCassette: closeCassette, openScenes: openScenes, closeScenes: closeScenes };
+  global.CloudRoom = { toggleTools: toggleTools, closeIntro: closeIntro, openCabin: openCabin, closeCabin: closeCabin, openCassette: openCassette, closeCassette: closeCassette, openActionCam: openActionCam, closeActionCam: closeActionCam, openScenes: openScenes, closeScenes: closeScenes };
   Portal.renderPortal = render;
   Portal.homeScroll = homeScroll;
   Portal.closeHomeWelcome = closeIntro;

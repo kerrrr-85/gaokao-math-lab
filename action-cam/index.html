@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#05080d">
+  <title>DJI Action 4 · 拆解实验室</title>
+  <link rel="stylesheet" href="styles.css?v=1156">
+</head>
+<body>
+  <main class="lab" id="lab">
+    <canvas id="scene" aria-label="DJI Action 4 三维模型"></canvas>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="back" href="../index.html?v=115#/" aria-label="返回云空间">← 云空间</a>
+      <div class="brand">
+        <span>FIELD LAB / 04</span>
+        <b>DJI ACTION 4</b>
+        <small>3D TEARDOWN INTERFACE</small>
+      </div>
+      <div class="status"><i></i><span>WEBGL ACTIVE</span></div>
+    </header>
+
+    <aside class="parts-panel">
+      <div class="panel-head">
+        <span>MODULE INDEX</span>
+        <b>部件清单</b>
+        <em>点击选择 · 再确认拆解</em>
+      </div>
+      <div class="parts-list" id="parts-list"></div>
+      <div class="parts-actions">
+        <button type="button" id="explode-all">全部拆解</button>
+        <button type="button" id="reset-view">复位</button>
+      </div>
+    </aside>
+
+    <aside class="details-panel" aria-live="polite">
+      <div class="details-kicker"><span id="part-index">01 / 06</span><i></i><em>SELECTED MODULE</em></div>
+      <h1 id="part-title">机身框架</h1>
+      <p class="part-en" id="part-en">MAGNESIUM ALLOY FRAME</p>
+      <p class="part-note" id="part-note">承载影像模组、双屏和磁吸快拆结构的核心骨架。</p>
+      <dl class="specs" id="part-specs"></dl>
+      <button class="access" type="button" id="focus-part">拆开此部件 <span>↗</span></button>
+    </aside>
+
+    <div class="labels" id="labels" aria-hidden="true"></div>
+
+    <section class="screen-dock">
+      <div>
+        <span>DISPLAY INPUT</span>
+        <b>屏幕视频区</b>
+        <small>MP4 / WEBM · 16:9 · 仅在本机播放</small>
+      </div>
+      <button type="button" id="load-video">装载 MP4</button>
+      <button type="button" id="toggle-video" hidden>暂停画面</button>
+      <button type="button" id="enlarge-screen" hidden>放大播放</button>
+      <input type="file" id="video-file" accept=".mp4,.webm,.mov,video/mp4,video/webm,video/quicktime" hidden>
+    </section>
+
+    <section class="screen-expand" id="screen-expand" aria-hidden="true">
+      <div class="expanded-head">
+        <span>DISPLAY OUTPUT / ACTION 4</span>
+        <button type="button" id="close-screen" aria-label="关闭放大屏幕">关闭 ✕</button>
+      </div>
+      <div class="expanded-frame">
+        <video id="expanded-video" playsinline loop muted controls></video>
+        <span class="expanded-scan" aria-hidden="true"></span>
+        <div class="expanded-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      </div>
+      <p>LOCAL DISPLAY ONLY · PRESS ESC TO RETURN</p>
+    </section>
+
+    <div class="guide">
+      <span class="mouse" aria-hidden="true"><i></i></span>
+      <p><b>拖动</b> 旋转 · <b>滚轮</b> 缩放 · <b>点击</b> 选择部件 · <b>确认后</b> 拆解</p>
+    </div>
+
+    <div class="hud-bottom">
+      <span>1/1.3 CMOS</span><i></i><span>4K / 120 FPS</span><i></i><span>155° FOV</span><i></i><span>145 G</span>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+    <div class="loader" id="loader"><span>正在生成精密模型</span><i></i></div>
+  </main>
+
+  <script src="../vendor/three.min.js?v=1156"></script>
+  <script src="app.js?v=1156"></script>
+</body>
+</html>
