@@ -89,6 +89,80 @@ body.ex-even-open{overflow:hidden}
 .ex-actions button:hover{background:#0077ed}
 .ex-actions a:hover{text-decoration:underline}
 .ex-actions i{font-style:normal;font-size:14px}
+.ex-music-home .ex-hero-shade{background:linear-gradient(90deg,rgba(2,5,8,.9),rgba(2,5,8,.58) 38%,rgba(2,5,8,.08) 72%),linear-gradient(180deg,rgba(0,0,0,.7),transparent 35%,rgba(0,0,0,.68))}
+.ex-music-home{justify-content:center}
+.ex-music-home .ex-slides img{filter:saturate(.92) contrast(1.03) brightness(.86);object-position:center}
+.ex-music-home .ex-hero-copy{max-width:1180px;padding-right:42%;text-align:left}
+.ex-music-home .ex-kicker{justify-content:flex-start}
+.ex-music-title{
+  margin:22px 0 0;
+  font-size:clamp(70px,9vw,126px);
+  font-weight:600;
+  line-height:.88;
+  letter-spacing:-.07em;
+  text-shadow:0 5px 30px rgba(0,0,0,.2);
+}
+.ex-music-lede{max-width:490px;margin:24px 0 0;font-size:16px;line-height:1.7;color:rgba(255,255,255,.72)}
+.ex-music-meta{padding:0!important;border:0!important;background:transparent!important;letter-spacing:.12em!important;color:rgba(255,255,255,.44)!important}
+.ex-music-home .ex-actions{justify-content:flex-start;margin-top:24px}
+.ex-music-now{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:27px;padding-left:13px;border-left:1px solid rgba(255,255,255,.28)}
+.ex-music-now span{font-size:7px;letter-spacing:.16em;color:rgba(255,255,255,.4)}
+.ex-music-now b{font-size:13px;font-weight:500;color:rgba(255,255,255,.86)}
+.ex-music-now small{font-size:9px;color:rgba(255,255,255,.44)}
+.ex-music-home .ex-hero-strip,.ex-music-home .ex-hero-corner{display:none}
+.ex-note-date{border:0!important;background:transparent!important;color:rgba(255,255,255,.48)!important;font-size:8px!important}
+.ex-note-paper{
+  position:relative;
+  width:min(760px,100%);
+  margin:24px auto 0;
+  padding:19px 22px 13px;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:5px;
+  background-color:rgba(251,249,239,.93);
+  background-image:repeating-linear-gradient(to bottom,transparent 0 30px,rgba(69,105,137,.13) 31px);
+  color:#252b33;
+  text-align:left;
+  box-shadow:0 22px 70px rgba(0,0,0,.3),0 2px 6px rgba(0,0,0,.2);
+  transform:rotate(-.18deg);
+  backdrop-filter:blur(13px);
+}
+.ex-note-paper::before{
+  content:"";
+  position:absolute;
+  top:-8px;
+  left:50%;
+  width:82px;
+  height:18px;
+  transform:translateX(-50%) rotate(.6deg);
+  background:rgba(226,218,193,.72);
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+}
+.ex-note-head{display:flex;align-items:baseline;justify-content:space-between;gap:18px;padding-bottom:5px}
+.ex-note-title{margin:0;font-family:"KaiTi","STKaiti","FangSong",serif;font-size:clamp(34px,4.2vw,54px);font-weight:700;line-height:1;letter-spacing:.02em}
+.ex-note-head span{color:#7f858b;font-size:9px;white-space:nowrap}
+#exNoteInput{
+  display:block;
+  width:100%;
+  min-height:128px;
+  max-height:235px;
+  margin:8px 0 5px;
+  padding:0 2px;
+  resize:vertical;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#252b33;
+  font-family:"KaiTi","STKaiti","FangSong",serif;
+  font-size:18px;
+  line-height:31px;
+  caret-color:#346da7;
+}
+#exNoteInput::placeholder{color:#9b9c96}
+.ex-note-foot{display:flex;align-items:center;gap:13px;min-height:24px;border-top:1px solid rgba(58,79,94,.12);color:#8b8e8c;font-size:8px}
+.ex-note-foot span:first-child{margin-right:auto}
+.ex-note-foot button{padding:0;border:0;background:transparent;color:#737b81;font-size:8px;cursor:pointer}
+.ex-note-foot button:hover{color:#b34c3f}
+.ex-hero:has(.ex-note-paper) .ex-hero-strip{padding-top:72px}
 .ex-hero-corner{position:absolute;right:26px;bottom:205px;display:flex;align-items:center;gap:9px;font-size:8px;letter-spacing:.07em;color:rgba(255,255,255,.46)}
 .ex-hero-corner b{color:rgba(255,255,255,.78);font-weight:500}
 .ex-hero-corner i{width:24px;height:1px;background:rgba(255,255,255,.26)}
@@ -264,6 +338,8 @@ body.ex-even-open{overflow:hidden}
   .ex-nav-time{display:none}
   .ex-brand small{display:none}
   .ex-title{font-size:clamp(44px,8.6vw,72px)}
+  .ex-music-home .ex-hero-copy{padding-right:16%}
+  .ex-music-title{font-size:clamp(62px,12vw,92px)}
   .ex-room-grid{grid-template-columns:1fr 1fr}
   .ex-scenes-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .ex-intro-card{min-height:520px;padding:45px 30px}
@@ -276,8 +352,23 @@ body.ex-even-open{overflow:hidden}
   .ex-nav nav>*{padding:7px 8px;font-size:9px}
   .ex-nav nav>*:nth-child(1){display:none}
   .ex-hero{min-height:900px;padding:90px 14px 16px}
+  .ex-music-home{min-height:760px;padding:96px 18px 34px}
+  .ex-music-home{justify-content:flex-start}
+  .ex-music-home .ex-slides img{object-position:66% center;filter:saturate(.92) contrast(1.04) brightness(.6)}
+  .ex-music-home .ex-hero-shade{background:linear-gradient(180deg,rgba(2,5,8,.7),rgba(2,5,8,.18) 42%,rgba(2,5,8,.82)),linear-gradient(90deg,rgba(2,5,8,.55),transparent 80%)}
+  .ex-music-home .ex-hero-copy{padding-right:0}
+  .ex-music-title{font-size:clamp(68px,21vw,92px)}
+  .ex-music-lede{max-width:310px;font-size:14px;margin-top:20px}
+  .ex-music-now{margin-top:21px}
+  .ex-music-home .ex-actions{flex-wrap:wrap;justify-content:flex-start;gap:12px 18px;margin-top:20px}
   .ex-title{margin-top:12px;font-size:clamp(45px,13vw,58px);line-height:1.02}
   .ex-lede{font-size:14px;max-width:350px}
+  .ex-note-paper{width:calc(100% - 4px);margin-top:18px;padding:17px 15px 10px;transform:none}
+  .ex-note-head{padding-bottom:3px}
+  .ex-note-title{font-size:34px}
+  .ex-note-head span{font-size:8px}
+  #exNoteInput{min-height:122px;font-size:16px;line-height:28px}
+  .ex-hero:has(.ex-note-paper) .ex-hero-strip{padding-top:54px}
   .ex-actions{gap:16px}
   .ex-actions button,.ex-actions a{font-size:12px}
   .ex-hero-corner{left:14px;right:auto;bottom:205px;font-size:7px}

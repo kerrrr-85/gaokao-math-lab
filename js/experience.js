@@ -3,8 +3,10 @@
   'use strict';
 
   var INTRO_KEY = 'gml_cloud_room_intro_v107';
+  var NOTE_KEY = 'gml_cloud_notebook_v1';
   var slideTimer = 0;
   var clockTimer = 0;
+  var noteSaveTimer = 0;
   var revealObserver = null;
   var scrollHandler = null;
   var slideIndex = 0;
@@ -46,6 +48,21 @@
     var w = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
     return d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + d.getDate()).slice(-2) + ' / 星期' + w;
   }
+  function loadNotebook() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(NOTE_KEY) || 'null');
+      if (saved && typeof saved.text === 'string') return saved;
+    } catch (e) {}
+    return { text: '', updatedAt: 0 };
+  }
+  function notebookTime(value) {
+    if (!value) return '自动保存在本机';
+    try {
+      return '已保存 ' + new Date(value).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '已保存到本机';
+    }
+  }
   function scenePickerHTML() {
     return GALLERY.map(function (item, i) {
       return '<button type="button" data-scene="' + i + '" aria-label="切换为背景：' + esc(item.title) + '">' +
@@ -68,7 +85,7 @@
       '<div class="ex-home' + (Portal.isNight && Portal.isNight() ? ' is-night' : '') + '" id="ptLanding">' +
         '<header class="ex-nav">' +
           '<a class="ex-brand" href="#/" onclick="return Portal.homeScroll(\'exTop\')"><i>G</i><span><b>我们的云空间</b><small>CLOUD ROOM / A QUIET PLACE</small></span></a>' +
-          '<nav><button type="button" onclick="Portal.homeScroll(\'exTop\')">漫游</button><button type="button" onclick="CloudRoom.openScenes()">换景</button><button type="button" onclick="CloudRoom.openCabin()">小屋</button><button type="button" onclick="CloudRoom.openCassette()">磁带</button><button type="button" onclick="CloudRoom.toggleTools()">工具</button></nav>' +
+          '<nav><button type="button" onclick="Portal.homeScroll(\'exTop\')">漫游</button><button type="button" onclick="CloudRoom.openScenes()">换景</button><button type="button" onclick="CloudRoom.openCabin()">小屋</button><button type="button" onclick="CloudRoom.openCassette()">音乐盒</button><button type="button" onclick="CloudRoom.toggleTools()">工具</button></nav>' +
           '<div class="ex-nav-time"><span id="exClock">' + clock() + '</span><small>' + dateText() + '</small></div>' +
         '</header>' +
         '<section class="ex-hero" id="exTop">' +
@@ -101,8 +118,21 @@
           '<button type="button" class="ex-study-toggle" onclick="CloudRoom.toggleTools()"><span><small>WHEN YOU NEED IT</small><b>需要学习时，再打开工具。</b></span><i>＋</i></button>' +
           '<div class="ex-tools" id="exTools"><div class="ex-tools-head"><span>STUDY DRAWER</span><button type="button" onclick="CloudRoom.toggleTools(false)">收起 ×</button></div><div class="ex-tools-grid">' + toolsHTML() + '</div><p>这些入口仍然可用，但不再占据首页。</p></div>' +
         '</section>' +
-          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v119 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
+          '<footer class="ex-footer"><div class="ex-footer-mark"><i>G</i><span><b>我们的云空间</b><small>这里不是任务清单。</small></span></div><div><span>v120 / CLOUD ROOM</span><button type="button" onclick="App.forceUpdate()">检查更新</button><a href="#/settings">设置</a></div></footer>' +
       '</div>';
+    var hero = view.querySelector('.ex-hero');
+    var heroCopy = view.querySelector('.ex-hero-copy');
+    var heroSlides = view.querySelector('.ex-slides');
+    if (hero) hero.classList.add('ex-music-home');
+    if (heroSlides) heroSlides.innerHTML = '<img class="is-active" src="./assets/gallery/cassette-preview.svg?v=120" alt="">';
+    if (heroCopy) {
+      heroCopy.innerHTML =
+        '<p class="ex-kicker"><span>ROOM 02</span><span class="ex-music-meta">MUSIC BOX / 9 TRACKS</span></p>' +
+        '<h1 class="ex-music-title">音乐盒</h1>' +
+        '<p class="ex-music-lede">把今天装进一盘磁带。可以转动、翻面、挑歌，也可以只是听一会儿。</p>' +
+        '<div class="ex-music-now"><span>NOW PLAYING</span><b>路過你的全世界</b><small>拖动磁带，选择今天的心情</small></div>' +
+        '<div class="ex-actions"><button type="button" onclick="CloudRoom.openCassette()">打开音乐盒<i>↗</i></button><button type="button" onclick="Portal.homeScroll(\'exRoom\')">看看别的空间<i>↓</i></button><a href="./wind-chime.html" target="_blank" rel="noopener">去听风<i>↗</i></a></div>';
+    }
     var roomGrid = view.querySelector('.ex-room-grid');
     if (roomGrid) {
       var conicsCard = document.createElement('button');
@@ -145,6 +175,34 @@
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); Portal.inkOpen(e); }
       });
     }
+    var noteInput = document.getElementById('exNoteInput');
+    var noteStatus = document.getElementById('exNoteStatus');
+    var noteCount = document.getElementById('exNoteCount');
+    var noteClear = document.getElementById('exNoteClear');
+    if (noteInput) {
+      var persistNote = function () {
+        var value = noteInput.value.slice(0, 3000);
+        var data = { text: value, updatedAt: Date.now() };
+        try { localStorage.setItem(NOTE_KEY, JSON.stringify(data)); } catch (e) {}
+        if (noteStatus) noteStatus.textContent = notebookTime(data.updatedAt);
+        if (noteCount) noteCount.textContent = value.length + ' / 3000';
+      };
+      noteInput.addEventListener('input', function () {
+        if (noteCount) noteCount.textContent = noteInput.value.length + ' / 3000';
+        if (noteStatus) noteStatus.textContent = '正在保存…';
+        if (noteSaveTimer) clearTimeout(noteSaveTimer);
+        noteSaveTimer = setTimeout(persistNote, 320);
+      });
+      noteInput.addEventListener('blur', function () {
+        if (noteSaveTimer) { clearTimeout(noteSaveTimer); noteSaveTimer = 0; }
+        persistNote();
+      });
+      if (noteClear) noteClear.addEventListener('click', function () {
+        noteInput.value = '';
+        persistNote();
+        noteInput.focus();
+      });
+    }
   }
 
   function start() {
@@ -172,6 +230,7 @@
   function stop() {
     if (slideTimer) { clearInterval(slideTimer); slideTimer = 0; }
     if (clockTimer) { clearInterval(clockTimer); clockTimer = 0; }
+    if (noteSaveTimer) { clearTimeout(noteSaveTimer); noteSaveTimer = 0; }
     if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
     if (scrollHandler) { removeEventListener('scroll', scrollHandler); scrollHandler = null; }
     var intro = document.getElementById('exIntro'); if (intro) intro.remove();
